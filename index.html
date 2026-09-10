@@ -169,6 +169,25 @@
   dots.forEach(function(d,x){d.addEventListener('click',function(){go(x);stop();start();});});
   c.addEventListener('mouseenter',stop);c.addEventListener('mouseleave',start);
   start();
+  // Auto-rotate carousel every 5 seconds
+  let autoRotateTimer;
+  function autoRotate(){
+      autoRotateTimer=setInterval(()=>{
+            const nextIndex=(i+1)%slides.length;
+            i=nextIndex;
+            track.style.transform=`translateX(-${i*100}%)`;
+            dots.forEach((d,x)=>{d.classList.toggle('active',x===i);});
+      },5000);
+  }
+  // Restart auto-rotate on manual interaction
+  function restartAutoRotate(){
+      clearInterval(autoRotateTimer);
+      autoRotate();
+  }
+  c.querySelector('.next').addEventListener('click',()=>{next();restartAutoRotate();});
+  c.querySelector('.prev').addEventListener('click',()=>{prev();restartAutoRotate();});
+  dots.forEach(d=>d.addEventListener('click',()=>{restartAutoRotate();}));
+  autoRotate();
 })();
 </script>
 </body>
