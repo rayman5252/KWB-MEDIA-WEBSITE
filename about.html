@@ -3,8 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>About Us | KWB Media LLC</title>
-<meta name="description" content="Explore KWB Media LLC for expert video marketing services, multi-media marketing, and social media marketing to elevate your brand's presence.">
+<title>About KWB Media | 20+ Years of Video Production in Hartford &amp; Boston</title>
+<meta name="description" content="Founded in 1998 by award-winning producer Ray Wolters, KWB Media LLC delivers expert video, multi-media and social media marketing to businesses across Hartford and Boston.">
+<meta name="keywords" content="about KWB Media, Ray Wolters, video production company Hartford, video marketing Boston">
+<meta name="theme-color" content="#c81e3a">
+<link rel="canonical" href="https://www.kwbmedia.com/about.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="About KWB Media | 20+ Years of Video Production">
+<meta property="og:description" content="Founded in 1998 by Ray Wolters, KWB Media delivers expert video and marketing across Hartford and Boston.">
+<meta property="og:url" content="https://www.kwbmedia.com/about.html">
+<meta property="og:image" content="https://img1.wsimg.com/isteam/ip/809a320e-7212-4286-b419-a797ee9511d5/KWB%20SOLO%20LOGO%20.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="About KWB Media | 20+ Years of Video Production">
+<meta name="twitter:description" content="Founded in 1998 by Ray Wolters, KWB Media delivers expert video and marketing across Hartford and Boston.">
+<meta name="twitter:image" content="https://img1.wsimg.com/isteam/ip/809a320e-7212-4286-b419-a797ee9511d5/KWB%20SOLO%20LOGO%20.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Squada+One&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
@@ -13,7 +25,7 @@
 <div class="announce">Don't wait, book your FREE CONSULTATION now!</div>
 
 <header class="site-header">
-  <a class="logo" href="index.html"><img src="https://img1.wsimg.com/isteam/ip/809a320e-7212-4286-b419-a797ee9511d5/KWB%20SOLO%20LOGO%20.png" alt="KWB Media LLC"></a>
+  <a class="logo" href="index.html"><img src="https://img1.wsimg.com/isteam/ip/809a320e-7212-4286-b419-a797ee9511d5/KWB%20SOLO%20LOGO%20.png" alt="KWB Media LLC logo"></a>
   <nav><ul>
     <li><a href="index.html">Home</a></li>
     <li><a href="about.html" class="active">About Us</a></li>
@@ -30,22 +42,26 @@
   <p>Over 20+ Years in Business</p>
 </div>
 
-<section>
-  <p>KWB Media LLC is a full service video, multi-media and social media marketing company with two offices in the Hartford and Boston areas.</p>
-  <p>KWB was founded by award winning editor and producer Ray Wolters in 1998 to service a need in the industry, allowing smaller companies access to the tools that the big boys have enjoyed for years, without the big price tag.</p>
+<section class="reveal">
+  <p>KWB Media LLC is a <strong>full service video, multi-media and social media marketing company</strong> with two offices in the Hartford and Boston areas.</p>
+  <p>KWB was founded by award winning editor and producer <span class="hl">Ray Wolters</span> in 1998 to service a need in the industry, allowing smaller companies access to the tools that the big boys have enjoyed for years, without the big price tag.</p>
   <p>While working in an advertising agency in Connecticut in his early days, Ray learned fast that big shops were getting rich helping the big accounts, and were escorting smaller businesses out the door. Without the high overhead of his previous owners' luxury cars and second homes to worry about, Ray was able to strike out on his own, and give everyday businesses access to high quality videos and marketing without the huge price tag.</p>
-  <p>What began simply as a love for making film and television has given rise to a whole breadth of services with the same passion. With the addition of co-owner Michelle Wolters and her background in finance and event planning, Dave Sweeney and his video production and corporate communications experience, Charles Jackson with his years of broadcast television producing and videography, and a talented stable of freelancers, there is nothing KWB can't tackle.</p>
+  <p>What began simply as a love for making film and television has given rise to a whole breadth of services with the same passion. With Dave Sweeney and his video production and corporate communications experience, Charles Jackson with his years of broadcast television producing and videography, and a talented stable of freelancers, there is nothing KWB can't tackle.</p>
 </section>
 
-<section class="section-alt">
-  <h2>Sit Back, Relax, Let Us Take Care of Everything</h2>
+<div class="divider"></div>
+
+<section class="section-alt reveal">
+  <h2>Sit Back, Relax, Let Us <span class="hl">Take Care</span> of Everything</h2>
   <p>Whether it is making an existing project better, or starting from scratch and working with the client from concept all the way through completion, Ray and his associates will be there for you every step of the way to make sure to exceed your expectations and not your budget.</p>
 </section>
 
-<section>
-  <h2>We Look Good When You Look Good</h2>
+<div class="divider"></div>
+
+<section class="reveal">
+  <h2>We Look Good When <span class="hl">You Look Good</span></h2>
   <p>We don't want to do one project with you and then part ways &mdash; we want to be lifetime partners in your company growth. We have seen our customers grow, we are proud to be a part of that, and we would love to help you too.</p>
-  <a href="contact.html" class="btn">Book a Free Consultation</a>
+  <a href="contact.html" class="btn pulse">Book a Free Consultation</a>
 </section>
 
 <footer>
@@ -56,5 +72,9 @@
   </div>
   <p>&copy; 2026 KWB Media LLC - All Rights Reserved.</p>
 </footer>
+
+<script>
+(function(){var els=document.querySelectorAll('.reveal');if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in');});return;}var io=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.15});els.forEach(function(e){io.observe(e);});})();
+</script>
 </body>
 </html>
