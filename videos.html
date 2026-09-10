@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Video Portfolio | KWB Media LLC</title>
 <meta name="description" content="Discover top-notch video marketing services at KWB Media. Engage your audience with creative marketing videos tailored for your brand.">
+<meta name="keywords" content="video portfolio, video production samples, corporate video, animation, broadcast, KWB Media Hartford Boston">
+<meta name="theme-color" content="#c81e3a">
+<link rel="canonical" href="https://www.kwbmedia.com/videos.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Video Portfolio | KWB Media LLC">
+<meta property="og:description" content="Explore KWB Media's video portfolio: charity, food, non-profit, animation, broadcast, automotive and corporate work.">
+<meta property="og:url" content="https://www.kwbmedia.com/videos.html">
+<meta property="og:image" content="https://img1.wsimg.com/isteam/ip/809a320e-7212-4286-b419-a797ee9511d5/KWB%20SOLO%20LOGO%20.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Video Portfolio | KWB Media LLC">
+<meta name="twitter:description" content="Explore KWB Media's video portfolio across many genres.">
+<meta name="twitter:image" content="https://img1.wsimg.com/isteam/ip/809a320e-7212-4286-b419-a797ee9511d5/KWB%20SOLO%20LOGO%20.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Squada+One&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
@@ -13,7 +25,7 @@
 <div class="announce">Don't wait, book your FREE CONSULTATION now!</div>
 
 <header class="site-header">
-  <a class="logo" href="index.html"><img src="https://img1.wsimg.com/isteam/ip/809a320e-7212-4286-b419-a797ee9511d5/KWB%20SOLO%20LOGO%20.png" alt="KWB Media LLC"></a>
+  <a class="logo" href="index.html"><img src="https://img1.wsimg.com/isteam/ip/809a320e-7212-4286-b419-a797ee9511d5/KWB%20SOLO%20LOGO%20.png" alt="KWB Media LLC logo"></a>
   <nav><ul>
     <li><a href="index.html">Home</a></li>
     <li><a href="about.html">About Us</a></li>
@@ -26,10 +38,10 @@
 </header>
 
 <div class="page-banner">
-  <h1>Our Video Portfolio</h1>
+  <h1>Our Video <span class="hl">Portfolio</span></h1>
 </div>
 
-<section>
+<section class="reveal">
   <div class="video-grid">
     <div class="video-item">
       <iframe src="https://youtube.com/embed/CzpkatY9rHo" title="Charity - United Way" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
@@ -82,5 +94,9 @@
   </div>
   <p>&copy; 2026 KWB Media LLC - All Rights Reserved.</p>
 </footer>
+
+<script>
+(function(){var els=document.querySelectorAll('.reveal');if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in');});return;}var io=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.15});els.forEach(function(e){io.observe(e);});})();
+</script>
 </body>
 </html>
