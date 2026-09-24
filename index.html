@@ -132,11 +132,15 @@
 <section class="section-alt reveal">
   <h2><span class="hl">Subscribe</span></h2>
   <p>Sign up to hear from us about our latest projects, tips and news.</p>
-  <form class="contact-form" action="#" method="post">
+  <p class="form-sent" hidden>Thanks for signing up!</p>
+  <form class="contact-form" action="https://formsubmit.co/ray@kwbmedia.com" method="POST">
+    <input type="hidden" name="_subject" value="New newsletter sign-up from the KWB Media website">
+    <input type="hidden" name="_template" value="table">
+    <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off">
     <input type="email" name="email" placeholder="Email Address" required>
     <button type="submit" class="btn">Sign Up</button>
   </form>
-  <!-- TODO: connect this form to an email service such as Mailchimp or Formspree -->
+  <!-- Sign-ups are emailed to ray@kwbmedia.com via FormSubmit.co -->
 </section>
 
 <section class="reveal">
@@ -162,7 +166,7 @@
 
 <footer>
   <p>KWB Media LLC &middot; 224 Durkee Road, Somers, CT 06071</p>
-  <p><a href="tel:8608037683">(860) 803-7683</a></p>
+  <p><a href="tel:8608037683">(860) 803-7683</a> &middot; <a href="mailto:ray@kwbmedia.com">ray@kwbmedia.com</a></p>
   <div class="footer-links">
     <a href="https://www.sr9.ai">Check the signal ...</a>
   </div>
@@ -210,6 +214,11 @@
   dots.forEach(d=>d.addEventListener('click',()=>{restartAutoRotate();}));
   autoRotate();
 })();
+</script>
+<script>
+(function(){var here=location.href.split('#')[0].split('?')[0];
+document.querySelectorAll('form[action^="https://formsubmit.co/"]').forEach(function(f){var n=document.createElement('input');n.type='hidden';n.name='_next';n.value=here+'?sent=1';f.appendChild(n);});
+if(/[?&]sent=1/.test(location.search)){document.querySelectorAll('.form-sent').forEach(function(p){p.hidden=false;p.scrollIntoView({block:'center'});});}})();
 </script>
 </body>
 </html>

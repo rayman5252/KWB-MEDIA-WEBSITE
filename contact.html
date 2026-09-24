@@ -48,27 +48,31 @@
       <h2><span class="hl">Visit</span> Us</h2>
       <p>We love our customers, so feel free to visit during normal business hours.</p>
       <p><strong>KWB Media LLC</strong><br>224 Durkee Road, Somers, CT 06071, United States</p>
-      <p><a href="tel:8608037683">(860) 803-7683</a></p>
+      <p><a href="tel:8608037683">(860) 803-7683</a><br><a href="mailto:ray@kwbmedia.com">ray@kwbmedia.com</a></p>
       <h3>Hours</h3>
       <p>Open today: 09:00 am &ndash; 05:00 pm</p>
       <a class="btn" href="https://maps.google.com/?q=224+Durkee+Road,+Somers,+CT+06071" target="_blank" rel="noopener">Get Directions</a>
     </div>
     <div>
       <h2>Drop Us a Line!</h2>
-      <form class="contact-form" action="mailto:ray@kwbmedia.com" method="post">
+      <p class="form-sent" hidden>Thanks! Your message is on its way. We'll get back to you soon.</p>
+      <form class="contact-form" action="https://formsubmit.co/ray@kwbmedia.com" method="POST">
+        <input type="hidden" name="_subject" value="New message from the KWB Media website">
+        <input type="hidden" name="_template" value="table">
+        <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off">
         <input type="text" name="name" placeholder="Name" required>
         <input type="email" name="email" placeholder="Email*" required>
-        <textarea name="message" rows="5" placeholder="Message"></textarea>
+        <textarea name="message" rows="5" placeholder="Message" required></textarea>
         <button type="submit" class="btn">Send</button>
       </form>
-      <!-- TODO: connect this form to a service such as Formspree or a Vercel serverless function, since the GoDaddy form backend and reCAPTCHA will not carry over -->
+      <!-- Form delivered by FormSubmit.co to ray@kwbmedia.com. The first submission sends a one-time activation email to that inbox. -->
     </div>
   </div>
 </section>
 
 <footer>
   <p>KWB Media LLC &middot; 224 Durkee Road, Somers, CT 06071</p>
-  <p><a href="tel:8608037683">(860) 803-7683</a></p>
+  <p><a href="tel:8608037683">(860) 803-7683</a> &middot; <a href="mailto:ray@kwbmedia.com">ray@kwbmedia.com</a></p>
   <div class="footer-links">
     <a href="https://www.sr9.ai">Check the signal ...</a>
   </div>
@@ -77,6 +81,11 @@
 
 <script>
 (function(){var els=document.querySelectorAll('.reveal');if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in');});return;}var io=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.15});els.forEach(function(e){io.observe(e);});})();
+</script>
+<script>
+(function(){var here=location.href.split('#')[0].split('?')[0];
+document.querySelectorAll('form[action^="https://formsubmit.co/"]').forEach(function(f){var n=document.createElement('input');n.type='hidden';n.name='_next';n.value=here+'?sent=1';f.appendChild(n);});
+if(/[?&]sent=1/.test(location.search)){document.querySelectorAll('.form-sent').forEach(function(p){p.hidden=false;p.scrollIntoView({block:'center'});});}})();
 </script>
 </body>
 </html>

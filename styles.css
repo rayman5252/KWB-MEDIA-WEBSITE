@@ -222,3 +222,4 @@ form.contact-form input, form.contact-form textarea { background:#0f0f0f; color:
 form.contact-form input::placeholder, form.contact-form textarea::placeholder { color:#8a8a8a; }
 
 footer { border-top:1px solid var(--line); }
+.form-sent { background:rgba(46,160,67,.15); border:1px solid rgba(46,160,67,.6); color:#d8f5de; padding:12px 16px; border-radius:6px; margin-bottom:14px; max-width:480px; }
