@@ -223,3 +223,5 @@ form.contact-form input::placeholder, form.contact-form textarea::placeholder { 
 
 footer { border-top:1px solid var(--line); }
 .form-sent { background:rgba(46,160,67,.15); border:1px solid rgba(46,160,67,.6); color:#d8f5de; padding:12px 16px; border-radius:6px; margin-bottom:14px; max-width:480px; }
+.video-grid-3 { grid-template-columns:repeat(3,1fr); gap:24px; }
+@media (max-width:800px){ .video-grid-3 { grid-template-columns:1fr; } }
