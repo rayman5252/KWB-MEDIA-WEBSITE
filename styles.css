@@ -225,3 +225,7 @@ footer { border-top:1px solid var(--line); }
 .form-sent { background:rgba(46,160,67,.15); border:1px solid rgba(46,160,67,.6); color:#d8f5de; padding:12px 16px; border-radius:6px; margin-bottom:14px; max-width:480px; }
 .video-grid-3 { grid-template-columns:repeat(3,1fr); gap:24px; }
 @media (max-width:800px){ .video-grid-3 { grid-template-columns:1fr; } }
+.about-intro { display:grid; grid-template-columns:minmax(260px,38%) 1fr; gap:40px; align-items:start; }
+.about-intro img { width:100%; border-radius:10px; box-shadow:0 14px 40px rgba(0,0,0,.7); }
+.about-intro .about-text p { text-align:justify; hyphens:auto; margin-bottom:16px; }
+@media (max-width:800px){ .about-intro { grid-template-columns:1fr; } .about-intro img { max-width:420px; margin:0 auto; } .about-intro .about-text p { text-align:left; } }
