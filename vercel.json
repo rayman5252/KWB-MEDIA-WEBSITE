@@ -1,0 +1,44 @@
+{
+  "redirects": [
+    {
+      "source": "/about-us",
+      "destination": "/about.html",
+      "permanent": true
+    },
+    {
+      "source": "/contact-us",
+      "destination": "/contact.html",
+      "permanent": true
+    },
+    {
+      "source": "/services",
+      "destination": "/services.html",
+      "permanent": true
+    },
+    {
+      "source": "/videos",
+      "destination": "/videos.html",
+      "permanent": true
+    },
+    {
+      "source": "/specials",
+      "destination": "/specials.html",
+      "permanent": true
+    },
+    {
+      "source": "/home",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/signal-room-9",
+      "destination": "https://www.sr9.ai",
+      "permanent": true
+    },
+    {
+      "source": "/f/:slug*",
+      "destination": "/",
+      "permanent": true
+    }
+  ]
+}
