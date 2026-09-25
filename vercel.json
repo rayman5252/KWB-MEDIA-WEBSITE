@@ -36,8 +36,13 @@
       "permanent": true
     },
     {
+      "source": "/blog",
+      "destination": "/blog/",
+      "permanent": true
+    },
+    {
       "source": "/f/:slug*",
-      "destination": "/",
+      "destination": "/blog/",
       "permanent": true
     }
   ]
