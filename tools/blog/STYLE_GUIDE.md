@@ -9,6 +9,14 @@ Read this whole file before writing a post. It is the rulebook for every blog po
 - **Humor:** at least a few real laughs per post: self-deprecating, observational, a little sarcastic. Keep it clean and business-safe. No drug, political or religious jokes. No jokes that punch down.
 - **Audience:** small and mid-sized business owners and marketing people. Plain English. Explain jargon or skip it.
 
+## What KWB does (keep this current)
+
+KWB is broadening beyond video. When a post mentions what KWB does, reflect the full range, never "video is all we do":
+- Video production (on-location shoots in the Northeast; editing and post for anyone, anywhere)
+- **Social media management**, including graphics
+- **AI video** and AI stories/animation
+- Marketing strategy and content
+
 ## Topics (the three lanes)
 
 Rotate between these so posts don't cluster:
@@ -17,7 +25,7 @@ Rotate between these so posts don't cluster:
 2. **Video:** production tips, planning a shoot, being on camera, drones, events, trade shows, short-form, testimonials.
 3. **AI:** how AI helps (and doesn't) in marketing and video; practical, honest, from someone actually using it.
 
-Check the existing posts in `tools/blog/posts/` first. Don't repeat a topic or angle that's already covered. Tie back to a KWB service where it fits naturally (see `services.html` and `specials.html`).
+Check the existing posts in `tools/blog/posts/` first. Don't repeat a topic or angle that's already covered. Tie back to a KWB service where it fits naturally (see the list above, `services.html` and `specials.html`).
 
 ## Hard rules
 
