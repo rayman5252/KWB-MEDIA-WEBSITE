@@ -5,3 +5,4 @@ images/trade-show-shoot.jpg
 images/nocturnal-chillers-thumbnail.jpg
 images/dealership-shoot.jpg
 images/signal-room-9-ham-radio.jpg
+images/edit-suite-desk.jpg

@@ -55,12 +55,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.kwbmedia.com/blog/50-year-old-marketing-pros-take-on-ai/</loc>
-    <lastmod>2026-09-25</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://www.kwbmedia.com/blog/how-to-not-look-like-a-hostage-on-camera/</loc>
     <lastmod>2026-09-25</lastmod>
     <changefreq>yearly</changefreq>
@@ -68,6 +62,18 @@
   </url>
   <url>
     <loc>https://www.kwbmedia.com/blog/defending-against-spammer-ai/</loc>
+    <lastmod>2026-09-25</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.kwbmedia.com/blog/small-business-marketing-budget/</loc>
+    <lastmod>2026-09-25</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.kwbmedia.com/blog/50-year-old-marketing-pros-take-on-ai/</loc>
     <lastmod>2026-09-25</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.7</priority>
