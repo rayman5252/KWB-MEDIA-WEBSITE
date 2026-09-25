@@ -35,6 +35,7 @@ Check the existing posts in `tools/blog/posts/` first. Don't repeat a topic or a
    - Skip anything already listed in `tools/blog/used_photos.txt` unless every photo has been used.
    - Skip logos, icons, favicons, banners and the book cover.
    - Prefer horizontal photos. Don't use a photo of kids for a jokey topic.
+   - **Never name or identify people in photos** (not even Ray) in the alt text or the post. Describe what's happening instead, e.g. "KWB Media editor at the edit suite".
    - Make the web copy: `python3 tools/blog/prep_photo.py "<source photo>" images/blog/<slug>.jpg`
 2. **If nothing fits,** make a branded title card:
    `python3 tools/blog/title_card.py "<Post Title>" images/blog/<slug>.jpg`
