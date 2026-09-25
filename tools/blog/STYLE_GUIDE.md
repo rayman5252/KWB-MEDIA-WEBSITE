@@ -62,9 +62,9 @@ Then run `python3 tools/blog/build.py`. It regenerates the post page, the blog p
 1. Clone/pull the latest `main`. Read this guide.
 2. Pick a topic (see lanes above), research it on the web, write the post JSON, pick/make the header image, run the build.
 3. Check the result: open the generated page in a headless browser, make sure there are no broken images or links, and read it once more for voice and facts.
-4. Create a branch `blog/<slug>`, commit, and push it. **Do NOT push to `main`.** Vercel automatically builds a preview at
-   `https://kwb-media-website-git-blog-<slug>-kwb5252.vercel.app/blog/<slug>/`
-   (if the slug is long, Vercel may shorten this; check the deployment on GitHub if the link 404s).
+4. Commit to a branch named `claude/blog-<slug>` and push it. **Do NOT push to `main`.** Vercel automatically builds a preview at
+   `https://kwb-media-website-git-claude-blog-<slug>-kwb5252.vercel.app/blog/<slug>/`
+   (Vercel may shorten long branch names; the real link is on the branch's deployment status on GitHub.)
 5. Tell Ray: the title, a 3-sentence summary, the preview link, the header image used, and the sources. Ask him to reply **"publish"** or with changes.
-6. **Only after Ray says publish:** merge the branch into `main`, push, then delete the `blog/<slug>` branch. Confirm the live URL loads.
+6. **Only after Ray says publish:** merge the branch into `main`, push, then delete the `claude/blog-<slug>` branch. Confirm the live URL loads.
 7. If Ray asks for changes, make them on the same branch, push, and send the preview link again.
