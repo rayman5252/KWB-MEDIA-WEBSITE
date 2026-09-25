@@ -1,0 +1,7 @@
+# Header images already used by blog posts (one per line). Don't reuse these
+# until every photo in "BLOG PHOTOS/" and images/ has had a turn.
+images/editing-timeline.jpg
+images/trade-show-shoot.jpg
+images/nocturnal-chillers-thumbnail.jpg
+images/dealership-shoot.jpg
+images/signal-room-9-ham-radio.jpg
