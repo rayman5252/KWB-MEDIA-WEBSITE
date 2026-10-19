@@ -32,6 +32,7 @@
 .book-feature img { width:100%; max-width:360px; display:block; margin:0 auto; border-radius:8px; }
 .book-tag { display:inline-block; font-size:.75rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
 .coming-soon { text-align:center; padding:40px 24px; }
+.card img.book-cover { height:auto; object-fit:contain; }
 .coming-soon .book-blank { height:220px; border:2px dashed var(--line, #333); border-radius:6px; display:flex; align-items:center; justify-content:center; margin-bottom:16px; font-family:'Squada One',sans-serif; font-size:2.4rem; color:var(--accent); opacity:.7; }
 </style>
 </head>
@@ -76,12 +77,13 @@
 
 <section class="reveal">
   <h2>Coming <span class="hl">Soon</span></h2>
-  <p>Two more books are in the works. Check back here for titles, covers and release dates.</p>
+  <p>Two more books are on the way. Check back here for covers and release dates.</p>
   <div class="grid-2" style="margin-top:24px;">
     <div class="card coming-soon">
-      <div class="book-blank">Book Two</div>
-      <h3>Title Coming Soon</h3>
-      <p>In the works.</p>
+      <img class="book-cover" src="images/growing-up-big-girl-cover.jpg" alt="Cover of Growing Up... BIG GIRL, written and illustrated by Ray Wolters, showing a cartoon girl reaching for a basketball held by Olympian Kara Wolters" loading="lazy">
+      <span class="book-tag">Children's Book &middot; Coming Soon</span>
+      <h3>Growing Up&hellip; Big Girl</h3>
+      <p>The true story of Ray&rsquo;s sister, Kara Wolters, who faced bullying and adversity growing up and went on to become an Olympic gold medalist and TV star. Written and illustrated by Ray Wolters.</p>
     </div>
     <div class="card coming-soon">
       <div class="book-blank">Book Three</div>
