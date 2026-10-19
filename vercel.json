@@ -26,6 +26,16 @@
       "permanent": true
     },
     {
+      "source": "/authors-corner",
+      "destination": "/authors-corner.html",
+      "permanent": true
+    },
+    {
+      "source": "/books",
+      "destination": "/authors-corner.html",
+      "permanent": true
+    },
+    {
       "source": "/home",
       "destination": "/",
       "permanent": true
