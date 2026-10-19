@@ -56,6 +56,7 @@ def head(title, desc, url, image, schema, og_type='article'):
     <li><a href="/contact.html">Contact Us</a></li>
     <li><a href="/videos.html">Videos</a></li>
     <li><a href="/specials.html">Specials</a></li>
+    <li><a href="/authors-corner.html">Author's Corner</a></li>
     <li><a href="/blog/" class="active">Blog</a></li>
   </ul></nav>
   <a class="phone" href="tel:8608037683">(860) 803-7683</a>
