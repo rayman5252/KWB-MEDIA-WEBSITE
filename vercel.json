@@ -51,6 +51,16 @@
       "permanent": true
     },
     {
+      "source": "/ai-game-fun",
+      "destination": "/ai-game-fun.html",
+      "permanent": true
+    },
+    {
+      "source": "/rays-realm",
+      "destination": "/rays-realm/",
+      "permanent": true
+    },
+    {
       "source": "/f/:slug*",
       "destination": "/blog/",
       "permanent": true

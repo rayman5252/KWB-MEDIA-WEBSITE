@@ -1,0 +1,1269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ray's Realm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --wood:#2a1d14; --parch:#e8d9b5; --parch2:#cdb98a; --ink:#2b1d10;
+    --gold:#e2b84a; --c0:#4a8fe0; --c1:#a06ae0; --c2:#e8a73a; --red:#d6453d;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--wood);color:var(--parch);font-family:Georgia,serif}
+  #app{display:flex;height:100vh}
+  #stage{flex:1;position:relative;min-width:0;background:radial-gradient(ellipse at 50% 45%,#5a3d27 0%,#33220f 60%,#1d130a 100%)}
+  #stage{overflow:hidden}
+  #scroller{position:absolute;inset:0;overflow:auto;scrollbar-color:#8a6a3a #1d130a}
+  canvas{position:absolute;left:0;top:0;display:block;touch-action:pan-x pan-y}
+  #side{width:330px;flex:none;background:linear-gradient(#3b281a,#2a1d14);border-left:3px solid #1a1109;padding:12px;display:flex;flex-direction:column;gap:9px;overflow:auto}
+  h1{font-family:Cinzel,Georgia,serif;font-size:21px;margin:0;letter-spacing:.06em;color:var(--gold);text-align:center}
+  #turn{display:flex;justify-content:space-between;align-items:center;font-size:14px;background:#00000040;border:1px solid #00000060;border-radius:6px;padding:6px 10px}
+  #turn b{font-family:Cinzel,Georgia,serif}
+  .pill{padding:2px 9px;border-radius:99px;font-size:12px;font-weight:bold;color:#120a04}
+  #factions{display:flex;flex-direction:column;gap:3px;font-size:12.5px}
+  .frow{display:grid;grid-template-columns:10px 1fr auto auto auto auto;gap:7px;align-items:center;background:#00000035;border-radius:5px;padding:4px 8px}
+  .frow.active{outline:2px solid var(--gold)}
+  .frow.out{opacity:.4;text-decoration:line-through}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .frow span.n{opacity:.85;white-space:nowrap}
+  #card{background:var(--parch);color:var(--ink);border-radius:8px;padding:9px;min-height:140px;border:2px solid var(--parch2);box-shadow:inset 0 0 18px #0003}
+  #card .top{display:flex;gap:10px;align-items:center}
+  #card img{width:60px;height:60px;object-fit:contain;flex:none;filter:drop-shadow(0 2px 2px #0006)}
+  #card h2{margin:0;font-family:Cinzel,Georgia,serif;font-size:16px}
+  #card .sub{font-size:12px;opacity:.75}
+  #card .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:7px 0;text-align:center;font-size:11px}
+  #card .stats div{background:#0001;border-radius:4px;padding:3px 0}
+  #card .stats b{display:block;font-size:15px}
+  #card p{margin:4px 0 0;font-size:12.5px;line-height:1.35}
+  #card .preview{margin-top:6px;padding:5px 7px;background:#a3352c22;border-left:3px solid var(--red);font-size:12.5px}
+  #card .empty{opacity:.7;font-style:italic;font-size:13px;padding:8px 0}
+  #cargo:empty{display:none}
+  #shop,#cargo{background:#00000035;border-radius:6px;padding:7px}
+  #shop h3,#cargo h3{margin:0 0 5px;font-family:Cinzel,Georgia,serif;font-size:13px;color:var(--gold);display:flex;justify-content:space-between}
+  #shop .grid,#cargo .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px}
+  #shop button,#cargo button{font-size:12px;padding:6px 6px;display:flex;justify-content:space-between;gap:4px}
+  #shop button.on{outline:3px solid #7bd26a}
+  .sw{display:block}
+  #shop button:disabled,#cargo button:disabled{pointer-events:none}
+  #shop .sw button{width:100%;font-size:12px;letter-spacing:0;padding:8px 6px;white-space:nowrap}
+  #tip{position:fixed;z-index:30;width:260px;background:var(--parch);color:var(--ink);border:2px solid #8a6a3a;border-radius:8px;padding:9px 10px;box-shadow:0 8px 24px #000a;pointer-events:none;display:none;font-size:12.5px;line-height:1.35}
+  #tip .top{display:flex;gap:10px;align-items:center}
+  #tip img{width:56px;height:56px;object-fit:contain;flex:none;filter:drop-shadow(0 2px 2px #0006)}
+  #tip h4{margin:0;font-family:Cinzel,Georgia,serif;font-size:15px}
+  #tip .cost{font-size:12px;opacity:.8}
+  #tip .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:7px 0 5px;text-align:center;font-size:11px}
+  #tip .stats div{background:#0001;border-radius:4px;padding:3px 0}
+  #tip .stats b{display:block;font-size:15px}
+  #tip .warn{margin-top:5px;color:#8a2a22;font-size:12px}
+  #hint{font-size:12.5px;line-height:1.4;opacity:.9;min-height:34px}
+  .btns{display:flex;gap:8px}
+  button{font-family:Cinzel,Georgia,serif;font-weight:700;font-size:14px;letter-spacing:.04em;border:0;border-radius:6px;padding:9px 12px;cursor:pointer;color:#2b1d10;background:linear-gradient(#f0cd6a,#c9962b);box-shadow:0 2px 0 #7a5614}
+  button:hover:not(:disabled){filter:brightness(1.08)}
+  button:active:not(:disabled){transform:translateY(1px);box-shadow:0 1px 0 #7a5614}
+  button:disabled{opacity:.4;cursor:default}
+  button.sec{background:linear-gradient(#d9ccaa,#b4a279);box-shadow:0 2px 0 #6d5f3f}
+  button.pulse:not(:disabled){animation:pl 1s infinite}
+  @keyframes pl{50%{filter:brightness(1.3)}}
+  .btns button{flex:1;white-space:nowrap;padding:9px 6px;font-size:13px}
+  #log{list-style:none;margin:0;padding:8px;background:#00000040;border-radius:6px;flex:1;min-height:90px;overflow:auto;font-size:12px;line-height:1.45}
+  #log li{padding:1px 0}#log .t0{color:#8fc0ff}#log .t1{color:#cba8f5}#log .t2{color:#f2c27a}#log .sys{color:var(--gold)}
+  #banner{position:absolute;left:0;right:0;top:36%;text-align:center;font-family:Cinzel,Georgia,serif;font-size:clamp(26px,4.5vw,54px);color:var(--gold);text-shadow:0 3px 12px #000,0 0 30px #000;pointer-events:none;opacity:0;letter-spacing:.1em}
+  #banner.show{animation:ban 1.2s ease-out}
+  @keyframes ban{0%{opacity:0;transform:scale(.8)}15%{opacity:1;transform:scale(1)}75%{opacity:1}100%{opacity:0;transform:scale(1.05)}}
+  #overlay{position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:5;padding:16px}
+  #overlay.hidden{display:none}
+  .panel{max-width:540px;background:var(--parch);color:var(--ink);border-radius:12px;padding:24px 28px;border:3px solid var(--gold);text-align:center;box-shadow:0 10px 50px #000}
+  .panel h2{font-family:Cinzel,Georgia,serif;font-size:32px;margin:0 0 6px;letter-spacing:.05em}
+  .panel p{line-height:1.5;margin:8px 0;font-size:15px}
+  .panel ul{text-align:left;font-size:14px;line-height:1.5;margin:8px 0 16px}
+  .scene{position:fixed;inset:0;z-index:8;display:flex;align-items:center;justify-content:flex-end;padding-right:clamp(16px,6vw,110px);overflow:hidden;
+    background:radial-gradient(ellipse at 50% 40%,#6b4a2c 0%,#2b1a0e 70%,#120a05 100%)}
+  .scene.hidden{display:none}
+  .scene video,.scene img.bgm{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .scene .shade{position:absolute;inset:0;background:linear-gradient(90deg,#0000 35%,#000b 100%),linear-gradient(#0005,#0000 30%,#0008)}
+  .scene .box{position:relative;text-align:right;display:flex;flex-direction:column;align-items:flex-end;padding:20px;max-width:640px}
+  .scene h2{font-family:Cinzel,Georgia,serif;font-size:clamp(44px,9vw,104px);margin:0;color:var(--gold);letter-spacing:.06em;text-shadow:0 4px 18px #000,0 0 40px #000}
+  .scene .tag{font-size:clamp(15px,2.4vw,22px);margin:6px 0 26px;text-shadow:0 2px 8px #000;color:#f3e6c4}
+  .scene button{font-size:20px;padding:14px 40px}
+  .scene details{margin-top:22px;text-align:left;background:#000a;border-radius:8px;padding:8px 14px;font-size:14px;line-height:1.5}
+  .scene summary{cursor:pointer;text-align:right;font-family:Cinzel,Georgia,serif;color:var(--gold)}
+  .scene ul{margin:8px 0 4px;padding-left:20px}
+  @media (max-width:820px){
+    #app{flex-direction:column}
+    #stage{flex:none;height:60vh}
+    #side{width:auto;flex:1;border-left:0;border-top:3px solid #1a1109;padding:10px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage"><div id="scroller"><canvas id="board"></canvas></div><div id="banner"></div></div>
+  <aside id="side">
+    <h1>Ray's Realm</h1>
+    <div id="turn"></div>
+    <div id="factions"></div>
+    <div id="card"></div>
+    <div id="shop"></div>
+    <div id="cargo"></div>
+    <div id="hint"></div>
+    <div class="btns"><button id="wait" class="sec">Wait</button><button id="undo" class="sec" title="Undo your last move (U)">Undo</button><button id="end">End Turn</button><button id="mute" class="sec" title="Sound on/off" style="flex:none">♪</button></div>
+    <ul id="log"></ul>
+  </aside>
+</div>
+<div id="tip"></div>
+<div id="overlay" class="hidden"><div class="panel" id="panel"></div></div>
+<div id="victory" class="scene hidden"><video id="vicvid" src="assets/title.mp4" poster="assets/title.jpg" preload="auto" muted loop playsinline></video><div class="shade"></div>
+  <div class="box"><h2>Realm Conquered!</h2><div class="tag">You have conquered the realm — it's Miller time!</div><button id="again2">Play Again</button></div></div>
+<div id="title" class="scene"><video id="titlevid" muted loop playsinline autoplay></video><img class="bgm" id="titleimg" alt="" style="display:none"><div class="shade"></div>
+  <div class="box"><h2>Ray's Realm</h2><div class="tag">Four armies. One crown. Hold the gold, rule the realm.</div>
+  <button id="go">Begin Battle</button>
+  <div id="musicnote" style="display:none;margin-top:10px;font-size:13px;opacity:.85;text-shadow:0 2px 6px #000">♪ Click anywhere to start the music</div>
+  <details><summary>How to play</summary><ul>
+    <li>Each unit has <b>movement points</b> per turn and can spend them in several steps until you press End Turn. Attacking ends that unit's turn. Catapults can't fire after moving.</li>
+    <li><b>Gold mines:</b> end a move on one to seize it. Each held mine pays +2 gold at the start of your turn.</li>
+    <li><b>Recruit</b> from the sidebar: new units appear near your keep and rest until next turn. Ships spawn on the river.</li>
+    <li><b>Ships</b> are unarmed transports. Walk a land unit onto a ship (max 2) to board: that ends its turn and the ship's. Next turn the ship sails 3 hexes and passengers may land on any adjacent shore.</li>
+    <li>Forests: +1 defence, cost 2 to enter. Crags and river block foot soldiers; cross at the fords.</li>
+    <li><b>Forts:</b> pay 30 gold to build one on any grass hex near your units. It gives +2 defence to your unit standing there, and lets you recruit one unit per turn on an adjacent hex (even a ship, if water is adjacent). It collapses if that unit is slain, and is razed if an enemy steps on it. Keeps give +2 and recruit without limit; each tower recruits one unit per turn.</li>
+    <li><b>Fog of war:</b> every army, yours and theirs, sees only 3 hexes around its units, keeps and forts (scouts and archer towers see 4). Explored ground stays revealed, but enemies in the dark are hidden.</li>
+    <li><b>Healing:</b> wounded units that stay out of battle recover 5% of their health each turn, or 10% if they end within 2 hexes of a keep or fort you hold.</li>
+    <li>Defenders counter-attack if the attacker is within their range.</li>
+    <li><b>Victory:</b> capture all three enemy keeps by ending a move on them. Taking a keep also loots 5–25 gold. Lose your own keep — or your whole army and gold — and the realm is lost.</li>
+  </ul></details></div></div>
+
+<script>
+'use strict';
+// ---------------------------------------------------------------- data
+const SPR = {
+  wizard:{w:302,h:359,cx:151,bottom:358,bw:300}, knight:{w:302,h:413,cx:151,bottom:412,bw:300},
+  ship:{w:302,h:365,cx:151,bottom:364,bw:300}, catapult:{w:335,h:291,cx:151,bottom:290,bw:300},
+  cavalry:{w:313,h:468,cx:162,bottom:466,bw:300}, dragon:{w:334,h:360,cx:151,bottom:358,bw:300},
+  archer:{w:325,h:456,cx:151,bottom:454,bw:300}, scout:{w:302,h:418,cx:151,bottom:416,bw:300}, archertower:{w:302,h:354,cx:151,bottom:353,bw:300}
+};
+const IMG = {};
+const spriteKey = (team,type) => 'f'+team+'_'+type;
+const TILEIMG = {};
+const TILEFILE = {'~':'t_water','f':'t_forest','^':'t_crags','G':'tf_mine','K':'tf_keep','F':'tf_fort'};
+const tilesReady = Promise.all(Object.entries(TILEFILE).map(([ch,n]) => new Promise(res => {
+  const i = new Image(); i.onload = () => { TILEIMG[ch]=i; res(); }; i.onerror = res; i.src = 'assets/'+n+'.png';
+})));
+const imgReady = Promise.all([0,1,2,3].flatMap(t => Object.keys(SPR).map(n => new Promise(res => {
+  const i = new Image(); i.onload = i.onerror = res; i.src = 'assets/'+spriteKey(t,n)+'.png'; IMG[spriteKey(t,n)] = i;
+}))));
+
+const FACTIONS = [
+  {name:'Order of the Cross', short:'Order', color:'#4a8fe0', base:1, human:true},
+  {name:'Dark Host',          short:'Dark',  color:'#a06ae0', base:2},
+  {name:'Black Legion',       short:'Legion',color:'#e8a73a', base:2},
+  {name:'Emerald Court',      short:'Emerald',color:'#4fcf7a', base:2}
+];
+const FACTION_INK = ['#2c5fa8','#6a3fa6','#a6661a','#2f8f4a'];   // readable on parchment
+const MINE_INCOME = 2;
+let COLS = 25, ROWS = 19, MAP = [], KEEPS = [], START = [], mapSeed = 0;
+const MINES = [];
+// . meadow  f forest  ~ river  ^ crags  G gold mine  K keep
+const TERR = {
+  '.':{name:'Meadow',def:0}, 'f':{name:'Forest',def:1,note:'Costs 2 to enter, +1 defence.'},
+  '~':{name:'River',def:0,note:'Ships only (dragons fly over).'}, '^':{name:'Crags',def:2,note:'Only dragons can cross.'},
+  'G':{name:'Gold Mine',def:0,note:`End a move here to seize it. Held mines pay +${MINE_INCOME} gold each turn.`},
+  'K':{name:'Keep',def:2,note:'+2 defence. Recruits appear within 2 hexes of a keep you hold. Walk onto an enemy keep to capture it.'}
+};
+
+// cls: ground | water | fly.  rng = [min,max]
+const TYPES = {
+  knight:  {name:'Foot Soldier', short:'Foot Soldier', cost:5, hp:12, atk:6, def:2, mv:2, rng:[1,1], cls:'ground',
+            desc:'Steady front-line infantry. Tough, reliable, hits hard in melee.'},
+  cavalry: {name:'Knight', short:'Knight', cost:7, hp:10, atk:6, def:1, mv:3, rng:[1,1], cls:'ground', charge:true,
+            desc:'Mounted warrior. Charge: +2 damage if it moved 2 or more hexes before striking. Great for seizing mines.'},
+  archer:  {name:'Archer', short:'Archer', cost:5, hp:7, atk:5, def:0, mv:2, rng:[2,3], cls:'ground',
+            desc:'Shoots 2–3 hexes. Cannot fire at adjacent foes, so keep it behind the line.'},
+  archertower:{name:'Archer Tower', short:'Archer Tower', cost:10, hp:16, atk:5, def:0, mv:0, rng:[1,4], cls:'ground', vision:4,
+            desc:'A garrisoned tower that cannot move. Fires like an Archer with 16 hit points and +1 range, and can hit adjacent targets too (range 1–4). Sees 4 hexes. Can be built next to any of your units, even far from home.'},
+  scout:   {name:'Scout', short:'Scout', cost:4, hp:8, atk:2, def:2, mv:3, rng:[1,1], cls:'ground', vision:4,
+            desc:'Light rider with sharp eyes: sees 4 hexes instead of 3. Weak in a fight, so scout ahead and stay out of trouble.'},
+  catapult:{name:'Catapult', short:'Catapult', cost:8, hp:8, atk:8, def:0, mv:2, rng:[2,3], cls:'ground', stat:true,
+            desc:'Devastating siege fire at range 2–3, but it cannot move and fire in the same turn.'},
+  ship:    {name:'Ship', short:'Ship', cost:6, hp:10, atk:0, def:1, mv:3, rng:[0,0], cls:'water', noattack:true, cap:2,
+            desc:'Unarmed. Carries 2 land units: boarding ends their turn and the ship\'s. Sails 3 hexes; passengers may land on an adjacent shore.'},
+  wizard:  {name:'Wizard', short:'Wizard', cost:8, hp:8, atk:6, def:0, mv:2, rng:[1,3], cls:'ground', pierce:true,
+            desc:'Arcane bolt ignores armour and terrain. Range 1–3. Fragile.'},
+  dragon:  {name:'Dragon', short:'Dragon', cost:18, hp:22, atk:7, def:2, mv:5, rng:[1,2], cls:'fly',
+            desc:'Flies over anything. Fire breath reaches 2 hexes. The terror of the field.'}
+};
+const SHOP_ORDER = Object.keys(TYPES).sort((a,b)=>TYPES[a].cost-TYPES[b].cost);   // recruit menu, cheapest first
+const MIN_COST = 4, MAX_UNITS = 12;
+
+
+
+// ---------------------------------------------------------------- hex helpers
+const SQ = Math.sqrt(3);
+const TILT = 0.66, BASE_W = 1.6, BASE_CY = 85, MIN_S = 22, VISION = 3;
+const inb = (c,r) => c>=0 && r>=0 && c<COLS && r<ROWS;
+const key = (c,r) => c+','+r;
+const tileCh = (c,r) => MAP[r][c];
+const toCube = (c,r) => { const x=c, z=r-(c-(c&1))/2; return {x, y:-x-z, z}; };
+const fromCube = q => ({c:q.x, r:q.z+(q.x-(q.x&1))/2});
+const DIRS = [[1,-1,0],[1,0,-1],[0,1,-1],[-1,1,0],[-1,0,1],[0,-1,1]];
+function neighbors(c,r){
+  const q=toCube(c,r), out=[];
+  for(const [dx,dy,dz] of DIRS){ const n=fromCube({x:q.x+dx,y:q.y+dy,z:q.z+dz}); if(inb(n.c,n.r)) out.push([n.c,n.r]); }
+  return out;
+}
+function hexDist(a,b){
+  const dx=a.c-b.c, dz=(a.r-(a.c-(a.c&1))/2)-(b.r-(b.c-(b.c&1))/2);
+  return Math.max(Math.abs(dx),Math.abs(dz),Math.abs(dx+dz));
+}
+function visTiles(src,out){
+  for(const q of src){
+    const rad=(q.type&&q.type.vision)||VISION;
+    for(let r=Math.max(0,q.r-rad-1);r<=Math.min(ROWS-1,q.r+rad+1);r++)
+      for(let c=Math.max(0,q.c-rad);c<=Math.min(COLS-1,q.c+rad);c++) if(hexDist(q,{c,r})<=rad) out.add(key(c,r));
+  }
+}
+function tileCost(cls,c,r){
+  const t=tileCh(c,r);
+  if(cls==='fly') return 1;
+  if(cls==='water') return t==='~' ? 1 : null;
+  if(t==='~'||t==='^') return null;
+  return t==='f' ? 2 : 1;
+}
+
+// ---------------------------------------------------------------- state
+let units=[], turn=1, side=0, sel=null, hover=null, busy=false, over=false;
+let moveInfo=null, targets=[], recruitType=null, spawnSet=[], boardShips=[], undoSnap=null;
+let gold=[0,0,0,0], elim=[false,false,false,false], mineOwner=new Map(), keepOwner=[0,1,2,3];
+let explored=new Set(), visible=new Set(), seenMine=new Map(), seenKeep=[null,null,null,null], seenTower=new Map();
+let effects=[], proj=null, logEl, S=40, ox=0, oy=0, dpr=1, bg=null, uid=0;
+
+function makeUnit(type,team,c,r){
+  const T=TYPES[type];
+  return {id:++uid,type:T,key:type,team,c,r,hp:T.hp,mp:T.mv,moved:false,done:false,steps:0,anim:null,cargo:[],aboard:null,off:{x:0,y:0},alpha:1,
+          name: team===0 ? T.name : FACTIONS[team].short+' '+T.short, sprite:spriteKey(team,type)};
+}
+const unitAt = (c,r) => units.find(u => u.c===c && u.r===r);
+const alive = team => units.filter(u => u.team===team);
+const TOWER_COST = 30;
+let towers = new Map(), towerUsed = new Set();
+const terrainDef = u => (u.type.cls==='fly' ? 0 : TERR[tileCh(u.c,u.r)].def) + (towers.get(key(u.c,u.r))===u.team ? 2 : 0);
+const minesOf = t => MINES.filter(m=>mineOwner.get(key(m.c,m.r))===t).length;
+const income = t => FACTIONS[t].base + MINE_INCOME*minesOf(t);
+
+// ---- undo: one level, the last move/board/unload/recruit/tower (attacks and end of turn clear it)
+function takeSnap(label){
+  const all=[...units,...units.flatMap(u=>u.cargo)];
+  return { label, units:[...units], gold:[...gold], mineOwner:new Map(mineOwner), keepOwner:[...keepOwner], towers:new Map(towers),
+    towerUsed:new Set(towerUsed), explored:new Set(explored), seenMine:new Map(seenMine), seenKeep:[...seenKeep], seenTower:new Map(seenTower),
+    recs:all.map(u=>({u,c:u.c,r:u.r,hp:u.hp,mp:u.mp,moved:u.moved,done:u.done,steps:u.steps,aboard:u.aboard,cargo:[...u.cargo]})) };
+}
+function undoLast(){
+  if(!undoSnap||busy||over||side!==0) return;
+  const z=undoSnap; undoSnap=null;
+  for(const q of z.recs){ Object.assign(q.u,{c:q.c,r:q.r,hp:q.hp,mp:q.mp,moved:q.moved,done:q.done,steps:q.steps,aboard:q.aboard,cargo:q.cargo,anim:null,alpha:1,off:{x:0,y:0}}); }
+  units=z.units; gold=z.gold; mineOwner=z.mineOwner; keepOwner=z.keepOwner; towers=z.towers; towerUsed=z.towerUsed;
+  explored=z.explored; seenMine=z.seenMine; seenKeep=z.seenKeep; seenTower=z.seenTower;
+  clearSel(); recruitType=null; spawnSet=[];
+  log(`Undid your last ${z.label}.`,'sys'); sfx('step'); refreshUI();
+}
+// ---------------------------------------------------------------- random map
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+const ROSTERS = [
+  ['knight','knight','cavalry','archer','archer','catapult','scout'],
+  ['knight','knight','archer','wizard','dragon','scout'],
+  ['knight','knight','archer','cavalry','wizard','catapult','scout'],
+  ['knight','knight','archer','archer','cavalry','wizard','scout']
+];
+// Four armies start in the four corners; a river cross and lake split the map, every army gets a pond for ships,
+// the same number of home mines, and shared mines sit on the borders and centre. Fords are carved so nothing is cut off.
+function generateMap(seed){
+  COLS=25; ROWS=19;
+  const rnd=mulberry32(seed), ri=(a,b)=>a+Math.floor(rnd()*(b-a+1)), pick=arr=>arr[Math.floor(rnd()*arr.length)];
+  const g=Array.from({length:ROWS},()=>Array(COLS).fill('.'));
+  const ok=(c,r)=>c>=0&&r>=0&&c<COLS&&r<ROWS, put=(c,r,ch)=>{ if(ok(c,r)) g[r][c]=ch; }, at=(c,r)=>g[r][c];
+  const mid={c:Math.floor(COLS/2),r:Math.floor(ROWS/2)};
+  const keeps=[[2,2],[COLS-3,2],[COLS-3,ROWS-3],[2,ROWS-3]];
+  const nearKeep=(c,r,rad)=>keeps.some(([kc,kr])=>hexDist({c,r},{c:kc,r:kr})<=rad);
+  // river cross
+  let vc=mid.c+ri(-2,1);
+  for(let r=0;r<ROWS;r++){ put(vc,r,'~'); put(vc+1,r,'~'); if(rnd()<0.45) vc=Math.max(mid.c-4,Math.min(mid.c+3,vc+ri(-1,1))); }
+  let hr=mid.r+ri(-1,0);
+  for(let c=0;c<COLS;c++){ put(c,hr,'~'); put(c,hr+1,'~'); if(rnd()<0.4) hr=Math.max(mid.r-3,Math.min(mid.r+2,hr+ri(-1,1))); }
+  const lakeR=ri(1,2);
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(hexDist({c,r},mid)<=lakeR) put(c,r,'~');
+  // a pond near every keep, joined to the nearest water by a channel, so ships can be built and sail out
+  for(const [kc,kr] of keeps){
+    let best=null;
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(hexDist({c,r},{c:kc,r:kr})===4){ const d=hexDist({c,r},mid); if(!best||d<best.d||(d===best.d&&rnd()<0.4)) best={c,r,d}; }
+    const pond=[]; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(hexDist({c,r},best)<=1){ put(c,r,'~'); pond.push(key(c,r)); }
+    let cur={c:best.c,r:best.r};
+    for(let step=0;step<60;step++){
+      let tgt=null;
+      for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(at(c,r)==='~'&&hexDist({c,r},best)>1){ const d=hexDist({c,r},cur); if(!tgt||d<tgt.d) tgt={c,r,d}; }
+      if(!tgt||tgt.d<=1) break;
+      const opts=neighbors(cur.c,cur.r).map(([c,r])=>({c,r,d:hexDist({c,r},tgt)})).sort((a,b)=>a.d-b.d);
+      cur=(opts[1]&&opts[1].d===opts[0].d&&rnd()<0.5)?opts[1]:opts[0]; put(cur.c,cur.r,'~');
+    }
+  }
+  // forests and crags in clusters
+  const cluster=(ch,count,smin,smax,avoid)=>{
+    for(let n=0;n<count;n++){
+      let c=0,r=0,tries=0;
+      do{ c=ri(0,COLS-1); r=ri(0,ROWS-1); tries++; }while(tries<40&&(at(c,r)!=='.'||nearKeep(c,r,avoid)));
+      if(at(c,r)!=='.') continue;
+      let size=ri(smin,smax), frontier=[[c,r]];
+      while(size>0&&frontier.length){
+        const [fc,fr]=frontier.splice(ri(0,frontier.length-1),1)[0];
+        if(at(fc,fr)!=='.'||nearKeep(fc,fr,avoid)) continue;
+        put(fc,fr,ch); size--; neighbors(fc,fr).forEach(x=>frontier.push(x));
+      }
+    }
+  };
+  const area=COLS*ROWS;
+  cluster('f',Math.round(area*0.12/5),3,8,2);
+  cluster('^',Math.round(area*0.035/2),1,3,3);
+  // clear every keep's surroundings so each army starts on open ground
+  for(const [kc,kr] of keeps){ for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(hexDist({c,r},{c:kc,r:kr})<=2) put(c,r,'.'); put(kc,kr,'K'); }
+  // mines: 3 home mines per army, 4 border mines, 2 centre mines
+  const mines=[], owners={};
+  const isLand=(c,r)=>at(c,r)==='.'||at(c,r)==='f';
+  const apart=(c,r,min)=>mines.every(m=>hexDist(m,{c,r})>=min);
+  const addMine=(c,r,owner)=>{ put(c,r,'G'); mines.push({c,r}); if(owner!=null) owners[key(c,r)]=owner; };
+  keeps.forEach(([kc,kr],i)=>{
+    for(let n=0;n<3;n++){
+      const cand=[]; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const d=hexDist({c,r},{c:kc,r:kr}); if(d>=3&&d<=7&&isLand(c,r)&&apart(c,r,3)) cand.push({c,r}); }
+      if(!cand.length) break; const m=pick(cand); addMine(m.c,m.r,i);
+    }
+  });
+  const spots=[{c:mid.c,r:3},{c:mid.c,r:ROWS-4},{c:3,r:mid.r},{c:COLS-4,r:mid.r}];
+  for(const sp of spots){
+    const jc=sp.c+ri(-2,2), jr=sp.r+ri(-1,1); let best=null;
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(isLand(c,r)&&apart(c,r,3)&&!nearKeep(c,r,4)){ const d=hexDist({c,r},{c:jc,r:jr}); if(!best||d<best.d) best={c,r,d}; }
+    if(best) addMine(best.c,best.r,null);
+  }
+  for(let n=0;n<2;n++){
+    const cand=[]; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const d=hexDist({c,r},mid); if(d>=4&&d<=6&&isLand(c,r)&&apart(c,r,4)&&!nearKeep(c,r,4)) cand.push({c,r}); }
+    if(cand.length){ const m=pick(cand); addMine(m.c,m.r,null); }
+  }
+  // connectivity: every keep and mine must be reachable on foot; carve fords through water/crags where needed
+  const passable=(c,r)=>at(c,r)!=='~'&&at(c,r)!=='^';
+  const flood=(sc,sr)=>{ const seen=new Set([key(sc,sr)]), q=[[sc,sr]]; while(q.length){ const [c,r]=q.pop(); for(const [nc,nr] of neighbors(c,r)){ const k=key(nc,nr); if(!seen.has(k)&&passable(nc,nr)){ seen.add(k); q.push([nc,nr]); } } } return seen; };
+  const carve=(tc,tr,reached)=>{
+    const dist=new Map(), prev=new Map(), open=[];
+    for(const k of reached){ dist.set(k,0); open.push(k); }
+    const cost=(c,r)=>!passable(c,r)?7:at(c,r)==='f'?2:1;
+    const tk=key(tc,tr);
+    while(open.length){
+      open.sort((a,b)=>dist.get(a)-dist.get(b)); const k=open.shift(); if(k===tk) break;
+      const [c,r]=k.split(',').map(Number);
+      for(const [nc,nr] of neighbors(c,r)){ const nk=key(nc,nr), nd=dist.get(k)+cost(nc,nr); if(!dist.has(nk)||nd<dist.get(nk)){ dist.set(nk,nd); prev.set(nk,k); open.push(nk); } }
+    }
+    let k=tk; while(k&&!reached.has(k)){ const [c,r]=k.split(',').map(Number); if(!passable(c,r)) put(c,r,'.'); k=prev.get(k); }
+  };
+  const targets=[...keeps.slice(1).map(([c,r])=>({c,r})),...mines];
+  let reached=flood(keeps[0][0],keeps[0][1]);
+  for(const t of targets){ if(!reached.has(key(t.c,t.r))){ carve(t.c,t.r,reached); reached=flood(keeps[0][0],keeps[0][1]); } }
+  // starting units: the nearest open ground around each keep
+  const start=[];
+  keeps.forEach(([kc,kr],i)=>{
+    const list=[]; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const d=hexDist({c,r},{c:kc,r:kr}); if(d>=1&&d<=4&&passable(c,r)&&at(c,r)!=='K') list.push({c,r,d:d+rnd()*0.9}); }
+    list.sort((a,b)=>a.d-b.d);
+    ROSTERS[i].forEach((type,n)=>{ const sp=list[n]; if(sp) start.push([type,i,sp.c,sp.r]); });
+  });
+  MAP=g.map(row=>row.join('')); KEEPS=keeps; START=start; MINES.length=0; mines.forEach(m=>MINES.push({c:m.c,r:m.r}));
+  return {owners};
+}
+
+function newGame(seed){
+  undoSnap=null; mapSeed=seed??((Math.random()*1e9)|0);
+  const info=generateMap(mapSeed); resize();
+  units = START.map(([t,team,c,r]) => makeUnit(t,team,c,r));
+  turn=1; side=0; sel=null; moveInfo=null; targets=[]; recruitType=null; spawnSet=[]; busy=false; over=false; effects=[]; proj=null;
+  gold=[2,2,2,2]; elim=[false,false,false,false]; mineOwner=new Map(); keepOwner=[0,1,2,3]; towers=new Map(); towerUsed=new Set();
+  explored=new Set(); visible=new Set(); seenMine=new Map(); seenKeep=[null,null,null,null]; seenTower=new Map();
+  MINES.forEach(m=>mineOwner.set(key(m.c,m.r),info.owners[key(m.c,m.r)]??null));
+  resetAIFog(); updateVision(); logEl.innerHTML='';
+  log("Welcome to Ray's Realm. Capture all three enemy keeps to rule the realm — and guard your own!",'sys');
+  log(`Map seed ${mapSeed}.`,'sys');
+  startTeamTurn(0); refreshUI();
+  { const sc=document.getElementById('scroller'), q=center(KEEPS[0][0],KEEPS[0][1]); sc.scrollLeft=Math.max(0,q.x-sc.clientWidth*0.3); sc.scrollTop=Math.max(0,q.y-sc.clientHeight*0.4); }
+}
+
+// ---------------------------------------------------------------- audio
+let AC=null, muted=false;
+function tone(f,d,type='square',v=0.05,slide=0,delay=0){
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    const t=AC.currentTime+delay, o=AC.createOscillator(), g=AC.createGain();
+    o.type=type; o.frequency.setValueAtTime(f,t); if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide),t+d);
+    g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+    o.connect(g).connect(AC.destination); o.start(t); o.stop(t+d+0.02);
+  }catch(e){}
+}
+// ---- music: the trailer theme plays on the title and victory screens
+const music=new Audio('assets/trailer.mp3'); music.loop=true; music.preload='auto';
+let musicWanted=false, fadeTimer=null;
+// only one tab/window plays at a time, and background tabs stay silent
+let musicBC=null; try{ musicBC=new BroadcastChannel('rays-realm-music'); musicBC.onmessage=e=>{ if(e.data==='playing'){ musicWanted=false; music.pause(); } }; }catch(e){}
+// ---- ambient meditation track: quiet bed of music under the game itself
+const ambient=new Audio('assets/ambient.m4a'); ambient.loop=true; ambient.preload='auto';
+const AMB_VOL=0.16; let ambientWanted=false, ambFade=null;
+function fadeAmbient(to,ms,done){
+  clearInterval(ambFade); const from=ambient.volume, steps=Math.max(1,Math.round(ms/60)), d=(to-from)/steps; let i=0;
+  ambFade=setInterval(()=>{ i++; ambient.volume=Math.min(1,Math.max(0,from+d*i)); if(i>=steps){ clearInterval(ambFade); ambient.volume=to; if(done) done(); } },60);
+}
+function playAmbient(){
+  ambientWanted=true; if(muted) return;
+  if(ambient.paused) ambient.volume=0;
+  ambient.play().then(()=>fadeAmbient(AMB_VOL,2500)).catch(()=>{});
+}
+function stopAmbient(){ ambientWanted=false; fadeAmbient(0,1200,()=>ambient.pause()); }
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){ music.pause(); ambient.pause(); }
+  else { if(musicWanted&&!muted&&musicScene()) music.play().catch(()=>{}); if(ambientWanted&&!muted) ambient.play().catch(()=>{}); }
+});
+const musicScene = () => !document.getElementById('title').classList.contains('hidden') || !document.getElementById('victory').classList.contains('hidden');
+// the trailer theme may only ever sound while the title or victory screen is showing
+music.addEventListener('play',()=>{ if(!musicScene()){ music.pause(); musicWanted=false; } });
+function playMusic(fromStart){
+  if(!musicScene()){ musicWanted=false; return; }
+  musicWanted=true; clearInterval(fadeTimer); music.muted=false; music.volume=0.75;
+  if(fromStart) try{ music.currentTime=0; }catch(e){}
+  if(muted) return;
+  music.play().then(()=>{ const n=document.getElementById('musicnote'); if(n) n.style.display='none'; try{ musicBC&&musicBC.postMessage('playing'); }catch(e){} })
+             .catch(()=>{ const n=document.getElementById('musicnote'); if(n&&musicWanted) n.style.display='block'; });
+}
+function stopMusic(){
+  musicWanted=false; clearInterval(fadeTimer);
+  fadeTimer=setInterval(()=>{ music.volume=Math.max(0,music.volume-0.14); if(music.volume<=0.01){ clearInterval(fadeTimer); music.pause(); music.muted=true; } },50);
+}
+['pointerdown','keydown'].forEach(ev=>window.addEventListener(ev,()=>{ if(musicWanted&&music.paused&&!muted&&musicScene()) playMusic(false); },true));
+function sfx(k){
+  if(muted) return;
+  switch(k){
+    case 'step': tone(180,0.05,'triangle',0.04); break;
+    case 'hit': tone(160,0.18,'sawtooth',0.08,-110); tone(90,0.2,'square',0.05,-40); break;
+    case 'arrow': tone(900,0.18,'triangle',0.05,-500); break;
+    case 'boom': tone(110,0.35,'sawtooth',0.1,-80); break;
+    case 'magic': tone(500,0.3,'sine',0.07,700); break;
+    case 'fire': tone(260,0.35,'sawtooth',0.07,-150); break;
+    case 'die': tone(300,0.5,'sawtooth',0.07,-250); break;
+    case 'coin': tone(880,0.1,'square',0.04); tone(1320,0.18,'square',0.04,0,0.08); break;
+    case 'recruit': tone(330,0.1,'triangle',0.06); tone(440,0.1,'triangle',0.06,0,0.1); tone(660,0.18,'triangle',0.06,0,0.2); break;
+    case 'turn': tone(220,0.25,'triangle',0.07); tone(330,0.3,'triangle',0.07,0,0.2); break;
+  }
+}
+
+// ---------------------------------------------------------------- rules
+function reach(u){
+  const res=new Map(), k0=key(u.c,u.r);
+  res.set(k0,{c:u.c,r:u.r,cost:0,steps:0,prev:null});
+  const open=[k0];
+  while(open.length){
+    open.sort((a,b)=>res.get(a).cost-res.get(b).cost);
+    const cur=res.get(open.shift());
+    for(const [nc,nr] of neighbors(cur.c,cur.r)){
+      const tc=tileCost(u.type.cls,nc,nr); if(tc==null) continue;
+      const occ=unitAt(nc,nr); if(occ && occ.team!==u.team) continue;
+      const cost=cur.cost+tc; if(cost>u.mp) continue;
+      const nk=key(nc,nr), ex=res.get(nk);
+      if(!ex||cost<ex.cost){ res.set(nk,{c:nc,r:nr,cost,steps:cur.steps+1,prev:key(cur.c,cur.r)}); if(!open.includes(nk)) open.push(nk); }
+    }
+  }
+  return res;
+}
+const canStop = (u,e) => !unitAt(e.c,e.r) || (e.c===u.c && e.r===u.r);
+
+function targetsFrom(u,c,r){
+  if(u.type.noattack) return [];
+  if(u.team===0) updateVision();
+  return units.filter(t => t.team!==u.team && (u.team===0?visible.has(key(t.c,t.r)):aiCanSee(u.team,t.c,t.r)) && (d=>d>=u.type.rng[0]&&d<=u.type.rng[1])(hexDist({c,r},t)));
+}
+function calcDmg(a,d,charge){
+  const atk=a.type.atk+(charge&&a.type.charge?2:0);
+  const def=a.type.pierce?0:d.type.def+terrainDef(d);
+  return Math.max(1,atk-def);
+}
+const chargeOf = (a,steps) => !!a.type.charge && steps>=2;
+function counterInfo(a,d,dmgToD){
+  if(d.hp-dmgToD<=0||d.type.noattack) return 0;
+  const dist=hexDist(a,d);
+  if(dist<d.type.rng[0]||dist>d.type.rng[1]) return 0;
+  return calcDmg(d,a,false);
+}
+
+// economy
+function spawnTiles(team,type){
+  const T=TYPES[type], maxD = T.cls==='water'?4:2, out=[];
+  const owned=KEEPS.filter((k,i)=>keepOwner[i]===team);
+  const myTowers=[...towers].filter(([k,tm])=>tm===team&&!towerUsed.has(k)).map(([k])=>({k,c:+k.split(',')[0],r:+k.split(',')[1]}));
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(unitAt(c,r)||tileCost(T.cls,c,r)==null) continue;
+    let tw=null;
+    if(!owned.some(([kc,kr])=>hexDist({c,r},{c:kc,r:kr})<=maxD)){
+      // archer towers can also go up beside any of your units; everything else needs a keep or an unused fort
+      if(type==='archertower'&&units.some(u=>u.team===team&&hexDist(u,{c,r})<=1)) { /* free placement */ }
+      else { const t=myTowers.find(q=>hexDist({c,r},q)<=1); if(!t) continue; tw=t.k; }
+    }
+    out.push({c,r,tower:tw});
+  }
+  return out;
+}
+function towerTiles(team){
+  const out=[], mine=units.filter(u=>u.team===team), owned=KEEPS.filter((k,i)=>keepOwner[i]===team);
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(tileCh(c,r)!=='.'||towers.has(key(c,r))) continue;
+    const occ=unitAt(c,r); if(occ&&occ.team!==team) continue;
+    if(mine.some(u=>hexDist(u,{c,r})<=2)||owned.some(([kc,kr])=>hexDist({c,r},{c:kc,r:kr})<=2)) out.push({c,r});
+  }
+  return out;
+}
+const costOf = type => type==='tower' ? TOWER_COST : TYPES[type].cost;
+const tilesFor = (team,type) => type==='tower' ? towerTiles(team) : spawnTiles(team,type);
+function buildTower(team,c,r){
+  gold[team]-=TOWER_COST; towers.set(key(c,r),team);
+  if(team===0||isVis(c,r)){ const p=center(c,r); effects.push({ring:true,x:p.x,y:p.y-S*0.3,t0:performance.now(),life:500,color:'#c9c2b0'});
+    log(`${FACTIONS[team].short} builds a fort (-${TOWER_COST}g).`,'t'+team); sfx('recruit'); }
+}
+function recruit(team,type,c,r,tw){
+  const T=TYPES[type]; gold[team]-=T.cost; if(tw) towerUsed.add(tw);
+  const u=makeUnit(type,team,c,r); u.done=true; u.moved=true; u.mp=0; units.push(u);
+  if(team===0||isVis(c,r)){ const p=center(c,r); effects.push({ring:true,x:p.x,y:p.y-S*0.3,t0:performance.now(),life:500,color:'#9be28a'});
+    log(`${FACTIONS[team].short} recruits ${u.name} at ${tw?'a fort':'the keep'} (-${T.cost}g).`,'t'+team); sfx('recruit'); }
+}
+function captureAt(u){
+  const tk=key(u.c,u.r);
+  const seen=u.team===0||isVis(u.c,u.r);
+  if(towers.has(tk)&&towers.get(tk)!==u.team){ towers.delete(tk); if(seen) log(`${FACTIONS[u.team].short} razes an enemy fort!`,'sys'); }
+  if(tileCh(u.c,u.r)==='K'){
+    const i=KEEPS.findIndex(k=>k[0]===u.c&&k[1]===u.r);
+    if(i>=0&&keepOwner[i]!==u.team){
+      keepOwner[i]=u.team; const p=center(u.c,u.r);
+      const loot=5+Math.floor(Math.random()*21); gold[u.team]+=loot;
+      if(seen){ addText(p.x,p.y-S*1.4,`Keep looted! +${loot}🪙`,FACTIONS[u.team].color);
+        log(`${FACTIONS[u.team].name} captures the ${FACTIONS[i].short} keep and loots ${loot} gold!`,'sys'); sfx('coin'); }
+      checkEnd();
+    }
+    return;
+  }
+  if(tileCh(u.c,u.r)!=='G') return;
+  const k=key(u.c,u.r); if(mineOwner.get(k)===u.team) return;
+  mineOwner.set(k,u.team); const p=center(u.c,u.r);
+  if(seen){ addText(p.x,p.y-S*1.3,'Mine seized!',FACTIONS[u.team].color);
+    log(`${FACTIONS[u.team].short} seizes a gold mine (+${MINE_INCOME}/turn).`,'t'+u.team); sfx('coin'); }
+}
+// ---- healing: wounded units that stayed out of battle recover 5% of max HP per turn, 10% within 2 hexes of a keep or fort they hold
+function healTeam(t){
+  const homes=[...KEEPS.filter((k,i)=>keepOwner[i]===t).map(([c,r])=>({c,r})),
+    ...[...towers].filter(([k,tm])=>tm===t).map(([k])=>{ const [c,r]=k.split(',').map(Number); return {c,r}; })];
+  for(const u of units.filter(x=>x.team===t).flatMap(x=>[x,...x.cargo])){
+    if(u.hp<u.type.hp && !u.fought){
+      const near=homes.some(h=>hexDist(u,h)<=2);
+      u.heal=(u.heal||0)+(near?0.10:0.05)*u.type.hp; let gain=0;
+      while(u.heal>=1&&u.hp<u.type.hp){ u.hp++; u.heal--; gain++; }
+      if(gain&&(t===0||isVis(u.c,u.r))&&!u.aboard){ const p=center(u.c,u.r); addText(p.x,p.y-S*1.1,'+'+gain,'#6bd35f'); }
+    }
+    if(u.hp>=u.type.hp) u.heal=0;
+    u.fought=false;
+  }
+}
+function startTeamTurn(t){
+  healTeam(t);
+  for(const [k,tm] of towers) if(tm===t) towerUsed.delete(k);
+  units.filter(u=>u.team===t).forEach(u=>{u.done=false;u.moved=false;u.steps=0;u.mp=u.type.mv;u.cargo.forEach(c=>{c.done=false;c.moved=false;c.steps=0;c.mp=c.type.mv;});});
+  const inc=income(t); gold[t]+=inc;
+  if(t===0) log(`${FACTIONS[t].name}: +${inc} gold (${gold[t]} total).`,'t'+t);
+}
+
+// ---------------------------------------------------------------- async helpers
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+function tween(ms,fn){
+  return new Promise(res=>{
+    const t0=performance.now();
+    (function f(now){ const t=Math.min(1,(now-t0)/ms); fn(t); t<1?requestAnimationFrame(f):res(); })(t0);
+  });
+}
+const center = (c,r) => ({x:ox+S+1.5*S*c, y:oy+TILT*SQ*S*(r+0.5*(c&1))+TILT*SQ*S/2});
+const upos = u => u.anim ? u.anim : center(u.c,u.r);
+
+// ---- fog of war: your units, keeps and towers see 3 hexes; explored hexes stay revealed
+const isVis = (c,r) => visible.has(key(c,r));
+const unitVisible = u => u.team===0 || isVis(u.c,u.r);
+function visionSources(){
+  return [...units.filter(u=>u.team===0),
+    ...KEEPS.filter((k,i)=>keepOwner[i]===0).map(([c,r])=>({c,r})),
+    ...[...towers].filter(([k,t])=>t===0).map(([k])=>{ const [c,r]=k.split(',').map(Number); return {c,r}; })];
+}
+function updateVision(){
+  visible=new Set(); visTiles(visionSources(),visible);
+  visible.forEach(k=>explored.add(k));
+  for(const m of MINES){ const k=key(m.c,m.r); if(visible.has(k)) seenMine.set(k,mineOwner.get(k)); }
+  KEEPS.forEach(([c,r],i)=>{ if(visible.has(key(c,r))) seenKeep[i]=keepOwner[i]; });
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const k=key(c,r); if(visible.has(k)){ if(towers.has(k)) seenTower.set(k,towers.get(k)); else seenTower.delete(k); } }
+}
+function revealAround(c,r,rad=VISION){ const t=new Set(); visTiles([{c,r,type:{vision:rad}}],t); t.forEach(k=>explored.add(k)); }
+function ensureInView(pt){
+  const sc=document.getElementById('scroller'); if(!sc||(sc.scrollWidth<=sc.clientWidth&&sc.scrollHeight<=sc.clientHeight)) return;
+  const m=90, x0=sc.scrollLeft, y0=sc.scrollTop;
+  if(pt.x<x0+m||pt.x>x0+sc.clientWidth-m||pt.y<y0+m||pt.y>y0+sc.clientHeight-m)
+    sc.scrollTo({left:pt.x-sc.clientWidth/2,top:pt.y-sc.clientHeight/2,behavior:'smooth'});
+}
+
+async function moveUnit(u,path){
+  const show = u.team===0 || path.some(q=>isVis(q.c,q.r));
+  for(let i=1;i<path.length;i++){
+    if(u.team===0) revealAround(path[i].c,path[i].r,u.type.vision||VISION);
+    if(!show) continue;
+    const a=center(path[i-1].c,path[i-1].r), b=center(path[i].c,path[i].r);
+    sfx('step'); if(i===1||i===path.length-1) ensureInView(b);
+    await tween(110,t=>{ u.anim={x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t}; });
+  }
+  const last=path[path.length-1]; u.c=last.c; u.r=last.r; u.anim=null;
+  captureAt(u);
+}
+function pathTo(info,c,r){
+  const p=[]; let k=key(c,r);
+  while(k){ const e=info.get(k); p.unshift(e); k=e.prev; }
+  return p;
+}
+function addText(x,y,text,color){ effects.push({x,y,text,color,t0:performance.now(),life:1200}); }
+
+async function strike(a,d,amount,counter){
+  a.fought=true; d.fought=true;
+  if(!(unitVisible(a)||unitVisible(d))){
+    d.hp=Math.max(0,d.hp-amount);
+    if(d.hp<=0){ if(towers.get(key(d.c,d.r))===d.team) towers.delete(key(d.c,d.r)); units=units.filter(x=>x!==d); if(sel===d) clearSel(); }
+    return;
+  }
+  ensureInView(upos(d));
+  const A=upos(a), D=upos(d), ranged=a.type.rng[1]>1;
+  const dx=D.x-A.x, dy=D.y-A.y, len=Math.hypot(dx,dy)||1;
+  if(ranged){
+    const kind=(a.key==='archer'||a.key==='archertower')?'arrow':(a.key==='catapult'||a.key==='ship')?'stone':a.key==='wizard'?'magic':'fire';
+    sfx(kind==='arrow'?'arrow':kind==='stone'?'boom':kind);
+    await tween(Math.min(520,180+len*1.1),t=>{
+      const arc = (kind==='stone')?-Math.sin(t*Math.PI)*S*1.6:(kind==='arrow'?-Math.sin(t*Math.PI)*S*0.5:0);
+      proj={kind,x:A.x+dx*t,y:A.y-S*0.4+dy*t+arc,ang:Math.atan2(dy,dx),t};
+    });
+    proj=null;
+  } else {
+    await tween(130,t=>{ a.off={x:dx/len*S*0.55*t,y:dy/len*S*0.55*t}; });
+  }
+  d.hp=Math.max(0,d.hp-amount); sfx('hit');
+  effects.push({ring:true,x:D.x,y:D.y-S*0.3,t0:performance.now(),life:350,color:FACTIONS[a.team].color});
+  addText(D.x,D.y-S*1.2,'-'+amount,'#ff5a4d');
+  log(`${a.name} ${counter?'counters':'hits'} ${d.name} for ${amount}.`,'t'+a.team);
+  const shake=tween(260,t=>{ const k=(1-t)*5; d.off={x:(Math.random()-.5)*k*2,y:(Math.random()-.5)*k}; });
+  if(!ranged) await tween(130,t=>{ a.off={x:dx/len*S*0.55*(1-t),y:dy/len*S*0.55*(1-t)}; });
+  await shake; d.off={x:0,y:0}; a.off={x:0,y:0};
+  if(d.hp<=0){
+    log(`${d.name} is destroyed!${d.cargo.length?' Its passengers are lost!':''}`,'sys'); sfx('die');
+    await tween(450,t=>{ d.alpha=1-t; d.off={x:0,y:t*S*0.3}; });
+    if(towers.get(key(d.c,d.r))===d.team){ towers.delete(key(d.c,d.r)); log('Its fort collapses with it!','sys'); }
+    units=units.filter(x=>x!==d);
+    if(sel===d) clearSel();
+  }
+}
+
+async function performAttack(a,d){
+  undoSnap=null;
+  const steps=a.steps, dmg=calcDmg(a,d,chargeOf(a,steps));
+  if(chargeOf(a,steps)&&(unitVisible(a)||unitVisible(d))) log(`${a.name} charges!`,'sys');
+  await strike(a,d,dmg,false);
+  if(d.hp>0 && a.hp>0){
+    const c=counterInfo(a,d,0);
+    if(c) await strike(d,a,c,true);
+  }
+  a.done=true; a.moved=true;
+  checkEnd();
+}
+function checkEnd(){
+  if(over) return;
+  for(let t=0;t<4;t++) if(!elim[t] && alive(t).length===0 && gold[t]<MIN_COST){
+    elim[t]=true; log(`${FACTIONS[t].name} has been eliminated!`,'sys');
+  }
+  if(!keepOwner.includes(0)){ over=true; showEnd(false,'Your keep has fallen. The realm is lost…'); }
+  else if(elim[0]){ over=true; showEnd(false,'Your army is destroyed and your coffers are empty…'); }
+  else if(keepOwner.every(o=>o===0)){ over=true; showEnd(true); }
+  refreshUI();
+}
+
+// ---------------------------------------------------------------- player input
+function clearSel(){ sel=null; moveInfo=null; targets=[]; boardShips=[]; }
+const canStrike = u => !u.type.noattack && !(u.type.stat&&u.moved) && targetsFrom(u,u.c,u.r).length>0;
+const actionable = u => (!u.done && (u.mp>0 || canStrike(u))) || u.cargo.some(c=>!c.done);
+const selectable = u => u.team===0 && actionable(u);
+const landTiles = sh => neighbors(sh.c,sh.r).filter(([c,r])=>tileCost('ground',c,r)!=null && !unitAt(c,r));
+function boardSpot(u,s){
+  let best=null;
+  for(const [c,r] of neighbors(s.c,s.r)){ const e=moveInfo.get(key(c,r)); if(e&&canStop(u,e)&&(!best||e.cost<best.cost)) best=e; }
+  return best;
+}
+function selectCargo(cu){
+  const sh=cu.aboard; cu.c=sh.c; cu.r=sh.r; recruitType=null; spawnSet=[];
+  sel=cu; targets=[]; boardShips=[];
+  moveInfo=new Map([[key(sh.c,sh.r),{c:sh.c,r:sh.r,cost:0,steps:0,prev:null}],
+    ...landTiles(sh).map(([c,r])=>[key(c,r),{c,r,cost:1,steps:1,prev:key(sh.c,sh.r)}])]);
+  refreshUI();
+}
+function select(u){
+  recruitType=null; spawnSet=[];
+  sel=u; moveInfo=(u.done||u.mp<=0)?null:reach(u); boardShips=[];
+  targets=(u.type.stat&&u.moved)?[]:targetsFrom(u,u.c,u.r);
+  if(moveInfo&&u.type.cls==='ground'&&u.type.mv>0) boardShips=units.filter(s=>s.team===u.team&&s.type.cap&&s.cargo.length<s.type.cap&&boardSpot(u,s));
+  refreshUI();
+}
+function finishUnit(u){ u.done=true; if(sel===u) clearSel(); refreshUI(); maybeAutoEnd(); }
+function chooseRecruit(type){
+  if(busy||side!==0||over) return;
+  if(recruitType===type){ recruitType=null; spawnSet=[]; }
+  else if(gold[0]>=costOf(type)){ clearSel(); recruitType=type; spawnSet=tilesFor(0,type); }
+  refreshUI();
+}
+
+async function onTile(c,r,pickedUnit){
+  if(busy||over||side!==0) return;
+  const u=pickedUnit||unitAt(c,r);
+  if(recruitType){
+    const ent=spawnSet.find(t=>t.c===c&&t.r===r);
+    if(ent){
+      undoSnap=takeSnap(recruitType==='tower'?'fort':'recruit');
+      if(recruitType==='tower') buildTower(0,c,r); else recruit(0,recruitType,c,r,ent.tower);
+      if(gold[0]<costOf(recruitType)){ recruitType=null; spawnSet=[]; } else spawnSet=tilesFor(0,recruitType);
+      refreshUI(); maybeAutoEnd(); return;
+    }
+    recruitType=null; spawnSet=[]; refreshUI();
+    if(!u) return;
+  }
+  if(sel){
+    if(u && boardShips.includes(u)){
+      undoSnap=takeSnap('boarding');
+      busy=true; const m=sel, ship=u, spot=boardSpot(m,ship), path=pathTo(moveInfo,spot.c,spot.r);
+      clearSel(); refreshUI();
+      if(path.length>1) await moveUnit(m,path);
+      units=units.filter(x=>x!==m); m.aboard=ship; m.c=ship.c; m.r=ship.r; ship.cargo.push(m);
+      m.done=true; m.moved=true; ship.done=true; ship.moved=true;
+      log(`${m.name} boards the ${ship.name}.`,'t0'); sfx('step');
+      busy=false; refreshUI(); maybeAutoEnd(); return;
+    }
+    if(sel.aboard && u===sel.aboard){ clearSel(); refreshUI(); return; }
+    if(u && u.team!==0 && targets.includes(u)){
+      busy=true; const a=sel; clearSel(); refreshUI();
+      await performAttack(a,u); busy=false; refreshUI(); maybeAutoEnd(); return;
+    }
+    if(u===sel){ clearSel(); refreshUI(); return; }
+    if(moveInfo && !u){
+      const e=moveInfo.get(key(c,r));
+      if(e && canStop(sel,e)){
+        undoSnap=takeSnap(sel.aboard?'unloading':'move');
+        busy=true; const m=sel, path=pathTo(moveInfo,c,r), wasAboard=!!m.aboard;
+        if(m.aboard){ const sh=m.aboard; sh.cargo=sh.cargo.filter(x=>x!==m); units.push(m); m.aboard=null; log(`${m.name} disembarks.`,'t0'); }
+        moveInfo=null; targets=[]; boardShips=[]; await moveUnit(m,path);
+        m.moved=true; m.steps+=path.length-1; m.mp=wasAboard?0:Math.max(0,m.mp-e.cost);
+        m.cargo.forEach(x=>{x.c=m.c;x.r=m.r;});
+        busy=false;
+        if(actionable(m)) select(m); else finishUnit(m);
+        return;
+      }
+    }
+    if(u && selectable(u)){ select(u); return; }
+    clearSel(); refreshUI();
+    return;
+  }
+  if(u && selectable(u)) select(u);
+}
+
+function canRecruitAny(){ return gold[0]>=MIN_COST && [...SHOP_ORDER,'tower'].some(t=>gold[0]>=costOf(t) && tilesFor(0,t).length); }
+function maybeAutoEnd(){
+  if(over||side!==0||busy) return;
+  const mine=alive(0);
+  refreshUI();
+}
+
+// ---------------------------------------------------------------- AI
+// ---- per-army fog of war for the AI: same rules as yours (3 hexes, explored stays revealed)
+const aiFog=[null,null,null,null];
+function resetAIFog(){
+  for(const t of [1,2,3]) aiFog[t]={explored:new Set(),visible:new Set(),seenMine:new Map(),seenKeep:[null,null,null,null]};
+  [1,2,3].forEach(updateAIVision);
+}
+function updateAIVision(t){
+  const F=aiFog[t]; if(!F) return;
+  const src=[...units.filter(u=>u.team===t),
+    ...KEEPS.filter((k,i)=>keepOwner[i]===t).map(([c,r])=>({c,r})),
+    ...[...towers].filter(([k,tm])=>tm===t).map(([k])=>{ const [c,r]=k.split(',').map(Number); return {c,r}; })];
+  F.visible=new Set(); visTiles(src,F.visible);
+  F.visible.forEach(k=>F.explored.add(k));
+  for(const m of MINES){ const k=key(m.c,m.r); if(F.visible.has(k)) F.seenMine.set(k,mineOwner.get(k)); }
+  KEEPS.forEach(([c,r],i)=>{ if(F.visible.has(key(c,r))) F.seenKeep[i]=keepOwner[i]; });
+}
+const aiCanSee = (t,c,r) => !!aiFog[t] && aiFog[t].visible.has(key(c,r));
+// everything this army knows it wants: visible foes, known mines/keeps it doesn't hold, and unexplored ground (to scout)
+function aiSources(t){
+  const F=aiFog[t], src=[];
+  for(const f of units) if(f.team!==t&&F.visible.has(key(f.c,f.r))) src.push({c:f.c,r:f.r,d0:0});
+  for(const m of MINES){ const k=key(m.c,m.r); if(F.explored.has(k)&&F.seenMine.get(k)!==t) src.push({c:m.c,r:m.r,d0:3}); }
+  KEEPS.forEach(([c,r],i)=>{ if(F.seenKeep[i]!=null&&F.seenKeep[i]!==t) src.push({c,r,d0:3}); });
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(!F.explored.has(key(c,r))) src.push({c,r,d0:7});
+  return src;
+}
+function distMapMulti(cls,sources){
+  const d=new Map(), buckets=[];
+  const push=(c,r,dist)=>{ (buckets[dist]||(buckets[dist]=[])).push([c,r,dist]); };
+  for(const s of sources){ const k=key(s.c,s.r); if(!d.has(k)||s.d0<d.get(k)){ d.set(k,s.d0); push(s.c,s.r,s.d0); } }
+  for(let b=0;b<buckets.length;b++){
+    const arr=buckets[b]; if(!arr) continue;
+    for(let i=0;i<arr.length;i++){
+      const [c,r,dist]=arr[i]; if(d.get(key(c,r))!==dist) continue;
+      for(const [nc,nr] of neighbors(c,r)){
+        const tc=tileCost(cls,nc,nr); if(tc==null) continue;
+        const nk=key(nc,nr), nd=dist+tc;
+        if(!d.has(nk)||nd<d.get(nk)){ d.set(nk,nd); push(nc,nr,nd); }
+      }
+    }
+  }
+  return d;
+}
+async function aiAttackFrom(u){
+  if(u.type.stat||u.type.noattack) return;
+  updateAIVision(u.team);
+  const tg=targetsFrom(u,u.c,u.r); if(!tg.length) return;
+  let best=null;
+  for(const t of tg){ const dmg=calcDmg(u,t,chargeOf(u,u.steps)), sc=dmg+(dmg>=t.hp?9:0)+(1-t.hp/t.type.hp)*3-counterInfo(u,t,dmg)*0.7; if(!best||sc>best.s) best={s:sc,t}; }
+  u.moved=true; await performAttack(u,best.t); await sleep(180);
+}
+async function aiShip(u){
+  if(!u.cargo.length) return;
+  updateAIVision(u.team);
+  const gm=distMapMulti('ground',aiSources(u.team));
+  const gd=(c,r)=>gm.get(key(c,r))??Infinity;
+  const info=reach(u); let best=null;
+  for(const [k,e] of info){
+    if(!canStop(u,e)) continue;
+    const lands=neighbors(e.c,e.r).filter(([c,r])=>tileCost('ground',c,r)!=null&&!unitAt(c,r)); if(!lands.length) continue;
+    const d=Math.min(...lands.map(([c,r])=>gd(c,r)));
+    if(d<(best?best.d:Infinity)) best={e,d};
+  }
+  if(best&&(best.e.c!==u.c||best.e.r!==u.r)){ const path=pathTo(info,best.e.c,best.e.r); await moveUnit(u,path); u.cargo.forEach(x=>{x.c=u.c;x.r=u.r;}); await sleep(80); }
+  u.moved=true;
+  for(const cu of [...u.cargo]){
+    const spots=landTiles(u).filter(([c,r])=>isFinite(gd(c,r))).sort((a,b)=>gd(a[0],a[1])-gd(b[0],b[1]));
+    if(!spots.length) break;
+    const [c,r]=spots[0];
+    u.cargo=u.cargo.filter(x=>x!==cu); units.push(cu); cu.aboard=null; cu.c=u.c; cu.r=u.r;
+    if(isVis(u.c,u.r)) log(`${cu.name} disembarks.`,'t'+cu.team);
+    await moveUnit(cu,[{c:u.c,r:u.r},{c,r}]); cu.moved=true; cu.steps=1; await aiAttackFrom(cu);
+    if(over) return;
+  }
+}
+async function aiTryBoard(u,info,dm){
+  if(u.type.cls!=='ground'||u.type.mv===0) return false;
+  const ships=units.filter(s=>s.team===u.team&&s.type.cap&&s.cargo.length<s.type.cap&&!s.done&&!s.moved);
+  if(!ships.length) return false;
+  const here=dm.get(key(u.c,u.r))??Infinity;
+  if(here<12) return false;
+  for(const sh of ships){
+    let spot=null;
+    for(const [c,r] of neighbors(sh.c,sh.r)){ const e=info.get(key(c,r)); if(e&&canStop(u,e)&&(!spot||e.cost<spot.cost)) spot=e; }
+    if(!spot) continue;
+    const path=pathTo(info,spot.c,spot.r); if(path.length>1) await moveUnit(u,path);
+    units=units.filter(x=>x!==u); u.aboard=sh; u.c=sh.c; u.r=sh.r; sh.cargo.push(u);
+    u.done=true; u.moved=true; sh.done=true; sh.moved=true;
+    if(isVis(sh.c,sh.r)) log(`${u.name} boards the ${sh.name}.`,'t'+u.team); sfx('step'); await sleep(120);
+    return true;
+  }
+  return false;
+}
+async function aiTower(t){
+  if(gold[t]<TOWER_COST || [...towers.values()].filter(x=>x===t).length>=3) return;
+  updateAIVision(t);
+  const foes=units.filter(f=>f.team!==t&&aiCanSee(t,f.c,f.r)); if(!foes.length) return;
+  const cands=towerTiles(t).filter(({c,r})=>{ const o=unitAt(c,r); return o&&o.team===t&&!o.type.noattack; })
+    .map(q=>({q,d:Math.min(...foes.map(f=>hexDist(q,f)))})).filter(x=>x.d<=5).sort((a,b)=>a.d-b.d);
+  if(cands.length) buildTower(t,cands[0].q.c,cands[0].q.r);
+  await sleep(300);
+}
+async function aiAct(u){
+  if(u.done) return;
+  if(u.type.noattack) return aiShip(u);
+  updateAIVision(u.team);
+  const info=reach(u), dm=distMapMulti(u.type.cls,aiSources(u.team));
+  if(await aiTryBoard(u,info,dm)) return;
+  let best=null;
+  for(const [k,e] of info){
+    if(!canStop(u,e)) continue;
+    const ghost={...u,c:e.c,r:e.r};
+    const tdef=u.type.cls==='fly'?0:TERR[tileCh(e.c,e.r)].def;
+    const kI=tileCh(e.c,e.r)==='K'?KEEPS.findIndex(q=>q[0]===e.c&&q[1]===e.r):-1;
+    const grab=(tileCh(e.c,e.r)==='G'&&mineOwner.get(k)!==u.team)?5:(kI>=0&&keepOwner[kI]!==u.team)?9:0;
+    const tgs=u.type.stat&&(e.c!==u.c||e.r!==u.r)?[]:targetsFrom(ghost,e.c,e.r);
+    if(tgs.length){
+      for(const t of tgs){
+        const dmg=calcDmg(ghost,t,chargeOf(u,e.steps)), kill=dmg>=t.hp;
+        const ctr=kill?0:counterInfo(ghost,t,dmg);
+        const sc=100+dmg+(kill?9:0)+(1-t.hp/t.type.hp)*3-ctr*0.7+tdef*0.6+grab*0.6;
+        if(!best||sc>best.score) best={score:sc,e,tgt:t};
+      }
+    } else {
+      let d=dm.get(k)??Infinity; if(!isFinite(d)) d=60;
+      const score=-d+tdef*0.3+grab;
+      if(!best||score>best.score) best={score,e,tgt:null};
+    }
+  }
+  if(!best) return;
+  const {e,tgt}=best;
+  if(e.c!==u.c||e.r!==u.r){ const path=pathTo(info,e.c,e.r); await moveUnit(u,path); u.steps=path.length-1; await sleep(70); }
+  if(tgt&&units.includes(tgt)){ u.moved=true; await performAttack(u,tgt); await sleep(180); }
+  else if(!tgt) await aiAttackFrom(u);
+}
+
+async function aiRecruit(t){
+  updateAIVision(t);
+  const foes=()=>units.filter(f=>f.team!==t&&aiCanSee(t,f.c,f.r));
+  while(!over && alive(t).length<MAX_UNITS){
+    const opts=SHOP_ORDER.filter(k=>gold[t]>=TYPES[k].cost && spawnTiles(t,k).length);
+    if(!opts.length) break;
+    let pick;
+    if(opts.includes('dragon') && Math.random()<0.6) pick='dragon';
+    else {
+      const w={knight:3,archer:2,archertower:1,scout:1,cavalry:2,wizard:2,catapult:1,ship:1,dragon:0};
+      const bag=opts.flatMap(k=>Array(w[k]).fill(k)); if(!bag.length) break;
+      pick=bag[Math.floor(Math.random()*bag.length)];
+    }
+    const tiles=spawnTiles(t,pick), f=foes();
+    if(f.length) tiles.sort((a,b)=>Math.min(...f.map(x=>hexDist(a,x)))-Math.min(...f.map(x=>hexDist(b,x))));
+    recruit(t,pick,tiles[0].c,tiles[0].r,tiles[0].tower); await sleep(350);
+  }
+}
+
+async function aiTeamTurn(t){
+  side=t; busy=true; clearSel(); startTeamTurn(t); updateAIVision(t); refreshUI(); banner(FACTIONS[t].name); sfx('turn'); await sleep(900);
+  const roster=[...alive(t)];
+  if(turn>1) for(const u of roster){
+    if(over) break;
+    if(!units.includes(u)) continue;
+    u.steps=0; await aiAct(u);
+  }
+  if(!over) await aiTower(t);
+  if(!over) await aiRecruit(t);
+  checkEnd();
+}
+async function endTurn(){
+  if(busy||side!==0||over) return;
+  undoSnap=null;
+  alive(0).forEach(u=>u.done=true); clearSel(); recruitType=null; spawnSet=[];
+  busy=true; refreshUI();
+  for(const t of [1,2,3]){
+    if(over) break; if(elim[t]) continue;
+    await aiTeamTurn(t);
+  }
+  if(over){ busy=false; refreshUI(); return; }
+  turn++; side=0; startTeamTurn(0); busy=false; refreshUI(); banner('Your Turn'); sfx('turn');
+  log(`— Turn ${turn} —`,'sys');
+}
+
+// ---------------------------------------------------------------- UI
+function log(msg,cls){
+  const li=document.createElement('li'); li.textContent=msg; if(cls) li.className=cls;
+  logEl.appendChild(li); while(logEl.children.length>80) logEl.firstChild.remove(); logEl.scrollTop=logEl.scrollHeight;
+}
+function banner(txt){
+  const b=document.getElementById('banner'); b.textContent=txt; b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+}
+function cardHTML(u,preview){
+  const T=u.type, rng=T.rng[0]===T.rng[1]?T.rng[0]:T.rng[0]+'–'+T.rng[1], tdef=terrainDef(u);
+  return `<div class="top"><img src="assets/${u.sprite}.png" alt=""><div><h2>${u.name}</h2>
+    <div class="sub" style="color:${FACTION_INK[u.team]}">${FACTIONS[u.team].name}</div>
+    <div class="sub">${TERR[tileCh(u.c,u.r)].name}${towers.get(key(u.c,u.r))===u.team?' + Fort':''}${tdef?` (+${tdef} def)`:''}</div></div></div>
+    <div class="stats"><div><b>${u.hp}/${T.hp}</b>HP</div><div><b>${T.atk}</b>ATK</div><div><b>${T.def}</b>DEF</div><div><b>${u.team===0?u.mp+'/'+T.mv:T.mv}</b>MOVE</div><div><b>${rng}</b>RANGE</div></div>
+    <p>${T.desc}</p>${u.cargo.length?`<p><b>Aboard:</b> ${u.cargo.map(c=>c.name).join(', ')}</p>`:''}${preview?`<div class="preview">${preview}</div>`:''}`;
+}
+function previewFor(t){
+  if(!sel||!targets.includes(t)) return '';
+  const steps=sel.steps, dmg=calcDmg(sel,t,chargeOf(sel,steps));
+  const ctr=counterInfo(sel,t,dmg);
+  return `<b>Attack:</b> ${dmg} damage${dmg>=t.hp?' — <b>lethal!</b>':''}${ctr?` · counter ${ctr}`:''}${chargeOf(sel,steps)?' · charge bonus':''}`;
+}
+function setHTML(id,html){ const el=document.getElementById(id); if(el.dataset.html!==html){ el.dataset.html=html; el.innerHTML=html; } return el; }
+function tipHTML(k){
+  if(k==='tower') return `<div class="top"><img src="assets/tf_fort.png" alt="" style="width:60px;height:auto"><div><h4>Fort</h4><div class="cost">${TOWER_COST} gold</div></div></div>
+    <p style="margin:6px 0 0">Build it on a grass hex near your units. <b>+2 defence</b> to your unit standing there, and it recruits <b>1 unit per turn</b> on adjacent hexes (ships too, if water is adjacent). Collapses if that unit is slain; enemies can raze it.</p>`;
+  const T=TYPES[k], rng=T.rng[0]===T.rng[1]?T.rng[0]:T.rng[0]+'–'+T.rng[1];
+  const why = gold[0]<T.cost ? `Need ${T.cost-gold[0]} more gold.` : !spawnTiles(0,k).length ? (k==='archertower'?'No open space next to your units.':T.cls==='water'?'No open water near your keeps or forts.':'No open space near your keeps or forts.') : '';
+  return `<div class="top"><img src="assets/${spriteKey(0,k)}.png" alt=""><div><h4>${T.name}</h4><div class="cost">${T.cost} gold${T.cap?' · carries '+T.cap:''}</div></div></div>
+    <div class="stats"><div><b>${T.hp}</b>HP</div><div><b>${T.noattack?'—':T.atk}</b>ATK</div><div><b>${T.def}</b>DEF</div><div><b>${T.mv}</b>MOVE</div><div><b>${T.noattack?'—':rng}</b>RANGE</div></div>
+    <div>${T.desc}</div>${why?`<div class="warn">${why}</div>`:''}`;
+}
+function showTip(w){
+  const tip=document.getElementById('tip'), r=w.getBoundingClientRect();
+  tip.innerHTML=tipHTML(w.dataset.k); tip.style.display='block';
+  const tw=tip.offsetWidth, th=tip.offsetHeight;
+  let x=r.left-tw-10; if(x<8) x=Math.min(innerWidth-tw-8,r.right+10);
+  let y=Math.min(innerHeight-th-8,Math.max(8,r.top-th/2+r.height/2));
+  if(x<8){ x=8; y=Math.max(8,r.top-th-8); }
+  tip.style.left=x+'px'; tip.style.top=y+'px';
+}
+function hideTip(){ document.getElementById('tip').style.display='none'; }
+function refreshUI(){
+  updateVision();
+  const p=document.getElementById('turn');
+  setHTML('turn',`<b>Turn ${turn}</b><span class="pill" style="background:${FACTIONS[side].color}">${side===0?'Your move':FACTIONS[side].short+' moves'}</span><span>🪙 ${gold[0]}</span>`);
+  setHTML('factions',FACTIONS.map((f,i)=>`<div class="frow ${side===i&&!over?'active':''} ${elim[i]?'out':''}"><span class="dot" style="background:${f.color}"></span><span>${f.name}</span>
+    <span class="n">⚔ ${i===0?alive(0).length:'?'}</span><span class="n">⛏ ${i===0?minesOf(0):MINES.filter(m=>seenMine.get(key(m.c,m.r))===i).length}</span><span class="n">🏰 ${i===0?keepOwner.filter(o=>o===0).length:seenKeep.filter(o=>o===i).length}</span><span class="n">🪙 ${i===0?`${gold[0]} <small>(+${income(0)})</small>`:'?'}</span></div>`).join(''));
+  const hu=hover&&unitAt(hover.c,hover.r), shown=(hu&&unitVisible(hu)?hu:null)||sel;
+  setHTML('card', shown ? cardHTML(shown,previewFor(shown))
+    : hover&&!explored.has(key(hover.c,hover.r)) ? '<div class="empty"><b>Unexplored</b><br>Send units this way to reveal the map.</div>'
+    : hover ? `<div class="empty"><b>${TERR[tileCh(hover.c,hover.r)].name}</b>${mineInfo(hover)}<br>${TERR[tileCh(hover.c,hover.r)].note||'Open ground.'}${seenTower.has(key(hover.c,hover.r))?`<br>🏯 ${FACTIONS[seenTower.get(key(hover.c,hover.r))].short} fort: +2 defence for its owner; recruits 1 unit per turn nearby${towerUsed.has(key(hover.c,hover.r))?' (used this turn)':''}.`:''}</div>`
+    : '<div class="empty">Select one of your units, or hover anything for details.</div>');
+  // shop
+  const shop=setHTML('shop',`<h3><span>Recruit at your keeps</span><span>🪙 ${gold[0]}</span></h3><div class="grid">${SHOP_ORDER.map(k=>{
+    const T=TYPES[k], ok=gold[0]>=T.cost&&side===0&&!busy&&!over&&spawnTiles(0,k).length>0;
+    return `<div class="sw" data-k="${k}"><button class="sec ${recruitType===k?'on':''}" data-k="${k}" ${ok||recruitType===k?'':'disabled'}><span>${T.short}</span><span>${T.cost}🪙</span></button></div>`;}).join('')}<div class="sw" data-k="tower" style="grid-column:1/3"><button class="sec ${recruitType==='tower'?'on':''}" data-k="tower" ${(gold[0]>=TOWER_COST&&side===0&&!busy&&!over&&towerTiles(0).length)||recruitType==='tower'?'':'disabled'}><span>Fort (+2 def, 1 recruit/turn)</span><span>${TOWER_COST}🪙</span></button></div></div>`);
+  shop.querySelectorAll('button').forEach(b=>b.onclick=()=>chooseRecruit(b.dataset.k));
+  shop.querySelectorAll('.sw').forEach(w=>{ w.onmouseenter=()=>showTip(w); w.onmouseleave=hideTip; });
+  const cp=sel&&sel.cargo.length&&side===0&&!busy?sel:null;
+  const cel=setHTML('cargo',cp?`<h3><span>Aboard the ${cp.type.short}</span></h3><div class="grid">${cp.cargo.map((c,i)=>`<button class="sec" data-i="${i}" ${!c.done&&landTiles(cp).length?'':'disabled'}>Unload ${c.type.short}</button>`).join('')}</div>`:'');
+  cel.querySelectorAll('button').forEach(b=>b.onclick=()=>selectCargo(cp.cargo[+b.dataset.i]));
+  let h='Click one of your units to begin.';
+  if(over) h='The battle is over.';
+  else if(side!==0) h=`${FACTIONS[side].name} is moving…`;
+  else if(recruitType==='tower') h='Click a green grass hex to build a fort: +2 defence for your unit there, and one recruit per turn on adjacent hexes. It collapses if that unit dies; enemies can raze it.';
+  else if(recruitType==='archertower') h='Click a green hex next to any of your units (or near a keep or fort) to build an Archer Tower. It rests until next turn.';
+  else if(recruitType) h=`Click a green hex near a keep (or next to an unused fort) to place a ${TYPES[recruitType].short}. Recruits rest until next turn.`;
+  else if(sel&&sel.aboard) h='Click a highlighted shore hex to disembark. Landing uses its move; it may still attack.';
+  else if(sel&&sel.type.noattack) h=`Blue hex = sail (${sel.mp} movement left). Passengers unload onto adjacent land.`;
+  else if(sel&&boardShips.length) h=`Blue hex = move (${sel.mp} left). Click a green-ringed ship to board it (ends this unit's turn).`;
+  else if(sel&&sel.mp>0) h=(sel.type.stat?'Moving means it cannot fire this turn. ':'')+`Blue hex = move (${sel.mp} movement left). ${targets.length?'Red-ringed enemy = attack.':''}`;
+  else if(sel) h='No movement left. Choose a red-ringed enemy to attack, or press Wait.';
+  else if(alive(0).length&&alive(0).every(u=>!actionable(u))) h='All units have acted. Recruit more, or end your turn.';
+  document.getElementById('hint').textContent=h;
+  document.getElementById('undo').disabled=!(undoSnap&&side===0&&!busy&&!over);
+  document.getElementById('wait').disabled=!(sel&&side===0&&!busy);
+  const end=document.getElementById('end'); end.disabled=side!==0||busy||over;
+  end.classList.toggle('pulse',side===0&&!busy&&!over&&alive(0).length>0&&alive(0).every(u=>!actionable(u)));
+}
+function mineInfo(h){
+  if(tileCh(h.c,h.r)!=='G') return '';
+  const o=seenMine.get(key(h.c,h.r)); return ` — ${o==null?'unclaimed':'held by '+FACTIONS[o].short}`;
+}
+function showEnd(win,why){
+  if(win){
+    const v=document.getElementById('victory'), vid=document.getElementById('vicvid');
+    v.classList.remove('hidden'); try{ vid.currentTime=0; vid.play().catch(()=>{}); }catch(e){}
+    document.getElementById('again2').onclick=()=>{ v.classList.add('hidden'); vid.pause(); stopMusic(); newGame(); playAmbient(); };
+    stopAmbient(); playMusic(true); return;
+  }
+  const p=document.getElementById('panel');
+  p.innerHTML=`<h2>Defeat</h2><p>${why||'The Order has fallen…'}</p><button id="again">Try Again</button>`;
+  document.getElementById('overlay').classList.remove('hidden');
+  document.getElementById('again').onclick=()=>{ document.getElementById('overlay').classList.add('hidden'); newGame(); };
+}
+function showIntro(){
+  const t=document.getElementById('title'), v=document.getElementById('titlevid'), im=document.getElementById('titleimg');
+  v.style.display='none';
+  const exts=['jpg','jpeg','png','webp']; let k=0;
+  const tryImg=()=>{ if(k>=exts.length) return; im.src='assets/title.'+exts[k++]; };
+  im.onload=()=>{ im.style.display='block'; }; im.onerror=tryImg;
+  v.onloadeddata=()=>{ v.style.display='block'; im.style.display='none'; v.play().catch(()=>{}); };
+  v.onerror=()=>{ v.style.display='none'; };
+  v.src='assets/title.mp4'; tryImg();
+  playMusic(true);
+  document.getElementById('go').onclick=()=>{ t.classList.add('hidden'); v.pause(); stopMusic(); playAmbient(); sfx('turn'); banner('Your Turn'); };
+}
+
+// ---------------------------------------------------------------- rendering
+function hexPath(x,y,r){
+  ctx.beginPath();
+  for(let i=0;i<6;i++){ const a=Math.PI/3*i; ctx[i?'lineTo':'moveTo'](x+r*Math.cos(a),y+TILT*r*Math.sin(a)); }
+  ctx.closePath();
+}
+function rng(seed){ let s=seed>>>0||1; return ()=>((s=(s*1664525+1013904223)>>>0)/4294967296); }
+
+function buildBackground(){
+  bg=document.createElement('canvas'); bg.width=canvasEl.width; bg.height=canvasEl.height;
+  const g=bg.getContext('2d'); g.scale(dpr,dpr);
+  const prev=ctx; ctx=g;
+  const tl=center(0,0), left=tl.x-S*1.3, right=center(COLS-1,0).x+S*1.3, top=tl.y-TILT*SQ*S*0.5-S*0.45, bottom=center(1,ROWS-1).y+TILT*SQ*S*0.5+S*0.45, thick=S*0.6;
+  g.save(); g.shadowColor='#000b'; g.shadowBlur=28; g.shadowOffsetY=12;
+  g.fillStyle='#120b05'; g.beginPath(); g.roundRect(left,top+thick,right-left,bottom-top,S*0.45); g.fill(); g.restore();
+  g.fillStyle='#3a2616'; g.beginPath(); g.roundRect(left,top+thick*0.5,right-left,bottom-top,S*0.45); g.fill();
+  g.fillStyle='#2a1b0f'; g.beginPath(); g.roundRect(left,top,right-left,bottom-top,S*0.45); g.fill();
+  g.strokeStyle='#5a3d24'; g.lineWidth=2; g.beginPath(); g.roundRect(left+2,top+2,right-left-4,bottom-top-4,S*0.42); g.stroke();
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const {x,y}=center(c,r), t=tileCh(c,r), R=rng(c*131+r*977+7), ti=TILEIMG[t];
+    hexPath(x,y,S);
+    let grd=g.createLinearGradient(x,y-TILT*S,x,y+TILT*S);
+    if(t==='~'){ grd.addColorStop(0,'#2f78ac'); grd.addColorStop(1,'#1b4f7e'); }
+    else if(t==='f'){ grd.addColorStop(0,'#4d7a3a'); grd.addColorStop(1,'#35592a'); }
+    else if(t==='^'){ grd.addColorStop(0,'#8a8680'); grd.addColorStop(1,'#625f5a'); }
+    else if(t==='K'){ grd.addColorStop(0,'#9a9484'); grd.addColorStop(1,'#6f6a5c'); }
+    else { const j=Math.floor(R()*16); grd.addColorStop(0,`rgb(${108+j},${150+j},${70})`); grd.addColorStop(1,`rgb(${84+j},${124+j},${54})`); }
+    g.fillStyle=grd; g.fill();
+    g.save(); hexPath(x,y,S); g.clip();
+    g.translate(x,y); g.scale(1,TILT); g.translate(-x,-y);
+    if(ti){ g.save(); g.translate(x,y);
+      if(t==='G'||t==='K') g.drawImage(ti,-S*1.02,-SQ*S*0.5*1.02,2*S*1.02,SQ*S*1.02);
+      else { g.rotate(Math.PI/2+(t==='~'?((c*7+r*3)%6)*Math.PI/3:0)); g.drawImage(ti,-SQ*S*0.5*1.02,-S*1.02,SQ*S*1.02,2*S*1.02); }
+      g.restore(); }
+    if(!ti&&(t==='.'||t==='G')){ for(let i=0;i<16;i++){ const px=x+(R()-.5)*S*1.8, py=y+(R()-.5)*S*1.5; g.strokeStyle=R()>.5?'#b9d68a55':'#2f511f66'; g.lineWidth=1; g.beginPath(); g.moveTo(px,py); g.lineTo(px+(R()-.5)*4,py-3-R()*4); g.stroke(); } }
+    if(t==='~'&&!ti){ g.strokeStyle='#bfe3f755'; g.lineWidth=1.3; for(let i=0;i<6;i++){ const px=x+(R()-.5)*S*1.4, py=y+(R()-.5)*S*1.3; g.beginPath(); g.moveTo(px-7,py); g.quadraticCurveTo(px-3.5,py-3,px,py); g.quadraticCurveTo(px+3.5,py+3,px+7,py); g.stroke(); } }
+    if(t==='f'&&!ti){ const pts=[...Array(5)].map(()=>({x:x+(R()-.5)*S*1.3,y:y+(R()-.5)*S*1.0})).sort((a,b)=>a.y-b.y);
+      for(const p of pts){ g.fillStyle='#4b3220'; g.fillRect(p.x-1.5,p.y+3,3,6); g.fillStyle='#244a1f'; g.beginPath(); g.arc(p.x,p.y,S*0.2,0,7); g.fill(); g.fillStyle='#3a7030aa'; g.beginPath(); g.arc(p.x-2,p.y-3,S*0.12,0,7); g.fill(); } }
+    if(t==='^'&&!ti){ for(let i=0;i<3;i++){ const px=x+(i-1)*S*0.45+(R()-.5)*6, py=y+(R()-.5)*S*0.3, h=S*(0.55+R()*0.35);
+      g.fillStyle='#4d4a47'; g.beginPath(); g.moveTo(px-S*.3,py+h*.4); g.lineTo(px,py-h*.6); g.lineTo(px+S*.3,py+h*.4); g.fill();
+      g.fillStyle='#b8b4ad'; g.beginPath(); g.moveTo(px,py-h*.6); g.lineTo(px+S*.3,py+h*.4); g.lineTo(px+S*.05,py+h*.4); g.fill(); } }
+    if(t==='G'&&!ti){ // mine entrance
+      g.fillStyle='#6d5b45'; g.beginPath(); g.ellipse(x,y+S*0.32,S*0.55,S*0.2,0,0,7); g.fill();
+      g.fillStyle='#1e150d'; g.beginPath(); g.moveTo(x-S*.34,y+S*.3); g.arc(x,y+S*.3,S*.34,Math.PI,0); g.closePath(); g.fill();
+      g.strokeStyle='#8a6a3a'; g.lineWidth=2.5; g.beginPath(); g.moveTo(x-S*.34,y+S*.3); g.lineTo(x-S*.34,y-S*.06); g.lineTo(x+S*.34,y-S*.06); g.lineTo(x+S*.34,y+S*.3); g.stroke();
+      g.fillStyle='#f5cf4a'; [[-.5,.42],[.46,.4],[.12,.5],[-.25,.52]].forEach(([a,b])=>{ g.beginPath(); g.arc(x+a*S,y+b*S,S*0.07,0,7); g.fill(); });
+    }
+    if(t==='K'&&!ti){ // castle
+      g.fillStyle='#5f5a4f'; g.fillRect(x-S*.38,y-S*.1,S*.76,S*.48);
+      g.fillStyle='#7d7769'; g.fillRect(x-S*.38,y-S*.1,S*.76,S*.1);
+      g.fillStyle='#5f5a4f'; for(const dx of [-.38,-.1,.2]) g.fillRect(x+dx*S,y-S*.22,S*.18,S*.14);
+      g.fillStyle='#231a12'; g.beginPath(); g.moveTo(x-S*.12,y+S*.38); g.arc(x,y+S*.2,S*.12,Math.PI,0); g.lineTo(x+S*.12,y+S*.38); g.fill();
+    }
+    g.restore();
+    hexPath(x,y,S); g.strokeStyle='#00000066'; g.lineWidth=1.2; g.stroke();
+  }
+  ctx=prev;
+}
+
+let canvasEl, ctx;
+function resize(){
+  if(!MAP.length) return;
+  const st=document.getElementById('stage'), w=st.clientWidth, h=st.clientHeight;
+  dpr=Math.min(2,window.devicePixelRatio||1);
+  const bw=1.5*(COLS-1)+2.6, bh=2.7+TILT*SQ*(ROWS+0.5)+0.9;
+  S=Math.max(MIN_S,Math.min((w-24)/bw,(h-16)/bh));
+  const cw=Math.max(w,Math.ceil(S*bw+24)), ch=Math.max(h,Math.ceil(S*bh+16));
+  canvasEl.style.width=cw+'px'; canvasEl.style.height=ch+'px';
+  canvasEl.width=Math.round(cw*dpr); canvasEl.height=Math.round(ch*dpr);
+  ox=(cw-S*bw)/2+S*0.3; oy=(ch-S*bh)/2+S*2.7;
+  ctx=canvasEl.getContext('2d'); buildBackground();
+}
+
+function drawUnit(u){
+  const m=SPR[u.key], img=IMG[u.sprite], p=upos(u), k=(BASE_W*S)/m.bw;
+  const dx=p.x+u.off.x-m.cx*k, dy=p.y+u.off.y-(m.bottom-BASE_CY*m.bw/300)*k;
+  const tired=u.done&&u.team===0&&side===0;
+  if(u.alpha>0.5){ hexPath(p.x+u.off.x,p.y+u.off.y,S*(BASE_W/2+0.03)); ctx.strokeStyle=FACTIONS[u.team].color; ctx.lineWidth=Math.max(2,S*0.07); ctx.globalAlpha=tired?0.4:0.95; ctx.stroke(); ctx.globalAlpha=1; }
+  ctx.save();
+  ctx.globalAlpha=u.alpha*(tired?0.55:1);
+  ctx.imageSmoothingQuality='high';
+  if(img.complete&&img.naturalWidth) ctx.drawImage(img,dx,dy,m.w*k,m.h*k);
+  u.cargo.forEach((cu,i)=>{ const cm=SPR[cu.key], ci=IMG[cu.sprite], k2=(0.8*S)/cm.bw, cx=p.x+u.off.x+(i?0.42:-0.42)*S, cb=p.y+u.off.y+S*0.15;
+    if(ci.complete&&ci.naturalWidth) ctx.drawImage(ci,cx-cm.cx*k2,cb-cm.bottom*k2,cm.w*k2,cm.h*k2); });
+  ctx.restore();
+  if(u.alpha>0.5){
+    const bw=S*1.15, bx=p.x-bw/2, by=p.y+u.off.y+S*0.52, f=u.hp/u.type.hp;
+    ctx.fillStyle='#000c'; ctx.fillRect(bx-2,by-2,bw+4,8);
+    ctx.fillStyle=f>.5?'#6bd35f':f>.25?'#e8c34a':'#e0553f'; ctx.fillRect(bx,by,bw*f,4);
+    ctx.fillStyle=FACTIONS[u.team].color; ctx.fillRect(bx-2,by-2,3,8);
+    if(tired){ ctx.fillStyle='#fff'; ctx.font=`bold ${Math.round(S*0.28)}px Georgia`; ctx.textAlign='center'; ctx.fillText('zZ',p.x+S*0.75,p.y-S*0.1); }
+  }
+}
+
+function draw(){
+  const w=canvasEl.width/dpr, h=canvasEl.height/dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
+  if(bg&&bg.width) ctx.drawImage(bg,0,0,w,h);
+  updateVision();
+  const now=performance.now(), pulse=0.5+0.5*Math.sin(now/220);
+  // ownership rings for mines + keeps
+  for(const m of MINES){ const o=seenMine.get(key(m.c,m.r)); if(o==null) continue; const {x,y}=center(m.c,m.r); hexPath(x,y,S*0.9); ctx.strokeStyle=FACTIONS[o].color; ctx.lineWidth=3; ctx.globalAlpha=.85; ctx.stroke(); ctx.globalAlpha=1; }
+  KEEPS.forEach(([c,r],i)=>{ if(seenKeep[i]==null) return; const {x,y}=center(c,r); hexPath(x,y,S*0.9); ctx.strokeStyle=FACTIONS[seenKeep[i]].color; ctx.lineWidth=3; ctx.stroke(); });
+  // forts: your own and any you have seen
+  for(const [k,team] of seenTower){ const [c,r]=k.split(',').map(Number), {x,y}=center(c,r);
+    ctx.save(); hexPath(x,y,S); ctx.clip(); ctx.translate(x,y); ctx.scale(1,TILT); if(TILEIMG.F) ctx.drawImage(TILEIMG.F,-S,-SQ*S*0.5,2*S,SQ*S); ctx.restore();
+    if(towerUsed.has(k)){ hexPath(x,y,S); ctx.fillStyle='rgba(0,0,0,0.32)'; ctx.fill(); }
+    hexPath(x,y,S*0.9); ctx.strokeStyle=FACTIONS[team].color; ctx.lineWidth=3; ctx.stroke(); }
+  // fog of war
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const k=key(c,r); if(visible.has(k)) continue; const {x,y}=center(c,r);
+    hexPath(x,y,S*1.01); ctx.fillStyle=explored.has(k)?'rgba(10,14,28,0.48)':'#0b0906'; ctx.fill(); }
+  if(moveInfo&&sel){
+    for(const [k,e] of moveInfo){ if(!canStop(sel,e)||(e.c===sel.c&&e.r===sel.r)) continue;
+      const {x,y}=center(e.c,e.r); hexPath(x,y,S*0.94); ctx.fillStyle=`rgba(80,150,255,${0.28+0.08*pulse})`; ctx.fill(); ctx.strokeStyle='#9cc6ff'; ctx.lineWidth=2; ctx.stroke(); }
+  }
+  for(const t of spawnSet){ const {x,y}=center(t.c,t.r); hexPath(x,y,S*0.94); ctx.fillStyle=`rgba(90,220,90,${0.28+0.1*pulse})`; ctx.fill(); ctx.strokeStyle='#a6f59a'; ctx.lineWidth=2; ctx.stroke(); }
+  if(hover&&!busy){ const {x,y}=center(hover.c,hover.r); hexPath(x,y,S*0.97); ctx.strokeStyle='#ffffffaa'; ctx.lineWidth=2; ctx.stroke(); }
+  const order=[...units].sort((a,b)=>upos(a).y-upos(b).y);
+  for(const u of order) if(unitVisible(u)) drawUnit(u);
+  // mine coin markers drawn above units
+  for(const m of MINES){ if(!explored.has(key(m.c,m.r))) continue; const o=seenMine.get(key(m.c,m.r)), {x,y}=center(m.c,m.r), cy=y-S*0.72;
+    ctx.beginPath(); ctx.arc(x,cy,S*0.2,0,7); ctx.fillStyle=o==null?'#8d8a83':FACTIONS[o].color; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='#1b120a'; ctx.stroke();
+    ctx.fillStyle='#fff6c8'; ctx.font=`bold ${Math.round(S*0.26)}px Georgia`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('$',x,cy+1); ctx.textBaseline='alphabetic'; }
+  for(const sh of boardShips){ const {x,y}=center(sh.c,sh.r); hexPath(x,y,S*0.97); ctx.fillStyle=`rgba(90,220,90,${0.18+0.15*pulse})`; ctx.fill(); ctx.strokeStyle='#8cf07a'; ctx.lineWidth=3.5; ctx.stroke(); }
+  if(sel){ const {x,y}=center(sel.c,sel.r); hexPath(x,y,S*0.97); ctx.strokeStyle='#ffd45a'; ctx.lineWidth=3.5; ctx.stroke(); }
+  for(const t of targets){ const {x,y}=center(t.c,t.r); hexPath(x,y,S*0.95); ctx.fillStyle=`rgba(230,60,50,${0.18+0.18*pulse})`; ctx.fill(); ctx.strokeStyle='#ff6a5a'; ctx.lineWidth=3; ctx.stroke(); }
+  if(proj){
+    const {x,y,kind}=proj; ctx.save();
+    if(kind==='arrow'){ ctx.translate(x,y); ctx.rotate(proj.ang); ctx.strokeStyle='#e9dcc0'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-9,0); ctx.lineTo(9,0); ctx.stroke(); ctx.fillStyle='#ccc'; ctx.beginPath(); ctx.moveTo(11,0); ctx.lineTo(5,-3); ctx.lineTo(5,3); ctx.fill(); }
+    else if(kind==='stone'){ ctx.fillStyle='#777'; ctx.beginPath(); ctx.arc(x,y,S*0.15,0,7); ctx.fill(); ctx.fillStyle='#bbb'; ctx.beginPath(); ctx.arc(x-2,y-2,S*0.06,0,7); ctx.fill(); }
+    else { const col=kind==='magic'?['#bff4ff','#4fb7ff']:['#fff1a8','#ff6a1a']; const gr=ctx.createRadialGradient(x,y,1,x,y,S*0.4); gr.addColorStop(0,col[0]); gr.addColorStop(1,col[1]+'00'); ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(x,y,S*0.4,0,7); ctx.fill(); }
+    ctx.restore();
+  }
+  effects=effects.filter(e=>now-e.t0<e.life);
+  for(const e of effects){
+    const t=(now-e.t0)/e.life;
+    if(e.ring){ ctx.strokeStyle=e.color; ctx.globalAlpha=1-t; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(e.x,e.y,S*(0.2+0.8*t),0,7); ctx.stroke(); ctx.globalAlpha=1; }
+    else { ctx.globalAlpha=1-t*t; ctx.font=`bold ${Math.round(S*0.6)}px Cinzel,Georgia,serif`; ctx.textAlign='center'; ctx.lineWidth=4; ctx.strokeStyle='#000'; ctx.strokeText(e.text,e.x,e.y-t*S*0.9); ctx.fillStyle=e.color; ctx.fillText(e.text,e.x,e.y-t*S*0.9); ctx.globalAlpha=1; }
+  }
+  requestAnimationFrame(draw);
+}
+
+// ---------------------------------------------------------------- picking
+function cellAt(x,y){
+  let best=null,bd=Infinity;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const p=center(c,r), d=Math.hypot(p.x-x,(p.y-y)/TILT); if(d<bd){bd=d;best={c,r};} }
+  return bd<=S?best:null;
+}
+function pick(x,y){
+  const cell=cellAt(x,y);
+  const isDest=cell&&!unitAt(cell.c,cell.r)&&((moveInfo&&moveInfo.has(key(cell.c,cell.r)))||spawnSet.some(t=>t.c===cell.c&&t.r===cell.r));
+  updateVision();
+  let u=cell&&unitAt(cell.c,cell.r); if(u&&!unitVisible(u)) u=null;
+  if(!u&&!isDest){
+    const order=[...units].sort((a,b)=>upos(b).y-upos(a).y);
+    for(const v of order){
+      if(!unitVisible(v)) continue;
+      const m=SPR[v.key], k=(BASE_W*S)/m.bw, p=upos(v), top=p.y-(m.bottom-BASE_CY*m.bw/300)*k;
+      if(Math.abs(x-p.x)<m.bw*k*0.28 && y>top && y<p.y+S*0.4) { u=v; break; }
+    }
+  }
+  return {cell: u?{c:u.c,r:u.r}:cell, unit:u};
+}
+function evPos(e){ const b=canvasEl.getBoundingClientRect(); return {x:e.clientX-b.left,y:e.clientY-b.top}; }
+
+// ---------------------------------------------------------------- boot
+window.addEventListener('DOMContentLoaded',async()=>{
+  canvasEl=document.getElementById('board'); logEl=document.getElementById('log');
+  await Promise.all([imgReady,tilesReady]); newGame(); showIntro(); draw();
+  new ResizeObserver(()=>{ if(document.getElementById('stage').clientWidth>0) resize(); }).observe(document.getElementById('stage'));
+  canvasEl.addEventListener('pointermove',e=>{ const {x,y}=evPos(e); const p=pick(x,y); const prev=hover; hover=p.cell; if(!prev||!hover||prev.c!==hover.c||prev.r!==hover.r) refreshUI(); });
+  canvasEl.addEventListener('pointerleave',()=>{ hover=null; refreshUI(); });
+  { const sc=document.getElementById('scroller'); let d0=null; window.__dragged=false;
+    canvasEl.addEventListener('pointerdown',e=>{ if(e.button!==0) return; d0={x:e.clientX,y:e.clientY,sl:sc.scrollLeft,st:sc.scrollTop,moved:false}; });
+    window.addEventListener('pointermove',e=>{ if(!d0) return; const dx=e.clientX-d0.x, dy=e.clientY-d0.y;
+      if(!d0.moved&&Math.hypot(dx,dy)>7&&(sc.scrollWidth>sc.clientWidth||sc.scrollHeight>sc.clientHeight)) d0.moved=true;
+      if(d0.moved){ sc.scrollLeft=d0.sl-dx; sc.scrollTop=d0.st-dy; } });
+    window.addEventListener('pointerup',()=>{ if(d0&&d0.moved){ window.__dragged=true; setTimeout(()=>window.__dragged=false,0); } d0=null; });
+  }
+  canvasEl.addEventListener('click',e=>{ if(window.__dragged) return; const {x,y}=evPos(e); const p=pick(x,y); if(p.cell) onTile(p.cell.c,p.cell.r,p.unit); else if(!busy){ if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); } });
+  canvasEl.addEventListener('contextmenu',e=>{ e.preventDefault(); if(busy) return; if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); });
+  window.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&!busy){ if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); }
+    if((e.key===' '||e.key==='w')&&sel&&!busy){ e.preventDefault(); finishUnit(sel); }
+    if((e.key==='u'||e.key==='U'||((e.ctrlKey||e.metaKey)&&e.key==='z'))&&!busy){ e.preventDefault(); undoLast(); }
+    if(e.key==='Enter'&&!busy) endTurn();
+  });
+  document.getElementById('undo').onclick=undoLast;
+  document.getElementById('wait').onclick=()=>{ if(sel&&!busy) finishUnit(sel); };
+  document.getElementById('end').onclick=endTurn;
+  document.getElementById('mute').onclick=e=>{ muted=!muted; e.target.style.opacity=muted?.45:1; e.target.textContent=muted?'✕':'♪'; if(muted){ music.pause(); ambient.pause(); } else { if(musicWanted) playMusic(false); if(ambientWanted){ ambient.volume=AMB_VOL; ambient.play().catch(()=>{}); } } };
+});
+</script>
+</body>
+</html>
