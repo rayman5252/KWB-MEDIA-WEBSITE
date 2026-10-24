@@ -91,6 +91,10 @@
   .scene details{margin-top:22px;text-align:left;background:#000a;border-radius:8px;padding:8px 14px;font-size:14px;line-height:1.5}
   .scene summary{cursor:pointer;text-align:right;font-family:Cinzel,Georgia,serif;color:var(--gold)}
   .scene ul{margin:8px 0 4px;padding-left:20px}
+  #defeat{justify-content:center;padding:0;background:#000;cursor:pointer}
+  #defeat .shade{background:radial-gradient(ellipse at center,#0000 30%,#000a 100%)}
+  #deftext{position:relative;font-family:Cinzel,Georgia,serif;font-weight:700;font-size:clamp(56px,15vw,190px);letter-spacing:.14em;margin-right:-.14em;color:#d3281f;text-shadow:0 0 28px #000,0 6px 26px #000,0 0 60px #7a0d08;animation:defIn 1.8s ease-out both;pointer-events:none}
+  @keyframes defIn{0%{opacity:0;transform:scale(1.18);filter:blur(10px)}60%{opacity:1}100%{opacity:1;transform:scale(1);filter:blur(0)}}
   @media (max-width:820px){
     #app{flex-direction:column}
     #stage{flex:none;height:60vh}
@@ -117,6 +121,7 @@
 <div id="overlay" class="hidden"><div class="panel" id="panel"></div></div>
 <div id="victory" class="scene hidden"><video id="vicvid" src="assets/title.mp4" poster="assets/title.jpg" preload="auto" muted loop playsinline></video><div class="shade"></div>
   <div class="box"><h2>Realm Conquered!</h2><div class="tag">You have conquered the realm — it's Miller time!</div><button id="again2">Play Again</button></div></div>
+<div id="defeat" class="scene hidden"><video id="defvid" src="assets/defeat.mp4" preload="auto" playsinline></video><div class="shade"></div><div id="deftext">DEFEAT</div></div>
 <div id="title" class="scene"><video id="titlevid" muted loop playsinline autoplay></video><img class="bgm" id="titleimg" alt="" style="display:none"><div class="shade"></div>
   <div class="box"><h2>Ray's Realm</h2><div class="tag">Four armies. One crown. Hold the gold, rule the realm.</div>
   <button id="go">Begin Battle</button>
@@ -1054,10 +1059,32 @@ function showEnd(win,why){
     document.getElementById('again2').onclick=()=>{ v.classList.add('hidden'); vid.pause(); stopMusic(); newGame(); playAmbient(); };
     stopAmbient(); playMusic(true); return;
   }
-  const p=document.getElementById('panel');
-  p.innerHTML=`<h2>Defeat</h2><p>${why||'The Order has fallen…'}</p><button id="again">Try Again</button>`;
-  document.getElementById('overlay').classList.remove('hidden');
-  document.getElementById('again').onclick=()=>{ document.getElementById('overlay').classList.add('hidden'); newGame(); };
+  startDefeat();
+}
+// ---- defeat: the animation plays under a big DEFEAT, then the game returns to the home screen
+let defeatTimer=null;
+function startDefeat(){
+  stopAmbient();
+  const d=document.getElementById('defeat'), v=document.getElementById('defvid'), txt=document.getElementById('deftext');
+  txt.style.animation='none'; void txt.offsetWidth; txt.style.animation='';
+  d.classList.remove('hidden');
+  let done=false;
+  const finish=()=>{
+    if(done) return; done=true; clearTimeout(defeatTimer); v.onended=null; v.onerror=null; d.onclick=null;
+    try{ v.pause(); }catch(e){}
+    d.classList.add('hidden'); goHome();
+  };
+  v.onended=finish; v.onerror=()=>{ clearTimeout(defeatTimer); defeatTimer=setTimeout(finish,4500); };
+  d.onclick=finish;                                   // click anywhere to skip
+  defeatTimer=setTimeout(finish,40000);               // failsafe: never get stuck on this screen
+  try{ v.currentTime=0; }catch(e){}
+  v.muted=muted; v.volume=0.9;
+  v.play().catch(()=>{ clearTimeout(defeatTimer); defeatTimer=setTimeout(finish,5000); });
+}
+function goHome(){
+  newGame();                                          // fresh random map waiting behind the title
+  document.getElementById('title').classList.remove('hidden');
+  showIntro();                                        // restarts the title video and music
 }
 function showIntro(){
   const t=document.getElementById('title'), v=document.getElementById('titlevid'), im=document.getElementById('titleimg');
