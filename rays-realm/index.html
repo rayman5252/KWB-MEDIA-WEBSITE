@@ -1079,7 +1079,8 @@ function startDefeat(){
   defeatTimer=setTimeout(finish,40000);               // failsafe: never get stuck on this screen
   try{ v.currentTime=0; }catch(e){}
   v.muted=muted; v.volume=0.9;
-  v.play().catch(()=>{ clearTimeout(defeatTimer); defeatTimer=setTimeout(finish,5000); });
+  // if the browser refuses sound, play the animation muted rather than not at all
+  v.play().catch(()=>{ v.muted=true; return v.play(); }).catch(()=>{ clearTimeout(defeatTimer); defeatTimer=setTimeout(finish,5000); });
 }
 function goHome(){
   newGame();                                          // fresh random map waiting behind the title
