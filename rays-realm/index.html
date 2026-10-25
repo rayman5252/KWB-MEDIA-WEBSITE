@@ -131,7 +131,8 @@
     <li><b>Gold mines:</b> end a move on one to seize it. Each held mine pays +2 gold at the start of your turn.</li>
     <li><b>Income:</b> every army earns 2 gold a turn no matter what, plus 2 for each keep and 2 for each mine it holds.</li>
     <li><b>Barbarians:</b> skull-banner towers hide in undiscovered land. Their riders and archers only defend their home, but they hit hard. Destroy a tower for a 10 gold bounty.</li>
-    <li><b>Recruit</b> from the sidebar: new units appear near your keep and rest until next turn. Ships spawn on the river.</li>
+    <li><b>Recruit</b> from the sidebar: new units appear near your keep and rest until next turn. Each keep you hold lets you recruit up to 4 units per turn, and each unused fort adds one more (the sidebar shows how many are left). Ships spawn on the river.</li>
+    <li><b>Mercenaries</b> cost 3 gold and match a Foot Soldier. They are hired on the spot: place one on any hex you can see, not just near a keep. A contract lasts 5 rounds (a badge shows the rounds left), or until he is killed. Three at a time at most, and they don't use up your keep recruits.</li>
     <li><b>Ships</b> are unarmed transports. Walk a land unit onto a ship (max 2) to board: that ends its turn and the ship's. Next turn the ship sails 3 hexes and passengers may land on any adjacent shore.</li>
     <li>Forests: +1 defence, cost 2 to enter. Crags and river block foot soldiers; cross at the fords.</li>
     <li><b>Forts:</b> pay 30 gold to build one on any grass hex near your units. It gives +2 defence to your unit standing there, and lets you recruit one unit per turn on an adjacent hex (even a ship, if water is adjacent). It collapses if that unit is slain, and is razed if an enemy steps on it. Keeps give +2 and recruit without limit; each tower recruits one unit per turn.</li>
@@ -149,16 +150,16 @@ const SPR = {
   ship:{w:302,h:365,cx:151,bottom:364,bw:300}, catapult:{w:335,h:291,cx:151,bottom:290,bw:300},
   cavalry:{w:313,h:468,cx:162,bottom:466,bw:300}, dragon:{w:334,h:360,cx:151,bottom:358,bw:300},
   archer:{w:325,h:456,cx:151,bottom:454,bw:300}, scout:{w:302,h:418,cx:151,bottom:416,bw:300},
-  barbarcher:{w:302,h:446,cx:151,bottom:444,bw:300}, barbtower:{w:302,h:394,cx:151,bottom:393,bw:300}, barbrider:{w:302,h:443,cx:151,bottom:441,bw:300}, archertower:{w:302,h:354,cx:151,bottom:353,bw:300}
+  barbarcher:{w:302,h:446,cx:151,bottom:444,bw:300}, barbtower:{w:302,h:394,cx:151,bottom:393,bw:300}, barbrider:{w:302,h:443,cx:151,bottom:441,bw:300}, merc:{w:337,h:440,cx:186,bottom:438,bw:300}, archertower:{w:302,h:354,cx:151,bottom:353,bw:300}
 };
 const IMG = {};
-const spriteKey = (team,type) => 'f'+team+'_'+type;
+const spriteKey = (team,type) => type==='merc' ? 'f4_merc' : 'f'+team+'_'+type;   // mercenaries share one neutral sprite; the hex ring shows who hired them
 const TILEIMG = {};
 const TILEFILE = {'~':'t_water','f':'t_forest','^':'t_crags','G':'tf_mine','K':'tf_keep','F':'tf_fort'};
 const tilesReady = Promise.all(Object.entries(TILEFILE).map(([ch,n]) => new Promise(res => {
   const i = new Image(); i.onload = () => { TILEIMG[ch]=i; res(); }; i.onerror = res; i.src = 'assets/'+n+'.png';
 })));
-const BARB_TYPES = ['barbarcher','barbrider','barbtower'];   // Barbarians (team 4) only have their own sprite set
+const BARB_TYPES = ['barbarcher','barbrider','barbtower','merc'];   // Barbarians (team 4) only have their own sprite set
 const imgReady = Promise.all(Object.keys(SPR).flatMap(n => (BARB_TYPES.includes(n)?[4]:[0,1,2,3]).map(t => new Promise(res => {
   const i = new Image(); i.onload = i.onerror = res; i.src = 'assets/'+spriteKey(t,n)+'.png'; IMG[spriteKey(t,n)] = i;
 }))));
@@ -186,12 +187,14 @@ const TERR = {
 const TYPES = {
   knight:  {name:'Foot Soldier', short:'Foot Soldier', cost:5, hp:12, atk:6, def:2, mv:2, rng:[1,1], cls:'ground',
             desc:'Steady front-line infantry. Tough, reliable, hits hard in melee.'},
+  merc:    {name:'Mercenary', short:'Mercenary', cost:3, hp:12, atk:6, def:2, mv:2, rng:[1,1], cls:'ground', merc:true,
+            desc:'A sellsword with Foot Soldier stats for only 3 gold. Hired on the spot: place him on any hex you can see. His contract lasts 5 rounds, or until he is killed. You can field 3 at a time.'},
   cavalry: {name:'Knight', short:'Knight', cost:7, hp:10, atk:6, def:1, mv:3, rng:[1,1], cls:'ground', charge:true,
             desc:'Mounted warrior. Charge: +2 damage if it moved 2 or more hexes before striking. Great for seizing mines.'},
   archer:  {name:'Archer', short:'Archer', cost:5, hp:7, atk:5, def:0, mv:2, rng:[2,3], cls:'ground',
             desc:'Shoots 2–3 hexes. Cannot fire at adjacent foes, so keep it behind the line.'},
   archertower:{name:'Archer Tower', short:'Archer Tower', cost:10, hp:16, atk:5, def:0, mv:0, rng:[1,4], cls:'ground', vision:4,
-            desc:'A garrisoned tower that cannot move. Fires like an Archer with 16 hit points and +1 range, and can hit adjacent targets too (range 1–4). Sees 4 hexes. Can be built next to any of your units, even far from home.'},
+            desc:'A garrisoned tower that cannot move. Fires like an Archer with 16 hit points and +1 range, and can hit adjacent targets too (range 1–4). Sees 4 hexes. Can be built on grass only, next to any of your units, even far from home.'},
   barbtower:{name:'Barbarian Tower', short:'Barbarian Tower', cost:0, hp:16, atk:5, def:0, mv:0, rng:[1,4], cls:'ground', vision:4, barb:true,
             desc:'A skull-banner watchtower where barbarians gather. Fires like an Archer Tower (range 1–4). Destroy it to stop the barbarians and claim a 10 gold bounty.'},
   barbarcher:{name:'Barbarian Archer', short:'Barbarian Archer', cost:0, hp:7, atk:5, def:0, mv:2, rng:[2,3], cls:'ground', barb:true,
@@ -210,7 +213,12 @@ const TYPES = {
             desc:'Flies over anything. Fire breath reaches 2 hexes. The terror of the field.'}
 };
 const SHOP_ORDER = Object.keys(TYPES).filter(k=>!TYPES[k].barb).sort((a,b)=>TYPES[a].cost-TYPES[b].cost);   // recruit menu, cheapest first
-const MIN_COST = 4, MAX_UNITS = 12;
+const MIN_COST = 3;   // no cap on army size: armies are limited only by gold and free hexes
+const MERC_ROUNDS = 5, MERC_MAX = 3;
+const KEEP_RECRUITS = 4;   // units an army may recruit per turn for each keep it holds (plus one per unused fort); mercenaries are hired outside this quota
+let recruitsUsed = [0,0,0,0];
+const recruitQuota = t => KEEP_RECRUITS*keepsOf(t);
+const recruitsLeft = t => Math.max(0,recruitQuota(t)-recruitsUsed[t]);
 
 
 
@@ -257,7 +265,7 @@ let effects=[], proj=null, logEl, S=40, ox=0, oy=0, dpr=1, bg=null, uid=0;
 function makeUnit(type,team,c,r){
   const T=TYPES[type];
   return {id:++uid,type:T,key:type,team,c,r,hp:T.hp,mp:T.mv,moved:false,done:false,steps:0,anim:null,cargo:[],aboard:null,off:{x:0,y:0},alpha:1,
-          name: (team===0||T.barb) ? T.name : FACTIONS[team].short+' '+T.short, sprite:spriteKey(team,type)};
+          name: (team===0||T.barb) ? T.name : FACTIONS[team].short+' '+T.short, sprite:spriteKey(team,type), rounds:T.merc?MERC_ROUNDS+1:null};
 }
 const unitAt = (c,r) => units.find(u => u.c===c && u.r===r);
 const alive = team => units.filter(u => u.team===team);
@@ -272,7 +280,7 @@ const income = t => FACTIONS[t].base + MINE_INCOME*minesOf(t) + KEEP_INCOME*keep
 // ---- undo: one level, the last move/board/unload/recruit/tower (attacks and end of turn clear it)
 function takeSnap(label){
   const all=[...units,...units.flatMap(u=>u.cargo)];
-  return { label, units:[...units], gold:[...gold], mineOwner:new Map(mineOwner), keepOwner:[...keepOwner], towers:new Map(towers),
+  return { label, recruitsUsed:[...recruitsUsed], units:[...units], gold:[...gold], mineOwner:new Map(mineOwner), keepOwner:[...keepOwner], towers:new Map(towers),
     towerUsed:new Set(towerUsed), explored:new Set(explored), seenMine:new Map(seenMine), seenKeep:[...seenKeep], seenTower:new Map(seenTower),
     recs:all.map(u=>({u,c:u.c,r:u.r,hp:u.hp,mp:u.mp,moved:u.moved,done:u.done,steps:u.steps,aboard:u.aboard,cargo:[...u.cargo]})) };
 }
@@ -280,7 +288,7 @@ function undoLast(){
   if(!undoSnap||busy||over||side!==0) return;
   const z=undoSnap; undoSnap=null;
   for(const q of z.recs){ Object.assign(q.u,{c:q.c,r:q.r,hp:q.hp,mp:q.mp,moved:q.moved,done:q.done,steps:q.steps,aboard:q.aboard,cargo:q.cargo,anim:null,alpha:1,off:{x:0,y:0}}); }
-  units=z.units; gold=z.gold; mineOwner=z.mineOwner; keepOwner=z.keepOwner; towers=z.towers; towerUsed=z.towerUsed;
+  units=z.units; gold=z.gold; recruitsUsed=z.recruitsUsed; mineOwner=z.mineOwner; keepOwner=z.keepOwner; towers=z.towers; towerUsed=z.towerUsed;
   explored=z.explored; seenMine=z.seenMine; seenKeep=z.seenKeep; seenTower=z.seenTower;
   clearSel(); recruitType=null; spawnSet=[];
   log(`Undid your last ${z.label}.`,'sys'); sfx('step'); refreshUI();
@@ -399,7 +407,7 @@ function newGame(seed){
   const info=generateMap(mapSeed); resize();
   units = START.map(([t,team,c,r]) => makeUnit(t,team,c,r));
   turn=1; side=0; sel=null; moveInfo=null; targets=[]; recruitType=null; spawnSet=[]; busy=false; over=false; effects=[]; proj=null;
-  gold=[2,2,2,2]; elim=[false,false,false,false]; mineOwner=new Map(); keepOwner=[0,1,2,3]; towers=new Map(); towerUsed=new Set();
+  gold=[2,2,2,2]; recruitsUsed=[0,0,0,0]; elim=[false,false,false,false]; mineOwner=new Map(); keepOwner=[0,1,2,3]; towers=new Map(); towerUsed=new Set();
   explored=new Set(); visible=new Set(); seenMine=new Map(); seenKeep=[null,null,null,null]; seenTower=new Map();
   MINES.forEach(m=>mineOwner.set(key(m.c,m.r),info.owners[key(m.c,m.r)]??null));
   resetAIFog(); updateVision(); barbSeen=new Set(); for(let i=0;i<3;i++) spawnBarbTower(); updateVision(); logEl.innerHTML='';
@@ -513,16 +521,25 @@ function counterInfo(a,d,dmgToD){
 }
 
 // economy
+const mercCount = team => [...units,...units.flatMap(u=>u.cargo)].filter(u=>u.team===team&&u.key==='merc').length;
 function spawnTiles(team,type){
+  if(type==='merc'){   // hired locally: any free, visible hex you could walk onto (not a keep or mine)
+    if(mercCount(team)>=MERC_MAX) return [];
+    const out=[]; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ if(unitAt(c,r)||tileCost('ground',c,r)==null) continue; const ch=tileCh(c,r); if(ch==='K'||ch==='G') continue; if(team===0&&!isVis(c,r)) continue; out.push({c,r,tower:null}); }
+    return out;
+  }
   const T=TYPES[type], maxD = T.cls==='water'?4:2, out=[];
   const owned=KEEPS.filter((k,i)=>keepOwner[i]===team);
   const myTowers=[...towers].filter(([k,tm])=>tm===team&&!towerUsed.has(k)).map(([k])=>({k,c:+k.split(',')[0],r:+k.split(',')[1]}));
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
     if(unitAt(c,r)||tileCost(T.cls,c,r)==null) continue;
+    if(type==='archertower'&&tileCh(c,r)!=='.') continue;   // towers are built on open grass only (no forest, crags, mines, keeps or water)
     let tw=null;
-    if(!owned.some(([kc,kr])=>hexDist({c,r},{c:kc,r:kr})<=maxD)){
+    const quotaOK=recruitsUsed[team]<recruitQuota(team);
+    const nearKeep=owned.some(([kc,kr])=>hexDist({c,r},{c:kc,r:kr})<=maxD);
+    if(!nearKeep||!quotaOK){
       // archer towers can also go up beside any of your units; everything else needs a keep or an unused fort
-      if(type==='archertower'&&units.some(u=>u.team===team&&hexDist(u,{c,r})<=1)) { /* free placement */ }
+      if(type==='archertower'&&quotaOK&&units.some(u=>u.team===team&&hexDist(u,{c,r})<=1)) { /* free placement */ }
       else { const t=myTowers.find(q=>hexDist({c,r},q)<=1); if(!t) continue; tw=t.k; }
     }
     out.push({c,r,tower:tw});
@@ -546,10 +563,10 @@ function buildTower(team,c,r){
     log(`${FACTIONS[team].short} builds a fort (-${TOWER_COST}g).`,'t'+team); sfx('recruit'); }
 }
 function recruit(team,type,c,r,tw){
-  const T=TYPES[type]; gold[team]-=T.cost; if(tw) towerUsed.add(tw);
+  const T=TYPES[type]; gold[team]-=T.cost; if(tw) towerUsed.add(tw); else if(!T.merc) recruitsUsed[team]++;
   const u=makeUnit(type,team,c,r); u.done=true; u.moved=true; u.mp=0; units.push(u);
   if(team===0||isVis(c,r)){ const p=center(c,r); effects.push({ring:true,x:p.x,y:p.y-S*0.3,t0:performance.now(),life:500,color:'#9be28a'});
-    log(`${FACTIONS[team].short} recruits ${u.name} at ${tw?'a fort':'the keep'} (-${T.cost}g).`,'t'+team); sfx('recruit'); }
+    log(T.merc?`${FACTIONS[team].short} hires a Mercenary (-${T.cost}g).`:`${FACTIONS[team].short} recruits ${u.name} at ${tw?'a fort':'the keep'} (-${T.cost}g).`,'t'+team); sfx('recruit'); }
 }
 function captureAt(u){
   if(u.team>=4) return;   // barbarians do not hold ground
@@ -589,7 +606,9 @@ function healTeam(t){
   }
 }
 function startTeamTurn(t){
-  healTeam(t);
+  for(const u of [...units]){ if(u.team===t&&u.key==='merc'&&--u.rounds<=0){ units=units.filter(x=>x!==u); units.forEach(h=>{ h.cargo=h.cargo.filter(x=>x!==u); }); if(sel===u) clearSel();
+    if(t===0){ const p=center(u.c,u.r); addText(p.x,p.y-S*1.2,'Contract ended',FACTIONS[0].color); log('A Mercenary\'s contract has ended. He walks away.','sys'); } } }
+  healTeam(t); recruitsUsed[t]=0;
   for(const [k,tm] of towers) if(tm===t) towerUsed.delete(k);
   units.filter(u=>u.team===t).forEach(u=>{u.done=false;u.moved=false;u.steps=0;u.mp=u.type.mv;u.cargo.forEach(c=>{c.done=false;c.moved=false;c.steps=0;c.mp=c.type.mv;});});
   const inc=income(t); gold[t]+=inc;
@@ -632,10 +651,10 @@ function ensureInView(pt){
 }
 
 async function moveUnit(u,path){
-  const show = u.team===0 || path.some(q=>isVis(q.c,q.r));
   for(let i=1;i<path.length;i++){
     if(u.team===0) revealAround(path[i].c,path[i].r,u.type.vision||VISION);
-    if(!show) continue;
+    // animate and make footstep noise only for steps you can actually see (either end of the step in view)
+    if(u.team!==0 && !isVis(path[i-1].c,path[i-1].r) && !isVis(path[i].c,path[i].r)) continue;
     const a=center(path[i-1].c,path[i-1].r), b=center(path[i].c,path[i].r);
     sfx('step'); if(i===1||i===path.length-1) ensureInView(b);
     await tween(110,t=>{ u.anim={x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t}; });
@@ -892,7 +911,7 @@ async function aiTryBoard(u,info,dm){
     const path=pathTo(info,spot.c,spot.r); if(path.length>1) await moveUnit(u,path);
     units=units.filter(x=>x!==u); u.aboard=sh; u.c=sh.c; u.r=sh.r; sh.cargo.push(u);
     u.done=true; u.moved=true; sh.done=true; sh.moved=true;
-    if(isVis(sh.c,sh.r)) log(`${u.name} boards the ${sh.name}.`,'t'+u.team); sfx('step'); await sleep(120);
+    if(isVis(sh.c,sh.r)){ log(`${u.name} boards the ${sh.name}.`,'t'+u.team); sfx('step'); await sleep(120); }
     return true;
   }
   return false;
@@ -943,8 +962,8 @@ async function aiAct(u){
 async function aiRecruit(t){
   updateAIVision(t);
   const foes=()=>units.filter(f=>f.team!==t&&aiCanSee(t,f.c,f.r));
-  while(!over && alive(t).length<MAX_UNITS){
-    const opts=SHOP_ORDER.filter(k=>gold[t]>=TYPES[k].cost && spawnTiles(t,k).length);
+  while(!over){
+    const opts=SHOP_ORDER.filter(k=>!TYPES[k].merc && gold[t]>=TYPES[k].cost && spawnTiles(t,k).length);
     if(!opts.length) break;
     let pick;
     if(opts.includes('dragon') && Math.random()<0.6) pick='dragon';
@@ -960,7 +979,7 @@ async function aiRecruit(t){
 }
 
 async function aiTeamTurn(t){
-  side=t; busy=true; clearSel(); startTeamTurn(t); updateAIVision(t); refreshUI(); banner(FACTIONS[t].name); sfx('turn'); await sleep(900);
+  side=t; busy=true; clearSel(); startTeamTurn(t); updateAIVision(t); refreshUI(); banner(FACTIONS[t].name); await sleep(900);   // no turn chime: you cannot see what they do
   const roster=[...alive(t)];
   if(turn>1) for(const u of roster){
     if(over) break;
@@ -1070,7 +1089,7 @@ function cardHTML(u,preview){
     <div class="sub" style="color:${FACTION_INK[u.team]}">${FACTIONS[u.team].name}</div>
     <div class="sub">${TERR[tileCh(u.c,u.r)].name}${towers.get(key(u.c,u.r))===u.team?' + Fort':''}${tdef?` (+${tdef} def)`:''}</div></div></div>
     <div class="stats"><div><b>${u.hp}/${T.hp}</b>HP</div><div><b>${T.atk}</b>ATK</div><div><b>${T.def}</b>DEF</div><div><b>${u.team===0?u.mp+'/'+T.mv:T.mv}</b>MOVE</div><div><b>${rng}</b>RANGE</div></div>
-    <p>${T.desc}</p>${u.cargo.length?`<p><b>Aboard:</b> ${u.cargo.map(c=>c.name).join(', ')}</p>`:''}${preview?`<div class="preview">${preview}</div>`:''}`;
+    <p>${T.desc}</p>${u.rounds!=null?`<p><b>Contract:</b> ${u.rounds} round${u.rounds===1?'':'s'} left</p>`:''}${u.cargo.length?`<p><b>Aboard:</b> ${u.cargo.map(c=>c.name).join(', ')}</p>`:''}${preview?`<div class="preview">${preview}</div>`:''}`;
 }
 function previewFor(t){
   if(!sel||!targets.includes(t)) return '';
@@ -1110,7 +1129,7 @@ function refreshUI(){
     : hover ? `<div class="empty"><b>${TERR[tileCh(hover.c,hover.r)].name}</b>${mineInfo(hover)}<br>${TERR[tileCh(hover.c,hover.r)].note||'Open ground.'}${seenTower.has(key(hover.c,hover.r))?`<br>🏯 ${FACTIONS[seenTower.get(key(hover.c,hover.r))].short} fort: +2 defence for its owner; recruits 1 unit per turn nearby${towerUsed.has(key(hover.c,hover.r))?' (used this turn)':''}.`:''}</div>`
     : '<div class="empty">Select one of your units, or hover anything for details.</div>');
   // shop
-  const shop=setHTML('shop',`<h3><span>Recruit at your keeps</span><span>🪙 ${gold[0]}</span></h3><div class="grid">${SHOP_ORDER.map(k=>{
+  const shop=setHTML('shop',`<h3><span>Recruit at your keeps · ${recruitsLeft(0)} left this turn</span><span>🪙 ${gold[0]}</span></h3><div class="grid">${SHOP_ORDER.map(k=>{
     const T=TYPES[k], ok=gold[0]>=T.cost&&side===0&&!busy&&!over&&spawnTiles(0,k).length>0;
     return `<div class="sw" data-k="${k}"><button class="sec ${recruitType===k?'on':''}" data-k="${k}" ${ok||recruitType===k?'':'disabled'}><span>${T.short}</span><span>${T.cost}🪙</span></button></div>`;}).join('')}<div class="sw" data-k="tower" style="grid-column:1/3"><button class="sec ${recruitType==='tower'?'on':''}" data-k="tower" ${(gold[0]>=TOWER_COST&&side===0&&!busy&&!over&&towerTiles(0).length)||recruitType==='tower'?'':'disabled'}><span>Fort (+2 def, 1 recruit/turn)</span><span>${TOWER_COST}🪙</span></button></div></div>`);
   shop.querySelectorAll('button').forEach(b=>b.onclick=()=>chooseRecruit(b.dataset.k));
@@ -1122,7 +1141,8 @@ function refreshUI(){
   if(over) h='The battle is over.';
   else if(side!==0) h=`${FACTIONS[side].name} is moving…`;
   else if(recruitType==='tower') h='Click a green grass hex to build a fort: +2 defence for your unit there, and one recruit per turn on adjacent hexes. It collapses if that unit dies; enemies can raze it.';
-  else if(recruitType==='archertower') h='Click a green hex next to any of your units (or near a keep or fort) to build an Archer Tower. It rests until next turn.';
+  else if(recruitType==='archertower') h='Click a green grass hex next to any of your units (or near a keep or fort) to build an Archer Tower. Grass only. It rests until next turn.';
+  else if(recruitType==='merc') h='Click any green hex you can see to hire a Mercenary there. He rests until next turn and serves for 5 rounds (3 at most).';
   else if(recruitType) h=`Click a green hex near a keep (or next to an unused fort) to place a ${TYPES[recruitType].short}. Recruits rest until next turn.`;
   else if(sel&&sel.aboard) h='Click a highlighted shore hex to disembark. Landing uses its move; it may still attack.';
   else if(sel&&sel.type.noattack) h=`Blue hex = sail (${sel.mp} movement left). Passengers unload onto adjacent land.`;
@@ -1273,6 +1293,7 @@ function drawUnit(u){
   u.cargo.forEach((cu,i)=>{ const cm=SPR[cu.key], ci=IMG[cu.sprite], k2=(0.8*S)/cm.bw, cx=p.x+u.off.x+(i?0.42:-0.42)*S, cb=p.y+u.off.y+S*0.15;
     if(ci.complete&&ci.naturalWidth) ctx.drawImage(ci,cx-cm.cx*k2,cb-cm.bottom*k2,cm.w*k2,cm.h*k2); });
   ctx.restore();
+  if(u.key==='merc'&&u.alpha>0.5){ const bx2=p.x+u.off.x+S*0.55, by2=p.y+u.off.y-S*1.55; ctx.beginPath(); ctx.arc(bx2,by2,S*0.24,0,Math.PI*2); ctx.fillStyle='#1b1710'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle=FACTIONS[u.team].color; ctx.stroke(); ctx.fillStyle='#f1e3b0'; ctx.font='700 '+Math.round(S*0.3)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(u.rounds,bx2,by2+1); ctx.textBaseline='alphabetic'; }
   if(u.alpha>0.5){
     const bw=S*1.15, bx=p.x-bw/2, by=p.y+u.off.y+S*0.52, f=u.hp/u.type.hp;
     ctx.fillStyle='#000c'; ctx.fillRect(bx-2,by-2,bw+4,8);
