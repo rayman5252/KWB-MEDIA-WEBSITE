@@ -72,6 +72,26 @@
   #log li{padding:1px 0}#log .t0{color:#8fc0ff}#log .t1{color:#cba8f5}#log .t2{color:#f2c27a}#log .sys{color:var(--gold)}
   #banner{position:absolute;left:0;right:0;top:36%;text-align:center;font-family:Cinzel,Georgia,serif;font-size:clamp(26px,4.5vw,54px);color:var(--gold);text-shadow:0 3px 12px #000,0 0 30px #000;pointer-events:none;opacity:0;letter-spacing:.1em}
   #banner.show{animation:ban 1.2s ease-out}
+  #omen{background:#00000035;border-radius:6px;padding:7px;font-size:12px;line-height:1.35}
+  #omen h3{margin:0 0 5px;font-family:Cinzel,Georgia,serif;font-size:13px;color:var(--gold)}
+  #omen .row{display:flex;gap:8px;align-items:center;padding:4px 0}
+  #omen .row+.row{border-top:1px solid #ffffff14}
+  #omen img{width:38px;height:38px;flex:none;border-radius:50%;box-shadow:0 0 10px var(--oc,#0000)}
+  #omen .lab{font-size:10px;letter-spacing:.12em;color:#b9ad90;text-transform:uppercase}
+  #omen b{font-family:Cinzel,Georgia,serif;font-size:13px;color:var(--oc,#f1e3b0)}
+  #omen .row.now img{animation:omenPulse 2.2s ease-in-out infinite}
+  #omen .row.next img{opacity:.75;filter:saturate(.8)}
+  #omen .clear{color:#9aa3a8;font-style:italic}
+  #omen .warn{color:#ffd27a;font-weight:700;margin:2px 0}
+  @keyframes omenPulse{50%{box-shadow:0 0 22px var(--oc,#fff)}}
+  #omenSplash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;z-index:30;opacity:0;text-align:center;padding:20px}
+  #omenSplash.show{animation:splash 4.2s ease-out}
+  #omenSplash img{width:min(34vw,200px);filter:drop-shadow(0 0 28px var(--oc,#fff));animation:splashIcon 4.2s ease-out}
+  #omenSplash h2{font-family:Cinzel,Georgia,serif;font-size:clamp(26px,5vw,54px);margin:12px 0 4px;color:var(--oc,#f1e3b0);text-shadow:0 3px 14px #000,0 0 30px #000;letter-spacing:.08em}
+  #omenSplash p{max-width:520px;margin:4px 0;font-size:clamp(13px,1.8vw,18px);color:#f3ead0;text-shadow:0 2px 8px #000,0 0 16px #000}
+  #omenSplash p.fl{font-style:italic;opacity:.9}
+  @keyframes splash{0%{opacity:0}10%{opacity:1}78%{opacity:1}100%{opacity:0}}
+  @keyframes splashIcon{0%{transform:scale(.4) rotate(-12deg)}14%{transform:scale(1.12) rotate(2deg)}24%{transform:scale(1) rotate(0)}100%{transform:scale(1.06)}}
   @keyframes ban{0%{opacity:0;transform:scale(.8)}15%{opacity:1;transform:scale(1)}75%{opacity:1}100%{opacity:0;transform:scale(1.05)}}
   #overlay{position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:5;padding:16px}
   #overlay.hidden{display:none}
@@ -109,6 +129,7 @@
     <h1>Ray's Realm</h1>
     <div id="turn"></div>
     <div id="factions"></div>
+    <div id="omen"></div>
     <div id="card"></div>
     <div id="shop"></div>
     <div id="cargo"></div>
@@ -117,6 +138,7 @@
     <ul id="log"></ul>
   </aside>
 </div>
+<div id="omenSplash"></div>
 <div id="tip"></div>
 <div id="overlay" class="hidden"><div class="panel" id="panel"></div></div>
 <div id="victory" class="scene hidden"><video id="vicvid" src="assets/title.mp4" poster="assets/title.jpg" preload="auto" muted loop playsinline></video><div class="shade"></div>
@@ -127,6 +149,7 @@
   <button id="go">Begin Battle</button>
   <div id="musicnote" style="display:none;margin-top:10px;font-size:13px;opacity:.85;text-shadow:0 2px 6px #000">♪ Click anywhere to start the music</div>
   <details><summary>How to play</summary><ul>
+    <li><b>Omens:</b> from round 4 on, the sky or the land sometimes turns on everyone. Each omen is announced one round ahead (see the Omens panel). Fog Bank: everyone sees 1 hex less. Thunderstorm: ships cannot sail and ranged units lose 1 range. Hard Frost: rivers freeze for 2–3 rounds so units can walk across (ships are stuck), then the ice cracks: anyone still on it takes 4 damage and is thrown onto the nearest bank. Bountiful Harvest: mines pay double. Plague: the largest army loses 2 health on each unit that can move. Barbarian Surge: each barbarian tower musters 2 extra raiders, who march a round later.</li>
     <li>Each unit has <b>movement points</b> per turn and can spend them in several steps until you press End Turn. Attacking ends that unit's turn. Catapults can't fire after moving.</li>
     <li><b>Gold mines:</b> end a move on one to seize it. Each held mine pays +2 gold at the start of your turn.</li>
     <li><b>Income:</b> every army earns 2 gold a turn no matter what, plus 2 for each keep and 2 for each mine it holds.</li>
@@ -242,7 +265,7 @@ function hexDist(a,b){
 }
 function visTiles(src,out){
   for(const q of src){
-    const rad=(q.type&&q.type.vision)||VISION;
+    const rad=Math.max(1,((q.type&&q.type.vision)||VISION)-(omenIs('fog')?1:0));
     for(let r=Math.max(0,q.r-rad-1);r<=Math.min(ROWS-1,q.r+rad+1);r++)
       for(let c=Math.max(0,q.c-rad);c<=Math.min(COLS-1,q.c+rad);c++) if(hexDist(q,{c,r})<=rad) out.add(key(c,r));
   }
@@ -250,8 +273,9 @@ function visTiles(src,out){
 function tileCost(cls,c,r){
   const t=tileCh(c,r);
   if(cls==='fly') return 1;
-  if(cls==='water') return t==='~' ? 1 : null;
-  if(t==='~'||t==='^') return null;
+  if(cls==='water') return (t==='~'&&!omenIs('frost')&&!omenIs('storm')) ? 1 : null;   // frozen or storm-bound: ships cannot sail
+  if(t==='~') return omenIs('frost') ? 1 : null;   // the frozen river can be walked
+  if(t==='^') return null;
   return t==='f' ? 2 : 1;
 }
 
@@ -275,7 +299,7 @@ const terrainDef = u => (u.type.cls==='fly' ? 0 : TERR[tileCh(u.c,u.r)].def) + (
 const minesOf = t => MINES.filter(m=>mineOwner.get(key(m.c,m.r))===t).length;
 const KEEP_INCOME = 2;
 const keepsOf = t => keepOwner.filter(o=>o===t).length;
-const income = t => FACTIONS[t].base + MINE_INCOME*minesOf(t) + KEEP_INCOME*keepsOf(t);
+const income = t => FACTIONS[t].base + MINE_INCOME*minesOf(t)*(omenIs('harvest')?2:1) + KEEP_INCOME*keepsOf(t);
 
 // ---- undo: one level, the last move/board/unload/recruit/tower (attacks and end of turn clear it)
 function takeSnap(label){
@@ -408,6 +432,7 @@ function newGame(seed){
   units = START.map(([t,team,c,r]) => makeUnit(t,team,c,r));
   turn=1; side=0; sel=null; moveInfo=null; targets=[]; recruitType=null; spawnSet=[]; busy=false; over=false; effects=[]; proj=null;
   gold=[2,2,2,2]; recruitsUsed=[0,0,0,0]; elim=[false,false,false,false]; mineOwner=new Map(); keepOwner=[0,1,2,3]; towers=new Map(); towerUsed=new Set();
+  omenNow=null; omenLast=null; stopAmbience(); omenNext=rollOmen(2); refreshOmenPanel(); loadOmenSfx();
   explored=new Set(); visible=new Set(); seenMine=new Map(); seenKeep=[null,null,null,null]; seenTower=new Map();
   MINES.forEach(m=>mineOwner.set(key(m.c,m.r),info.owners[key(m.c,m.r)]??null));
   resetAIFog(); updateVision(); barbSeen=new Set(); for(let i=0;i<3;i++) spawnBarbTower(); updateVision(); logEl.innerHTML='';
@@ -505,7 +530,7 @@ const canStop = (u,e) => !unitAt(e.c,e.r) || (e.c===u.c && e.r===u.r);
 function targetsFrom(u,c,r){
   if(u.type.noattack) return [];
   if(u.team===0) updateVision();
-  return units.filter(t => t.team!==u.team && (u.team===0?visible.has(key(t.c,t.r)):aiCanSee(u.team,t.c,t.r)) && (d=>d>=u.type.rng[0]&&d<=u.type.rng[1])(hexDist({c,r},t)));
+  return units.filter(t => t.team!==u.team && (u.team===0?visible.has(key(t.c,t.r)):aiCanSee(u.team,t.c,t.r)) && (d=>d>=u.type.rng[0]&&d<=rmax(u))(hexDist({c,r},t)));
 }
 function calcDmg(a,d,charge){
   const atk=a.type.atk+(charge&&a.type.charge?2:0);
@@ -516,7 +541,7 @@ const chargeOf = (a,steps) => !!a.type.charge && steps>=2;
 function counterInfo(a,d,dmgToD){
   if(d.hp-dmgToD<=0||d.type.noattack) return 0;
   const dist=hexDist(a,d);
-  if(dist<d.type.rng[0]||dist>d.type.rng[1]) return 0;
+  if(dist<d.type.rng[0]||dist>rmax(d)) return 0;
   return calcDmg(d,a,false);
 }
 
@@ -614,6 +639,151 @@ function startTeamTurn(t){
   const inc=income(t); gold[t]+=inc;
   if(t===0) log(`${FACTIONS[t].name}: +${inc} gold (${gold[t]} total).`,'t'+t);
 }
+
+// ---------------------------------------------------------------- omens: telegraphed weather and events
+const OMENS = {
+  fog:    {name:'Fog Bank',          icon:'omen_fog',     color:'#c4d0dc', rule:'Everyone sees 1 hex less.', flavor:'A grey wall rolls in off the river. Scouts walk blind.'},
+  storm:  {name:'Thunderstorm',      icon:'omen_storm',   color:'#86adf0', rule:'Ships cannot sail. Ranged units lose 1 range.', flavor:'The sky splits open. Arrows fly short and the ships stay in port.'},
+  frost:  {name:'Hard Frost',        icon:'omen_frost',   color:'#a6e0ff', rule:'The rivers freeze for 2–3 rounds: walk across the water! Ships are stuck. When it thaws, the ice cracks: anyone still on it takes 4 damage and is thrown onto the nearest bank.', flavor:'Snow on the wind. The river has gone silent and solid.'},
+  harvest:{name:'Bountiful Harvest', icon:'omen_harvest', color:'#f2c14e', rule:'Gold mines pay double.', flavor:'The seams run rich. Every pickaxe strikes gold.'},
+  plague: {name:'Plague',            icon:'omen_plague',  color:'#8fd36a', rule:'The largest army (counting units that can move) loses 2 health on each of them.', flavor:'A sickness crawls through the biggest camp.'},
+  surge:  {name:'Barbarian Surge',   icon:'omen_surge',   color:'#e8604a', rule:'Every barbarian tower musters 2 extra raiders; they march the round after.', flavor:'War horns in the hills. The horde is on the move.'}
+};
+let omenNow=null, omenNext=null, omenLast=null;
+const omenIs = t => !!omenNow && omenNow.type===t;
+const rmax = u => u.type.rng[1] - (omenIs('storm') && u.type.rng[1]>1 ? 1 : 0);
+const OMEN_START = 4;          // no omens until round 4: players get a few rounds to settle in
+function rollOmen(forTurn){
+  if(forTurn<OMEN_START) return null;
+  const chance=Math.min(0.55,0.35+0.03*(forTurn-OMEN_START));   // starts at 35% and climbs to 55%
+  if(Math.random()>chance) return null;
+  const early=forTurn<8;   // the swingy ones (plague, surge) are rare early on
+  const W={fog:3,harvest:3,storm:2,frost:2,plague:early?1:2,surge:early?1:2};
+  const keys=Object.keys(OMENS).filter(k=>k!==omenLast&&!(omenNow&&omenNow.type===k));
+  let x=Math.random()*keys.reduce((n,k)=>n+W[k],0), type=keys[0]; for(const k of keys){ x-=W[k]; if(x<=0){ type=k; break; } }
+  return {type, turn:forTurn, len:type==='frost'?(Math.random()<0.5?2:3):1};
+}
+const omenLeft = () => omenNow ? omenNow.start+omenNow.len-turn : 0;   // rounds remaining including this one
+function thawIce(){
+  let n=0; playOmenSample('ice_crack',0.7);
+  for(const u of [...units]){ if(u.type.cls==='fly'||tileCh(u.c,u.r)!=='~'||u.type.cls==='water') continue; u.hp=Math.max(1,u.hp-4); n++;
+    const was=unitVisible(u), p0=center(u.c,u.r);
+    // the survivors scramble onto the nearest free bank, so nobody is left standing in open water
+    let best=null; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ if(unitAt(c,r)||tileCost('ground',c,r)==null||tileCh(c,r)==='~') continue; const ch=tileCh(c,r); if(ch==='K'||ch==='G') continue; const d=hexDist(u,{c,r}); if(!best||d<best.d) best={c,r,d}; }
+    if(best){ u.c=best.c; u.r=best.r; u.done=true; u.mp=0; }
+    if(was||unitVisible(u)){ addText(p0.x,p0.y-S*1.2,'-4 ice',OMENS.frost.color); effects.push({ring:true,x:p0.x,y:p0.y-S*0.3,t0:performance.now(),life:600,color:'#bfe9ff'}); } }
+  log(n?`The ice cracks! ${n} unit${n>1?'s':''} caught on the river take 4 damage and scramble ashore.`:'The ice thaws and the river flows again.','sys'); if(n) sfx('hit');
+}
+function startOmen(o){
+  const def=OMENS[o.type]; omenLast=o.type;
+  log(`Omen: ${def.name}. ${def.rule}`,'sys');
+  if(o.type==='plague'){
+    const mobile=t=>alive(t).filter(u=>u.type.mv>0), live=[0,1,2,3].filter(t=>!elim[t]&&mobile(t).length);
+    if(live.length){ live.sort((a,b)=>mobile(b).length-mobile(a).length||gold[b]-gold[a]); const t=live[0];
+      for(const u of mobile(t)){ u.hp=Math.max(1,u.hp-2); u.cargo.forEach(c=>{ c.hp=Math.max(1,c.hp-2); }); if(unitVisible(u)){ const p=center(u.c,u.r); addText(p.x,p.y-S*1.2,'-2',def.color); } }
+      log(`The plague strikes the ${FACTIONS[t].name}: every unit that can move loses 2 health.`,'sys'); }
+  }
+  if(o.type==='surge'){
+    let n=0; for(const tw of units.filter(u=>u.key==='barbtower')) for(let i=0;i<2;i++){ const nu=spawnBarbUnit(tw,true); if(nu){ nu.hold=true; n++; } }
+    log(n?`${n} extra barbarian raiders gather at their towers. They muster this round and march next round.`:'The horn sounds, but no barbarian towers answer.','sys');
+  }
+  showOmenSplash(o); omenSting(o.type); startAmbience(o.type);
+}
+function advanceOmen(){            // a new round begins: the announced omen arrives (or a long one carries on), then the next is rolled
+  const prev=omenNow;
+  if(prev && turn < prev.start+prev.len){ continueOmen(); }
+  else{
+    omenNow=(omenNext&&omenNext.turn===turn&&!omenNext.cont)?{type:omenNext.type,start:turn,len:omenNext.len||1}:null;
+    if(prev&&prev.type==='frost'&&!omenIs('frost')) thawIce();
+    if(!omenNow) stopAmbience();
+  }
+  const first=omenNow&&omenNow.start===turn;
+  omenNext=(omenNow&&omenLeft()>1)?{type:omenNow.type,turn:turn+1,cont:true,len:omenNow.len}:rollOmen(turn+1);
+  if(first) startOmen(omenNow);
+  if(omenNext) log(omenNext.cont?`Forecast: ${OMENS[omenNext.type].name} holds for another round.`:`Forecast: ${OMENS[omenNext.type].name} next round.`,'sys');
+  else if(omenNow&&omenLeft()===1&&omenNow.type==='frost') log('Forecast: the ice thaws at the start of next round.','sys');
+  refreshOmenPanel();
+}
+function continueOmen(){
+  const left=omenLeft(), d=OMENS[omenNow.type];
+  if(omenNow.type==='frost'&&left===1){ log('The ice is going soft. It thaws at the start of next round: get off the river!','sys'); banner('THE ICE THAWS NEXT ROUND'); }
+  else log(`${d.name} continues (${left} round${left>1?'s':''} left, counting this one).`,'sys');
+}
+function refreshOmenPanel(){
+  const el=document.getElementById('omen'); if(!el) return;
+  const row=(cls,lab,o)=>{ const d=OMENS[o.type]; let extra='';
+    if(cls==='now'&&omenNow&&omenNow.len>1){ const k=turn-omenNow.start+1; extra=`<div class="lab">Round ${k} of ${omenNow.len}</div>`+(omenNow.type==='frost'&&omenLeft()===1?'<div class="warn">⚠ The ice thaws at the start of next round. Get off the river!</div>':''); }
+    const note=(cls==='next'&&o.cont)?' (continues)':'';
+    return `<div class="row ${cls}" style="--oc:${d.color}" title="${d.rule}"><img src="assets/${d.icon}.png" alt=""><div><div class="lab">${lab}</div><b>${d.name}${note}</b>${extra}<div>${d.rule}</div></div></div>`; };
+  el.innerHTML=`<h3>Omens</h3>${omenNow?row('now','Now',omenNow):`<div class="row"><div class="clear">${turn<OMEN_START-1?`The skies are quiet. Omens begin in round ${OMEN_START}.`:'The skies are quiet this round.'}</div></div>`}${omenNext?row('next','Next round',omenNext):'<div class="row"><div class="lab">Next round</div>&nbsp;<div class="clear">Nothing foreseen.</div></div>'}`;
+}
+function showOmenSplash(o){
+  const d=OMENS[o.type], el=document.getElementById('omenSplash'); if(!el) return;
+  el.style.setProperty('--oc',d.color); el.innerHTML=`<img src="assets/${d.icon}.png" alt=""><h2>${d.name}</h2><p>${d.rule}</p><p class="fl">${d.flavor}</p>`;
+  el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+}
+
+// ---- omen sound: recorded Envato sfx (assets/omen), with the synth versions below as a fallback
+let wxA=null, noiseBuffer=null;
+const OSFX={}, OSFX_FILES=['storm_bed','thunder','frost_bed','fog_bed','harvest_bed','plague_bed','surge_horn','surge_drums','ice_crack'];
+let osfxLoading=false;
+function loadOmenSfx(){
+  if(osfxLoading) return; const a=actx(); if(!a) return; osfxLoading=true;
+  for(const n of OSFX_FILES) fetch('assets/omen/'+n+'.m4a').then(r=>r.ok?r.arrayBuffer():null).then(b=>b?a.decodeAudioData(b):null).then(buf=>{ if(buf) OSFX[n]=buf; }).catch(()=>{});
+}
+function playOmenSample(n,vol=0.8){
+  if(muted||!OSFX[n]) return false; const a=actx(); if(!a) return false;
+  const s=a.createBufferSource(); s.buffer=OSFX[n]; const g=a.createGain(); g.gain.value=vol; s.connect(g).connect(a.destination); s.start(); return true;
+}
+function bedSample(w,n,vol){
+  const a=actx(); if(!a||!OSFX[n]) return false; const s=a.createBufferSource(); s.buffer=OSFX[n]; s.loop=true;
+  const g=a.createGain(); g.gain.value=0.0001; g.gain.setTargetAtTime(vol,a.currentTime,1.6); s.connect(g).connect(a.destination); s.start(); w.nodes.push(s,g); w.gains.push(g); return true;
+}
+let lastThunder=0;
+function actx(){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended') AC.resume(); return AC; }catch(e){ return null; } }
+function noiseBuf(){ const a=actx(); if(!a) return null; if(!noiseBuffer){ noiseBuffer=a.createBuffer(1,a.sampleRate*2,a.sampleRate); const d=noiseBuffer.getChannelData(0); let l=0; for(let i=0;i<d.length;i++){ const w=Math.random()*2-1; l=(l+0.02*w)/1.02; d[i]=(w*0.6+l*6)*0.5; } } return noiseBuffer; }
+function thunder(){
+  if(muted) return; const nowT=performance.now(); if(nowT-lastThunder<7000) return; lastThunder=nowT;
+  if(playOmenSample('thunder',0.85)) return; const a=actx(), nb=noiseBuf(); if(!a||!nb) return;
+  const s=a.createBufferSource(); s.buffer=nb; const f=a.createBiquadFilter(); f.type='lowpass'; f.frequency.value=260; const g=a.createGain(); const t=a.currentTime;
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.5,t+0.08); g.gain.exponentialRampToValueAtTime(0.0001,t+2.4); s.connect(f).connect(g).connect(a.destination); s.start(t); s.stop(t+2.5);
+  tone(52,1.8,'sine',0.12,-18);
+}
+function omenSting(type){
+  if(muted) return;
+  if(type==='surge'&&playOmenSample('surge_horn',0.9)) return;
+  if(type==='frost'&&playOmenSample('ice_crack',0.6)) return;
+  if(type==='harvest'&&playOmenSample('harvest_bed',0.55)) return;
+  const seq={
+    fog:()=>{ tone(110,1.6,'sine',0.08,-20); tone(165,1.6,'sine',0.05,-30,0.1); },
+    storm:()=>{ thunder(); },
+    frost:()=>{ [1568,2093,2637,3136].forEach((f,i)=>tone(f,0.9,'sine',0.045,0,i*0.13)); },
+    harvest:()=>{ [523,659,784,1047].forEach((f,i)=>tone(f,0.7,'triangle',0.06,0,i*0.12)); },
+    plague:()=>{ tone(98,1.4,'sawtooth',0.06,-30); tone(104,1.4,'sawtooth',0.05,-30,0.05); tone(147,1.2,'square',0.03,-40,0.4); },
+    surge:()=>{ tone(147,0.9,'sawtooth',0.09,-20); tone(110,1.2,'sawtooth',0.09,-30,0.7); tone(220,0.5,'square',0.04,-60,1.0); }
+  }; (seq[type]||(()=>{}))();
+}
+function stopAmbience(){
+  if(!wxA) return; const w=wxA; wxA=null; clearInterval(w.timer);
+  try{ const a=AC, t=a.currentTime; w.gains.forEach(g=>{ g.gain.cancelScheduledValues(t); g.gain.setTargetAtTime(0.0001,t,0.4); }); setTimeout(()=>{ w.nodes.forEach(n=>{ try{ n.stop&&n.stop(); n.disconnect&&n.disconnect(); }catch(e){} }); },2000); }catch(e){}
+}
+function startAmbience(type){
+  stopAmbience(); if(muted) return; const a=actx(), nb=noiseBuf(); if(!a||!nb) return;
+  const w={type,nodes:[],gains:[],timer:null}; const t=a.currentTime;
+  const beds={storm:['storm_bed',0.5],frost:['frost_bed',0.55],fog:['fog_bed',0.5],harvest:['harvest_bed',0.2],plague:['plague_bed',0.4],surge:['surge_drums',0.6]};
+  if(beds[type]&&bedSample(w,beds[type][0],beds[type][1])){ wxA=w; return; }   // recorded bed loaded: no synth needed
+  const bed=(ftype,freq,q,vol,lfoHz=0,lfoDepth=0)=>{ const s=a.createBufferSource(); s.buffer=nb; s.loop=true; const f=a.createBiquadFilter(); f.type=ftype; f.frequency.value=freq; f.Q.value=q;
+    const g=a.createGain(); g.gain.value=0.0001; g.gain.setTargetAtTime(vol,t,1.5); s.connect(f).connect(g).connect(a.destination); s.start(); w.nodes.push(s,f); w.gains.push(g);
+    if(lfoHz){ const o=a.createOscillator(), og=a.createGain(); o.frequency.value=lfoHz; og.gain.value=lfoDepth; o.connect(og).connect(f.frequency); o.start(); w.nodes.push(o,og); } };
+  if(type==='storm'){ bed('bandpass',1800,0.5,0.045); bed('lowpass',220,0.7,0.03,0.12,60); }
+  else if(type==='frost'){ bed('lowpass',520,0.8,0.05,0.18,260); bed('highpass',3200,0.7,0.006); }
+  else if(type==='fog'){ bed('lowpass',300,0.6,0.035,0.08,90); }
+  else if(type==='harvest'){ w.timer=setInterval(()=>{ if(muted) return; const n=[784,880,988,1175,1319][Math.floor(Math.random()*5)]; tone(n,0.9,'sine',0.018,0); },900); }
+  else if(type==='plague'){ bed('lowpass',160,1.2,0.04,0.3,50); w.timer=setInterval(()=>{ if(!muted) tone(70+Math.random()*10,1.2,'sawtooth',0.012,-10); },2600); }
+  else if(type==='surge'){ w.timer=setInterval(()=>{ if(muted) return; tone(80,0.28,'sine',0.12,-45); tone(80,0.28,'sine',0.1,-45,0.45); },1500); }
+  wxA=w;
+}
+setInterval(()=>{ if(muted&&wxA) stopAmbience(); else if(!muted&&!wxA&&omenNow&&AC) startAmbience(omenNow.type); },1500);
 
 // ---------------------------------------------------------------- async helpers
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
@@ -1001,7 +1171,7 @@ async function endTurn(){
   }
   if(!over) await barbTurn();
   if(over){ busy=false; refreshUI(); return; }
-  turn++; side=0; startTeamTurn(0); busy=false; refreshUI(); banner('Your Turn'); sfx('turn');
+  turn++; side=0; advanceOmen(); startTeamTurn(0); busy=false; refreshUI(); banner('Your Turn'); sfx('turn');
   log(`— Turn ${turn} —`,'sys');
 }
 
@@ -1027,8 +1197,8 @@ function barbCandidates(){
   return out;
 }
 const barbUnitCount = tw => units.filter(u=>u.team===BARB_TEAM&&u.home===tw.id).length;
-function spawnBarbUnit(tw){
-  if(barbUnitCount(tw)>=BARB_MAX_UNITS) return null;
+function spawnBarbUnit(tw,force){
+  if(!force&&barbUnitCount(tw)>=BARB_MAX_UNITS) return null;
   const spots=neighbors(tw.c,tw.r).filter(([c,r])=>tileCost('ground',c,r)!=null&&!unitAt(c,r)); if(!spots.length) return null;
   const [c,r]=spots[Math.floor(Math.random()*spots.length)];
   const u=makeUnit(Math.random()<0.5?'barbrider':'barbarcher',BARB_TEAM,c,r);
@@ -1047,7 +1217,7 @@ async function barbTurn(){
   if(towersB.length<6&&Math.random()<0.12) spawnBarbTower();               // a new tower rises somewhere undiscovered
   for(const tw of towersB) if(units.includes(tw)&&Math.random()<0.5) spawnBarbUnit(tw);   // 50%: one more recruit
   updateAIVision(BARB_TEAM);
-  for(const u of [...mine()]){ if(over) break; if(!units.includes(u)) continue; u.steps=0; await barbAct(u); }
+  for(const u of [...mine()]){ if(over) break; if(!units.includes(u)) continue; if(u.hold){ u.hold=false; u.done=true; continue; } u.steps=0; await barbAct(u); }   // surge raiders muster for a round first
 }
 async function barbAct(u){
   if(u.done) return;
@@ -1084,7 +1254,7 @@ function banner(txt){
   const b=document.getElementById('banner'); b.textContent=txt; b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
 }
 function cardHTML(u,preview){
-  const T=u.type, rng=T.rng[0]===T.rng[1]?T.rng[0]:T.rng[0]+'–'+T.rng[1], tdef=terrainDef(u);
+  const T=u.type, mx=rmax(u), rng=(T.rng[0]===mx?T.rng[0]:T.rng[0]+'–'+mx)+(mx<T.rng[1]?' ⛈':''), tdef=terrainDef(u);
   return `<div class="top"><img src="assets/${u.sprite}.png" alt=""><div><h2>${u.name}</h2>
     <div class="sub" style="color:${FACTION_INK[u.team]}">${FACTIONS[u.team].name}</div>
     <div class="sub">${TERR[tileCh(u.c,u.r)].name}${towers.get(key(u.c,u.r))===u.team?' + Fort':''}${tdef?` (+${tdef} def)`:''}</div></div></div>
@@ -1303,6 +1473,69 @@ function drawUnit(u){
   }
 }
 
+// ---- weather rendering (all drawn in code; layered over the map)
+const WX={type:null,ptype:null,level:0,last:0,parts:[],flash:0,bolt:null,nextBolt:0,fogTex:{},}
+function fogTexture(rgb){
+  if(WX.fogTex[rgb]) return WX.fogTex[rgb];
+  const c=document.createElement('canvas'); c.width=640; c.height=320; const g=c.getContext('2d');
+  for(let i=0;i<22;i++){ const x=Math.random()*640, y=Math.random()*320, r=60+Math.random()*90;
+    for(const ox of [-640,0,640]){ const gr=g.createRadialGradient(x+ox,y,0,x+ox,y,r); gr.addColorStop(0,`rgba(${rgb},0.38)`); gr.addColorStop(1,`rgba(${rgb},0)`); g.fillStyle=gr; g.fillRect(x+ox-r,y-r,r*2,r*2); } }
+  return WX.fogTex[rgb]=c;
+}
+function tileFog(tex,ox,oy,alpha,w,h){ ctx.globalAlpha=alpha; const tw=tex.width,th2=tex.height; ox=((ox%tw)+tw)%tw; oy=((oy%th2)+th2)%th2;
+  for(let x=-ox;x<w;x+=tw) for(let y=-oy;y<h;y+=th2) ctx.drawImage(tex,x,y); ctx.globalAlpha=1; }
+function drawIce(now){
+  if(!omenIs('frost')&&WX.type!=='frost') return; const L=omenIs('frost')?WX.level:WX.level; if(L<0.02) return;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ if(tileCh(c,r)!=='~'||!explored.has(key(c,r))) continue;
+    const {x,y}=center(c,r); hexPath(x,y,S*1.0); ctx.fillStyle=`rgba(205,236,255,${0.55*L})`; ctx.fill();
+    ctx.strokeStyle=`rgba(255,255,255,${0.7*L})`; ctx.lineWidth=1.5; ctx.beginPath(); const sd=(c*131+r*977)%97;
+    for(let i=0;i<3;i++){ const a=(sd+i*2.1)*1.3; ctx.moveTo(x+Math.cos(a)*S*0.05,y+Math.sin(a)*S*0.04); ctx.lineTo(x+Math.cos(a)*S*0.55,y+Math.sin(a)*S*0.4); ctx.lineTo(x+Math.cos(a+0.5)*S*0.7,y+Math.sin(a+0.7)*S*0.45); }
+    ctx.stroke();
+    const tw=0.5+0.5*Math.sin(now/260+sd); ctx.fillStyle=`rgba(255,255,255,${0.9*tw*L})`; ctx.beginPath(); ctx.arc(x+Math.cos(sd)*S*0.4,y+Math.sin(sd*2)*S*0.25,1.6+tw*1.4,0,7); ctx.fill(); }
+}
+function drawWeather(w,h,now){
+  const dt=Math.min(0.05,(now-WX.last)/1000||0.016); WX.last=now;
+  WX.level+=((omenNow?1:0)-WX.level)*Math.min(1,dt*1.4);
+  if(omenNow) WX.type=omenNow.type;
+  if(!omenNow&&WX.level<0.01){ WX.level=0; WX.type=null; WX.parts.length=0; WX.ptype=null; return; }
+  const type=WX.type; if(!type) return; const L=WX.level, area=w*h;
+  if(WX.ptype!==type){ WX.ptype=type; WX.parts=[]; WX.flash=0; WX.nextBolt=now+2500;
+    const div={frost:6500,storm:2600,harvest:9000,surge:4500}[type], n=div?Math.min(1500,Math.round(area/div)):0;
+    for(let i=0;i<n;i++) WX.parts.push({x:Math.random()*w,y:Math.random()*h,v:Math.random(),ph:Math.random()*6.28}); }
+  ctx.save();
+  if(type==='frost'){
+    ctx.fillStyle=`rgba(150,195,255,${0.12*L})`; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle=`rgba(255,255,255,${0.85*L})`;
+    for(const p of WX.parts){ p.y+=(22+p.v*46)*dt; p.x+=(Math.sin(now/900+p.ph)*14+10)*dt; if(p.y>h+4){ p.y=-4; p.x=Math.random()*w; } if(p.x>w+4) p.x=-4;
+      ctx.beginPath(); ctx.arc(p.x,p.y,1+p.v*2.2,0,7); ctx.fill(); }
+  } else if(type==='storm'){
+    ctx.fillStyle=`rgba(8,14,32,${0.30*L})`; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle=`rgba(200,222,255,${0.4*L})`; ctx.lineWidth=1.1; ctx.beginPath();
+    for(const p of WX.parts){ const len=12+p.v*12; p.y+=(640+p.v*340)*dt; p.x-=120*dt; if(p.y>h){ p.y=-20; p.x=Math.random()*(w+120); } if(p.x<-20) p.x=w+10; ctx.moveTo(p.x,p.y); ctx.lineTo(p.x-len*0.19,p.y+len); }
+    ctx.stroke();
+    if(now>WX.nextBolt){ WX.flash=1; WX.nextBolt=now+4500+Math.random()*7500; const bx=Math.random()*w; const pts=[[bx,0]]; let y=0,x=bx; while(y<h*0.8){ y+=30+Math.random()*50; x+=(Math.random()-0.5)*70; pts.push([x,y]); } WX.bolt=pts; setTimeout(thunder,350+Math.random()*900); }
+    if(WX.flash>0){ ctx.fillStyle=`rgba(225,236,255,${0.5*WX.flash*L})`; ctx.fillRect(0,0,w,h);
+      if(WX.bolt&&WX.flash>0.45){ ctx.strokeStyle=`rgba(240,246,255,${Math.min(1,WX.flash*1.4)})`; ctx.lineWidth=3; ctx.shadowColor='#bcd4ff'; ctx.shadowBlur=18; ctx.beginPath(); WX.bolt.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y)); ctx.stroke(); ctx.shadowBlur=0; }
+      WX.flash=Math.max(0,WX.flash-dt*3.3); }
+  } else if(type==='fog'||type==='plague'){
+    const rgb=type==='fog'?'205,214,225':'120,180,70', tex=fogTexture(rgb);
+    ctx.fillStyle=type==='fog'?`rgba(190,200,215,${0.20*L})`:`rgba(80,130,40,${0.16*L})`; ctx.fillRect(0,0,w,h);
+    tileFog(tex,now*0.012,now*0.003,0.85*L,w,h); tileFog(tex,-now*0.02+200,now*0.005+90,0.7*L,w,h);
+    if(type==='plague'){ ctx.fillStyle=`rgba(20,30,10,${0.8*L})`; for(let i=0;i<16;i++){ const a=now/900+i*1.7, cx=((i*173)%w), cy=((i*97)%h); ctx.beginPath(); ctx.arc(cx+Math.sin(a*1.3)*70,cy+Math.cos(a*1.7)*50,1.6,0,7); ctx.fill(); } }
+  } else if(type==='harvest'){
+    ctx.fillStyle=`rgba(255,190,70,${0.07*L})`; ctx.fillRect(0,0,w,h);
+    for(const p of WX.parts){ p.y-=(6+p.v*16)*dt; p.x+=Math.sin(now/1100+p.ph)*8*dt; if(p.y<-4){ p.y=h+4; p.x=Math.random()*w; } const tw=0.4+0.6*Math.abs(Math.sin(now/500+p.ph));
+      ctx.fillStyle=`rgba(255,226,120,${0.8*tw*L})`; ctx.beginPath(); ctx.arc(p.x,p.y,1+p.v*1.8,0,7); ctx.fill(); }
+    for(const m of MINES){ if(!explored.has(key(m.c,m.r))) continue; const {x,y}=center(m.c,m.r), k=0.6+0.4*Math.sin(now/380+m.c);
+      const g=ctx.createRadialGradient(x,y,0,x,y,S*1.1); g.addColorStop(0,`rgba(255,215,90,${0.55*k*L})`); g.addColorStop(1,'rgba(255,215,90,0)'); ctx.fillStyle=g; ctx.fillRect(x-S*1.2,y-S*1.2,S*2.4,S*2.4); }
+  } else if(type==='surge'){
+    const k=0.6+0.4*Math.sin(now/420); const g=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*0.3,w/2,h/2,Math.max(w,h)*0.75); g.addColorStop(0,'rgba(120,0,0,0)'); g.addColorStop(1,`rgba(170,12,12,${0.75*k*L})`); ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+    for(const p of WX.parts){ p.y-=(28+p.v*60)*dt; p.x+=Math.sin(now/700+p.ph)*16*dt; if(p.y<-6){ p.y=h+6; p.x=Math.random()*w; } const tw=0.4+0.6*Math.abs(Math.sin(now/260+p.ph));
+      ctx.fillStyle=p.v>0.5?`rgba(255,160,60,${0.95*tw*L})`:`rgba(255,80,45,${0.95*tw*L})`; ctx.beginPath(); ctx.arc(p.x,p.y,1.4+p.v*2.4,0,7); ctx.fill(); }
+    for(const u of units){ if(u.key!=='barbtower'||!unitVisible(u)) continue; const {x,y}=center(u.c,u.r); const gg=ctx.createRadialGradient(x,y,0,x,y,S*1.3); gg.addColorStop(0,`rgba(255,60,30,${0.5*k*L})`); gg.addColorStop(1,'rgba(255,60,30,0)'); ctx.fillStyle=gg; ctx.fillRect(x-S*1.4,y-S*1.4,S*2.8,S*2.8); }
+  }
+  ctx.restore();
+}
 function draw(){
   const w=canvasEl.width/dpr, h=canvasEl.height/dpr;
   ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
@@ -1317,6 +1550,7 @@ function draw(){
     ctx.save(); hexPath(x,y,S); ctx.clip(); ctx.translate(x,y); ctx.scale(1,TILT); if(TILEIMG.F) ctx.drawImage(TILEIMG.F,-S,-SQ*S*0.5,2*S,SQ*S); ctx.restore();
     if(towerUsed.has(k)){ hexPath(x,y,S); ctx.fillStyle='rgba(0,0,0,0.32)'; ctx.fill(); }
     hexPath(x,y,S*0.9); ctx.strokeStyle=FACTIONS[team].color; ctx.lineWidth=3; ctx.stroke(); }
+  drawIce(now);
   // fog of war
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const k=key(c,r); if(visible.has(k)) continue; const {x,y}=center(c,r);
     hexPath(x,y,S*1.01); ctx.fillStyle=explored.has(k)?'rgba(10,14,28,0.48)':'#0b0906'; ctx.fill(); }
@@ -1348,6 +1582,7 @@ function draw(){
     if(e.ring){ ctx.strokeStyle=e.color; ctx.globalAlpha=1-t; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(e.x,e.y,S*(0.2+0.8*t),0,7); ctx.stroke(); ctx.globalAlpha=1; }
     else { ctx.globalAlpha=1-t*t; ctx.font=`bold ${Math.round(S*0.6)}px Cinzel,Georgia,serif`; ctx.textAlign='center'; ctx.lineWidth=4; ctx.strokeStyle='#000'; ctx.strokeText(e.text,e.x,e.y-t*S*0.9); ctx.fillStyle=e.color; ctx.fillText(e.text,e.x,e.y-t*S*0.9); ctx.globalAlpha=1; }
   }
+  drawWeather(w,h,now);
   requestAnimationFrame(draw);
 }
 
