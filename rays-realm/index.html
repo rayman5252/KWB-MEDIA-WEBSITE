@@ -129,6 +129,8 @@
   <details><summary>How to play</summary><ul>
     <li>Each unit has <b>movement points</b> per turn and can spend them in several steps until you press End Turn. Attacking ends that unit's turn. Catapults can't fire after moving.</li>
     <li><b>Gold mines:</b> end a move on one to seize it. Each held mine pays +2 gold at the start of your turn.</li>
+    <li><b>Income:</b> every army earns 2 gold a turn no matter what, plus 2 for each keep and 2 for each mine it holds.</li>
+    <li><b>Barbarians:</b> skull-banner towers hide in undiscovered land. Their riders and archers only defend their home, but they hit hard. Destroy a tower for a 10 gold bounty.</li>
     <li><b>Recruit</b> from the sidebar: new units appear near your keep and rest until next turn. Ships spawn on the river.</li>
     <li><b>Ships</b> are unarmed transports. Walk a land unit onto a ship (max 2) to board: that ends its turn and the ship's. Next turn the ship sails 3 hexes and passengers may land on any adjacent shore.</li>
     <li>Forests: +1 defence, cost 2 to enter. Crags and river block foot soldiers; cross at the fords.</li>
@@ -146,7 +148,8 @@ const SPR = {
   wizard:{w:302,h:359,cx:151,bottom:358,bw:300}, knight:{w:302,h:413,cx:151,bottom:412,bw:300},
   ship:{w:302,h:365,cx:151,bottom:364,bw:300}, catapult:{w:335,h:291,cx:151,bottom:290,bw:300},
   cavalry:{w:313,h:468,cx:162,bottom:466,bw:300}, dragon:{w:334,h:360,cx:151,bottom:358,bw:300},
-  archer:{w:325,h:456,cx:151,bottom:454,bw:300}, scout:{w:302,h:418,cx:151,bottom:416,bw:300}, archertower:{w:302,h:354,cx:151,bottom:353,bw:300}
+  archer:{w:325,h:456,cx:151,bottom:454,bw:300}, scout:{w:302,h:418,cx:151,bottom:416,bw:300},
+  barbarcher:{w:302,h:446,cx:151,bottom:444,bw:300}, barbtower:{w:302,h:394,cx:151,bottom:393,bw:300}, barbrider:{w:302,h:443,cx:151,bottom:441,bw:300}, archertower:{w:302,h:354,cx:151,bottom:353,bw:300}
 };
 const IMG = {};
 const spriteKey = (team,type) => 'f'+team+'_'+type;
@@ -155,26 +158,28 @@ const TILEFILE = {'~':'t_water','f':'t_forest','^':'t_crags','G':'tf_mine','K':'
 const tilesReady = Promise.all(Object.entries(TILEFILE).map(([ch,n]) => new Promise(res => {
   const i = new Image(); i.onload = () => { TILEIMG[ch]=i; res(); }; i.onerror = res; i.src = 'assets/'+n+'.png';
 })));
-const imgReady = Promise.all([0,1,2,3].flatMap(t => Object.keys(SPR).map(n => new Promise(res => {
+const BARB_TYPES = ['barbarcher','barbrider','barbtower'];   // Barbarians (team 4) only have their own sprite set
+const imgReady = Promise.all(Object.keys(SPR).flatMap(n => (BARB_TYPES.includes(n)?[4]:[0,1,2,3]).map(t => new Promise(res => {
   const i = new Image(); i.onload = i.onerror = res; i.src = 'assets/'+spriteKey(t,n)+'.png'; IMG[spriteKey(t,n)] = i;
 }))));
 
 const FACTIONS = [
-  {name:'Order of the Cross', short:'Order', color:'#4a8fe0', base:1, human:true},
+  {name:'Order of the Cross', short:'Order', color:'#4a8fe0', base:2, human:true},
   {name:'Dark Host',          short:'Dark',  color:'#a06ae0', base:2},
   {name:'Black Legion',       short:'Legion',color:'#e8a73a', base:2},
-  {name:'Emerald Court',      short:'Emerald',color:'#4fcf7a', base:2}
+  {name:'Emerald Court',      short:'Emerald',color:'#4fcf7a', base:2},
+  {name:'Barbarian Horde',    short:'Barbarian',color:'#d6cdb8', base:0, barb:true}
 ];
-const FACTION_INK = ['#2c5fa8','#6a3fa6','#a6661a','#2f8f4a'];   // readable on parchment
+const FACTION_INK = ['#2c5fa8','#6a3fa6','#a6661a','#2f8f4a','#6b6455'];   // readable on parchment
 const MINE_INCOME = 2;
-let COLS = 25, ROWS = 19, MAP = [], KEEPS = [], START = [], mapSeed = 0;
+let COLS = 25, ROWS = 19, MAP = [], KEEPS = [], START = [], mapSeed = 0, groundReach = new Set();
 const MINES = [];
 // . meadow  f forest  ~ river  ^ crags  G gold mine  K keep
 const TERR = {
   '.':{name:'Meadow',def:0}, 'f':{name:'Forest',def:1,note:'Costs 2 to enter, +1 defence.'},
   '~':{name:'River',def:0,note:'Ships only (dragons fly over).'}, '^':{name:'Crags',def:2,note:'Only dragons can cross.'},
   'G':{name:'Gold Mine',def:0,note:`End a move here to seize it. Held mines pay +${MINE_INCOME} gold each turn.`},
-  'K':{name:'Keep',def:2,note:'+2 defence. Recruits appear within 2 hexes of a keep you hold. Walk onto an enemy keep to capture it.'}
+  'K':{name:'Keep',def:2,note:'+2 defence. Pays +2 gold each turn. Recruits appear within 2 hexes of a keep you hold. Walk onto an enemy keep to capture it.'}
 };
 
 // cls: ground | water | fly.  rng = [min,max]
@@ -187,6 +192,12 @@ const TYPES = {
             desc:'Shoots 2–3 hexes. Cannot fire at adjacent foes, so keep it behind the line.'},
   archertower:{name:'Archer Tower', short:'Archer Tower', cost:10, hp:16, atk:5, def:0, mv:0, rng:[1,4], cls:'ground', vision:4,
             desc:'A garrisoned tower that cannot move. Fires like an Archer with 16 hit points and +1 range, and can hit adjacent targets too (range 1–4). Sees 4 hexes. Can be built next to any of your units, even far from home.'},
+  barbtower:{name:'Barbarian Tower', short:'Barbarian Tower', cost:0, hp:16, atk:5, def:0, mv:0, rng:[1,4], cls:'ground', vision:4, barb:true,
+            desc:'A skull-banner watchtower where barbarians gather. Fires like an Archer Tower (range 1–4). Destroy it to stop the barbarians and claim a 10 gold bounty.'},
+  barbarcher:{name:'Barbarian Archer', short:'Barbarian Archer', cost:0, hp:7, atk:5, def:0, mv:2, rng:[2,3], cls:'ground', barb:true,
+            desc:'Wild bowman. Defends his tower and will not stray far from it.'},
+  barbrider:{name:'Barbarian Rider', short:'Barbarian Rider', cost:0, hp:9, atk:5, def:1, mv:3, rng:[1,1], cls:'ground', charge:true, barb:true,
+            desc:'Armoured raider on horseback, a little weaker than a Knight. Charges for +2 damage, but stays close to his tower.'},
   scout:   {name:'Scout', short:'Scout', cost:4, hp:8, atk:2, def:2, mv:3, rng:[1,1], cls:'ground', vision:4,
             desc:'Light rider with sharp eyes: sees 4 hexes instead of 3. Weak in a fight, so scout ahead and stay out of trouble.'},
   catapult:{name:'Catapult', short:'Catapult', cost:8, hp:8, atk:8, def:0, mv:2, rng:[2,3], cls:'ground', stat:true,
@@ -198,7 +209,7 @@ const TYPES = {
   dragon:  {name:'Dragon', short:'Dragon', cost:18, hp:22, atk:7, def:2, mv:5, rng:[1,2], cls:'fly',
             desc:'Flies over anything. Fire breath reaches 2 hexes. The terror of the field.'}
 };
-const SHOP_ORDER = Object.keys(TYPES).sort((a,b)=>TYPES[a].cost-TYPES[b].cost);   // recruit menu, cheapest first
+const SHOP_ORDER = Object.keys(TYPES).filter(k=>!TYPES[k].barb).sort((a,b)=>TYPES[a].cost-TYPES[b].cost);   // recruit menu, cheapest first
 const MIN_COST = 4, MAX_UNITS = 12;
 
 
@@ -246,7 +257,7 @@ let effects=[], proj=null, logEl, S=40, ox=0, oy=0, dpr=1, bg=null, uid=0;
 function makeUnit(type,team,c,r){
   const T=TYPES[type];
   return {id:++uid,type:T,key:type,team,c,r,hp:T.hp,mp:T.mv,moved:false,done:false,steps:0,anim:null,cargo:[],aboard:null,off:{x:0,y:0},alpha:1,
-          name: team===0 ? T.name : FACTIONS[team].short+' '+T.short, sprite:spriteKey(team,type)};
+          name: (team===0||T.barb) ? T.name : FACTIONS[team].short+' '+T.short, sprite:spriteKey(team,type)};
 }
 const unitAt = (c,r) => units.find(u => u.c===c && u.r===r);
 const alive = team => units.filter(u => u.team===team);
@@ -254,7 +265,9 @@ const TOWER_COST = 30;
 let towers = new Map(), towerUsed = new Set();
 const terrainDef = u => (u.type.cls==='fly' ? 0 : TERR[tileCh(u.c,u.r)].def) + (towers.get(key(u.c,u.r))===u.team ? 2 : 0);
 const minesOf = t => MINES.filter(m=>mineOwner.get(key(m.c,m.r))===t).length;
-const income = t => FACTIONS[t].base + MINE_INCOME*minesOf(t);
+const KEEP_INCOME = 2;
+const keepsOf = t => keepOwner.filter(o=>o===t).length;
+const income = t => FACTIONS[t].base + MINE_INCOME*minesOf(t) + KEEP_INCOME*keepsOf(t);
 
 // ---- undo: one level, the last move/board/unload/recruit/tower (attacks and end of turn clear it)
 function takeSnap(label){
@@ -369,6 +382,7 @@ function generateMap(seed){
   const targets=[...keeps.slice(1).map(([c,r])=>({c,r})),...mines];
   let reached=flood(keeps[0][0],keeps[0][1]);
   for(const t of targets){ if(!reached.has(key(t.c,t.r))){ carve(t.c,t.r,reached); reached=flood(keeps[0][0],keeps[0][1]); } }
+  groundReach=reached;
   // starting units: the nearest open ground around each keep
   const start=[];
   keeps.forEach(([kc,kr],i)=>{
@@ -388,7 +402,7 @@ function newGame(seed){
   gold=[2,2,2,2]; elim=[false,false,false,false]; mineOwner=new Map(); keepOwner=[0,1,2,3]; towers=new Map(); towerUsed=new Set();
   explored=new Set(); visible=new Set(); seenMine=new Map(); seenKeep=[null,null,null,null]; seenTower=new Map();
   MINES.forEach(m=>mineOwner.set(key(m.c,m.r),info.owners[key(m.c,m.r)]??null));
-  resetAIFog(); updateVision(); logEl.innerHTML='';
+  resetAIFog(); updateVision(); barbSeen=new Set(); for(let i=0;i<3;i++) spawnBarbTower(); updateVision(); logEl.innerHTML='';
   log("Welcome to Ray's Realm. Capture all three enemy keeps to rule the realm — and guard your own!",'sys');
   log(`Map seed ${mapSeed}.`,'sys');
   startTeamTurn(0); refreshUI();
@@ -538,6 +552,7 @@ function recruit(team,type,c,r,tw){
     log(`${FACTIONS[team].short} recruits ${u.name} at ${tw?'a fort':'the keep'} (-${T.cost}g).`,'t'+team); sfx('recruit'); }
 }
 function captureAt(u){
+  if(u.team>=4) return;   // barbarians do not hold ground
   const tk=key(u.c,u.r);
   const seen=u.team===0||isVis(u.c,u.r);
   if(towers.has(tk)&&towers.get(tk)!==u.team){ towers.delete(tk); if(seen) log(`${FACTIONS[u.team].short} razes an enemy fort!`,'sys'); }
@@ -606,6 +621,7 @@ function updateVision(){
   for(const m of MINES){ const k=key(m.c,m.r); if(visible.has(k)) seenMine.set(k,mineOwner.get(k)); }
   KEEPS.forEach(([c,r],i)=>{ if(visible.has(key(c,r))) seenKeep[i]=keepOwner[i]; });
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const k=key(c,r); if(visible.has(k)){ if(towers.has(k)) seenTower.set(k,towers.get(k)); else seenTower.delete(k); } }
+  for(const b of units) if(b.key==='barbtower'&&!barbSeen.has(b.id)&&visible.has(key(b.c,b.r))){ barbSeen.add(b.id); if(logEl) log('You have discovered a Barbarian Tower!','sys'); }
 }
 function revealAround(c,r,rad=VISION){ const t=new Set(); visTiles([{c,r,type:{vision:rad}}],t); t.forEach(k=>explored.add(k)); }
 function ensureInView(pt){
@@ -638,7 +654,7 @@ async function strike(a,d,amount,counter){
   a.fought=true; d.fought=true;
   if(!(unitVisible(a)||unitVisible(d))){
     d.hp=Math.max(0,d.hp-amount);
-    if(d.hp<=0){ if(towers.get(key(d.c,d.r))===d.team) towers.delete(key(d.c,d.r)); units=units.filter(x=>x!==d); if(sel===d) clearSel(); }
+    if(d.hp<=0){ if(towers.get(key(d.c,d.r))===d.team) towers.delete(key(d.c,d.r)); if(d.key==='barbtower'&&a.team<BARB_TEAM) gold[a.team]+=BARB_BOUNTY; units=units.filter(x=>x!==d); if(sel===d) clearSel(); }
     return;
   }
   ensureInView(upos(d));
@@ -664,6 +680,7 @@ async function strike(a,d,amount,counter){
   await shake; d.off={x:0,y:0}; a.off={x:0,y:0};
   if(d.hp<=0){
     log(`${d.name} is destroyed!${d.cargo.length?' Its passengers are lost!':''}`,'sys'); sfx('die');
+    if(d.key==='barbtower'&&a.team<BARB_TEAM){ gold[a.team]+=BARB_BOUNTY; addText(D.x,D.y-S*1.6,`+${BARB_BOUNTY}🪙`,FACTIONS[a.team].color); log(`${FACTIONS[a.team].name} destroys a Barbarian Tower and claims ${BARB_BOUNTY} gold!`,'sys'); }
     await tween(450,t=>{ d.alpha=1-t; d.off={x:0,y:t*S*0.3}; });
     if(towers.get(key(d.c,d.r))===d.team){ towers.delete(key(d.c,d.r)); log('Its fort collapses with it!','sys'); }
     units=units.filter(x=>x!==d);
@@ -788,10 +805,10 @@ function maybeAutoEnd(){
 
 // ---------------------------------------------------------------- AI
 // ---- per-army fog of war for the AI: same rules as yours (3 hexes, explored stays revealed)
-const aiFog=[null,null,null,null];
+const aiFog=[null,null,null,null,null];
 function resetAIFog(){
-  for(const t of [1,2,3]) aiFog[t]={explored:new Set(),visible:new Set(),seenMine:new Map(),seenKeep:[null,null,null,null]};
-  [1,2,3].forEach(updateAIVision);
+  for(const t of [1,2,3,4]) aiFog[t]={explored:new Set(),visible:new Set(),seenMine:new Map(),seenKeep:[null,null,null,null]};
+  [1,2,3,4].forEach(updateAIVision);
 }
 function updateAIVision(t){
   const F=aiFog[t]; if(!F) return;
@@ -963,9 +980,80 @@ async function endTurn(){
     if(over) break; if(elim[t]) continue;
     await aiTeamTurn(t);
   }
+  if(!over) await barbTurn();
   if(over){ busy=false; refreshUI(); return; }
   turn++; side=0; startTeamTurn(0); busy=false; refreshUI(); banner('Your Turn'); sfx('turn');
   log(`— Turn ${turn} —`,'sys');
+}
+
+// ---------------------------------------------------------------- barbarians
+// A neutral, defensive horde. Towers rise in undiscovered land, at least 5 hexes from any other tower, spawn one unit
+// (up to 4), and each round a tower has a 50% chance of adding another. Barbarians never stray far from home.
+const BARB_TEAM = 4, BARB_MAX_UNITS = 4, BARB_LEASH = 3, BARB_BOUNTY = 10;
+let barbSeen = new Set();
+function barbCandidates(){
+  const st=[...[...towers.keys()].map(k=>{ const [c,r]=k.split(',').map(Number); return {c,r}; }),
+            ...units.filter(u=>u.key==='barbtower'||u.key==='archertower').map(u=>({c:u.c,r:u.r}))];
+  const out=[];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const k=key(c,r); if(!groundReach.has(k)) continue;
+    const ch=tileCh(c,r); if(ch!=='.'&&ch!=='f') continue;
+    if(unitAt(c,r)||explored.has(k)||visible.has(k)) continue;
+    if([1,2,3].some(t=>aiFog[t]&&aiFog[t].visible.has(k))) continue;
+    if(KEEPS.some(([kc,kr])=>hexDist({c,r},{c:kc,r:kr})<6)) continue;
+    if(st.some(p=>hexDist(p,{c,r})<5)) continue;
+    if(!neighbors(c,r).some(([nc,nr])=>tileCost('ground',nc,nr)!=null&&!unitAt(nc,nr))) continue;
+    out.push({c,r});
+  }
+  return out;
+}
+const barbUnitCount = tw => units.filter(u=>u.team===BARB_TEAM&&u.home===tw.id).length;
+function spawnBarbUnit(tw){
+  if(barbUnitCount(tw)>=BARB_MAX_UNITS) return null;
+  const spots=neighbors(tw.c,tw.r).filter(([c,r])=>tileCost('ground',c,r)!=null&&!unitAt(c,r)); if(!spots.length) return null;
+  const [c,r]=spots[Math.floor(Math.random()*spots.length)];
+  const u=makeUnit(Math.random()<0.5?'barbrider':'barbarcher',BARB_TEAM,c,r);
+  u.home=tw.id; u.hc=tw.c; u.hr=tw.r; u.done=true; u.moved=true; u.mp=0; units.push(u); return u;
+}
+function spawnBarbTower(){
+  const cand=barbCandidates(); if(!cand.length) return null;
+  const p=cand[Math.floor(Math.random()*cand.length)];
+  const tw=makeUnit('barbtower',BARB_TEAM,p.c,p.r); units.push(tw); spawnBarbUnit(tw); return tw;
+}
+async function barbTurn(){
+  const mine=()=>units.filter(u=>u.team===BARB_TEAM);
+  if(!mine().length&&Math.random()>0.12) return;
+  mine().forEach(u=>{ u.done=false; u.moved=false; u.steps=0; u.mp=u.type.mv; });
+  const towersB=mine().filter(u=>u.key==='barbtower');
+  if(towersB.length<6&&Math.random()<0.12) spawnBarbTower();               // a new tower rises somewhere undiscovered
+  for(const tw of towersB) if(units.includes(tw)&&Math.random()<0.5) spawnBarbUnit(tw);   // 50%: one more recruit
+  updateAIVision(BARB_TEAM);
+  for(const u of [...mine()]){ if(over) break; if(!units.includes(u)) continue; u.steps=0; await barbAct(u); }
+}
+async function barbAct(u){
+  if(u.done) return;
+  updateAIVision(BARB_TEAM);
+  if(u.type.mv===0){ await aiAttackFrom(u); return; }                       // the tower just fires at anyone in range
+  const tw=units.find(x=>x.id===u.home), home=tw?{c:tw.c,r:tw.r}:{c:u.hc,r:u.hr};
+  const info=reach(u); let best=null;
+  for(const [k,e] of info){
+    if(!canStop(u,e)||hexDist(e,home)>BARB_LEASH) continue;                 // never leave the leash
+    const ghost={...u,c:e.c,r:e.r};
+    for(const t of targetsFrom(ghost,e.c,e.r)){
+      const dmg=calcDmg(ghost,t,chargeOf(u,e.steps)), kill=dmg>=t.hp, ctr=kill?0:counterInfo(ghost,t,dmg);
+      const sc=dmg+(kill?6:0)-ctr*0.8-hexDist(e,home)*0.3;
+      if(!best||sc>best.sc) best={sc,e,t};
+    }
+  }
+  if(best){
+    if(best.e.c!==u.c||best.e.r!==u.r){ const path=pathTo(info,best.e.c,best.e.r); await moveUnit(u,path); u.steps=path.length-1; }
+    if(units.includes(best.t)){ u.moved=true; await performAttack(u,best.t); }
+    return;
+  }
+  if(hexDist(u,home)>1&&Math.random()<0.6){                                  // nobody to fight: drift back toward the tower
+    let b=null; for(const [k,e] of info){ if(!canStop(u,e)) continue; const d=hexDist(e,home); if(d<=BARB_LEASH&&(!b||d<b.d)) b={e,d}; }
+    if(b&&(b.e.c!==u.c||b.e.r!==u.r)){ const path=pathTo(info,b.e.c,b.e.r); await moveUnit(u,path); }
+  }
 }
 
 // ---------------------------------------------------------------- UI
@@ -1014,7 +1102,7 @@ function refreshUI(){
   updateVision();
   const p=document.getElementById('turn');
   setHTML('turn',`<b>Turn ${turn}</b><span class="pill" style="background:${FACTIONS[side].color}">${side===0?'Your move':FACTIONS[side].short+' moves'}</span><span>🪙 ${gold[0]}</span>`);
-  setHTML('factions',FACTIONS.map((f,i)=>`<div class="frow ${side===i&&!over?'active':''} ${elim[i]?'out':''}"><span class="dot" style="background:${f.color}"></span><span>${f.name}</span>
+  setHTML('factions',FACTIONS.slice(0,4).map((f,i)=>`<div class="frow ${side===i&&!over?'active':''} ${elim[i]?'out':''}"><span class="dot" style="background:${f.color}"></span><span>${f.name}</span>
     <span class="n">⚔ ${i===0?alive(0).length:'?'}</span><span class="n">⛏ ${i===0?minesOf(0):MINES.filter(m=>seenMine.get(key(m.c,m.r))===i).length}</span><span class="n">🏰 ${i===0?keepOwner.filter(o=>o===0).length:seenKeep.filter(o=>o===i).length}</span><span class="n">🪙 ${i===0?`${gold[0]} <small>(+${income(0)})</small>`:'?'}</span></div>`).join(''));
   const hu=hover&&unitAt(hover.c,hover.r), shown=(hu&&unitVisible(hu)?hu:null)||sel;
   setHTML('card', shown ? cardHTML(shown,previewFor(shown))
