@@ -6,4 +6,4 @@ images/nocturnal-chillers-thumbnail.jpg
 images/dealership-shoot.jpg
 images/signal-room-9-ham-radio.jpg
 images/social-media-management.jpg
-images/ray-on-location-facebook.jpg
+title-card-ai-tiktok-chase (custom image from Ray)
