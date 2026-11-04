@@ -20,6 +20,10 @@
   canvas{position:absolute;left:0;top:0;display:block;touch-action:pan-x pan-y}
   #side{width:330px;flex:none;background:linear-gradient(#3b281a,#2a1d14);border-left:3px solid #1a1109;padding:12px;display:flex;flex-direction:column;gap:9px;overflow:auto}
   h1{font-family:Cinzel,Georgia,serif;font-size:21px;margin:0;letter-spacing:.06em;color:var(--gold);text-align:center}
+  a.back{display:block;text-align:center;text-decoration:none;font-family:Cinzel,Georgia,serif;font-size:13px;letter-spacing:.04em;color:var(--gold);background:#00000040;border:1px solid #00000060;border-radius:6px;padding:6px 10px}
+  a.back:hover,a.back:focus-visible{background:#00000070;outline:2px solid var(--gold)}
+  .scene a.back{display:inline-block;margin-top:14px;font-size:15px;padding:9px 18px;background:#000a;border-color:#ffffff30}
+  .scene a.back:hover,.scene a.back:focus-visible{background:#000d}
   #turn{display:flex;justify-content:space-between;align-items:center;font-size:14px;background:#00000040;border:1px solid #00000060;border-radius:6px;padding:6px 10px}
   #turn b{font-family:Cinzel,Georgia,serif}
   .pill{padding:2px 9px;border-radius:99px;font-size:12px;font-weight:bold;color:#120a04}
@@ -127,6 +131,7 @@
   <div id="stage"><div id="scroller"><canvas id="board"></canvas></div><div id="banner"></div></div>
   <aside id="side">
     <h1>Ray's Realm</h1>
+    <a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a>
     <div id="turn"></div>
     <div id="factions"></div>
     <div id="omen"></div>
@@ -142,11 +147,12 @@
 <div id="tip"></div>
 <div id="overlay" class="hidden"><div class="panel" id="panel"></div></div>
 <div id="victory" class="scene hidden"><video id="vicvid" src="assets/title.mp4" poster="assets/title.jpg" preload="auto" muted loop playsinline></video><div class="shade"></div>
-  <div class="box"><h2>Realm Conquered!</h2><div class="tag">You have conquered the realm — it's Miller time!</div><button id="again2">Play Again</button></div></div>
+  <div class="box"><h2>Realm Conquered!</h2><div class="tag">You have conquered the realm — it's Miller time!</div><button id="again2">Play Again</button><a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a></div></div>
 <div id="defeat" class="scene hidden"><video id="defvid" src="assets/defeat.mp4" preload="auto" playsinline></video><div class="shade"></div><div id="deftext">DEFEAT</div></div>
 <div id="title" class="scene"><video id="titlevid" muted loop playsinline autoplay></video><img class="bgm" id="titleimg" alt="" style="display:none"><div class="shade"></div>
   <div class="box"><h2>Ray's Realm</h2><div class="tag">Four armies. One crown. Hold the gold, rule the realm.</div>
   <button id="go">Begin Battle</button>
+  <a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a>
   <div id="musicnote" style="display:none;margin-top:10px;font-size:13px;opacity:.85;text-shadow:0 2px 6px #000">♪ Click anywhere to start the music</div>
   <details><summary>How to play</summary><ul>
     <li><b>Omens:</b> from round 4 on, the sky or the land sometimes turns on everyone. Each omen is announced one round ahead (see the Omens panel). Fog Bank: everyone sees 1 hex less. Thunderstorm: ships cannot sail and ranged units lose 1 range. Hard Frost: rivers freeze for 2–3 rounds so units can walk across (ships are stuck), then the ice cracks: anyone still on it takes 4 damage and is thrown onto the nearest bank. Bountiful Harvest: mines pay double. Plague: the largest army loses 2 health on each unit that can move. Barbarian Surge: each barbarian tower musters 2 extra raiders, who march a round later.</li>

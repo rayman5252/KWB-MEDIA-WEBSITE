@@ -35,6 +35,8 @@ canvas{display:block;width:100%;height:100%}
 .go:hover{background:#C2432F}
 .go:active{transform:translate(2px,2px)}
 .go:focus-visible,.tool:focus-visible{outline:3px solid var(--ochre);outline-offset:3px}
+a.tool{text-decoration:none;display:inline-block;white-space:nowrap}
+a.tool:hover{background:rgba(176,56,42,.78)}
 .small{font-size:max(11px,calc(var(--u)*14));opacity:.8;margin:0}
 .touch-only{display:none}
 .is-touch .touch-only{display:block}
@@ -58,6 +60,7 @@ canvas{display:block;width:100%;height:100%}
   <div id="frame">
     <canvas id="game" aria-label="Over the Marne game screen"></canvas>
     <div id="tools">
+      <a class="tool" id="backBtn" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a>
       <button class="tool" id="pauseBtn" type="button">Pause</button>
       <button class="tool" id="viewBtn" type="button">View: Wide</button>
       <button class="tool" id="muteBtn" type="button">Sound: on</button>
