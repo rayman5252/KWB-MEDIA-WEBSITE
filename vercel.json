@@ -61,6 +61,11 @@
       "permanent": true
     },
     {
+      "source": "/over-the-marne",
+      "destination": "/over-the-marne/",
+      "permanent": true
+    },
+    {
       "source": "/f/:slug*",
       "destination": "/blog/",
       "permanent": true
