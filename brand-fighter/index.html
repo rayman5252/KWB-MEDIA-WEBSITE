@@ -512,7 +512,8 @@
 
   function startWave(i){
     var w = WAVES[i];
-    spawnQueue = w.count;
+    // Scrolling levels spawn enemies non-stop until the player reaches the right edge.
+    spawnQueue = w.scroll ? Infinity : w.count;
     spawnCooldown = 0;
     levelLength = w.length || W;
     camera.x = 0;
@@ -715,7 +716,9 @@
 
   // ---------- Update ----------
   var last = 0;
+  var bgTime = 0;
   function update(dt){
+    bgTime += dt;
     updateParticles(dt);
     updateConfetti(dt);
     if(shakeT > 0){ shakeT -= dt; } else { shakeMag = 0; }
@@ -809,9 +812,11 @@
       spawnCooldown -= dt*1000;
       var w = WAVES[waveIndex];
       var activeCount = enemies.filter(function(e){return !e.dead;}).length;
-      if(spawnCooldown <= 0 && activeCount < w.maxActive){
+      // stop feeding in new enemies once the player is right at the end of the level
+      var nearEnd = w.scroll && player.x >= levelLength - 160;
+      if(spawnCooldown <= 0 && activeCount < w.maxActive && !nearEnd){
         spawnEnemy(w.type);
-        spawnQueue--;
+        if(spawnQueue !== Infinity) spawnQueue--;
         spawnCooldown = 500 + Math.random()*400;
       }
     }
@@ -902,7 +907,14 @@
 
     // wave clear check: enemies defeated, and (for scrolling levels) the end reached
     var curWave = WAVES[waveIndex];
-    if(spawnQueue <= 0 && enemies.length === 0 && (!curWave.scroll || player.x >= levelLength-60)){
+    if(curWave.scroll){
+      // reaching the right edge ends the level, no matter who is still on screen
+      if(player.x >= levelLength-60){
+        enemies = []; projectiles = [];
+        showToast('ROUND CLEAR!', 1200);
+        nextWave();
+      }
+    } else if(spawnQueue <= 0 && enemies.length === 0){
       nextWave();
     }
 
@@ -916,7 +928,32 @@
   }
 
   // ---------- Drawing ----------
-  function drawBackground(){
+  // ----- Per-level backgrounds -----
+  // Round 1 keeps the original synthwave art. Rounds 2, 3 and the boss fight
+  // each get their own procedurally drawn backdrop so every level looks different.
+  var FLOOR_Y = 405;
+
+  function rnd(i, s){
+    var x = Math.sin(i*127.1 + s*311.7) * 43758.5453;
+    return x - Math.floor(x);
+  }
+  function rrect(x, y, w, h, r){
+    ctx.beginPath();
+    if(ctx.roundRect){ ctx.roundRect(x, y, w, h, r); } else { ctx.rect(x, y, w, h); }
+  }
+  // Repeats fn across the screen as a parallax layer; fn gets the tile's screen x and a stable tile index.
+  function layer(factor, tileW, fn){
+    var off = camera.x * factor;
+    var first = Math.floor(off / tileW);
+    for(var i = first; i*tileW - off < W; i++){ fn(i*tileW - off, i); }
+  }
+  function vGrad(stops){
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    stops.forEach(function(s){ g.addColorStop(s[0], s[1]); });
+    return g;
+  }
+
+  function drawBgSynthwave(){
     if(ASSETS.bg){
       var img = ASSETS.bg;
       var scale = Math.max(W/img.width, H/img.height);
@@ -931,6 +968,136 @@
       ctx.fillStyle = '#120518';
       ctx.fillRect(0,0,W,H);
     }
+  }
+
+  // Round 2: Billboard Boulevard at dusk
+  var BILLBOARD_SLOGANS = ['SYNERGY!', 'DISRUPT IT', 'THINK DIFFERENT-ISH', 'BEST. EVER. MAYBE.', 'LEVERAGE YOUR LEVERAGE', 'JUST DO... SOMETHING', 'PASSION. PURPOSE. PIZZA.'];
+  function drawBgBoulevard(){
+    ctx.fillStyle = vGrad([[0,'#2a0b4a'],[0.45,'#d4386c'],[0.75,'#ff9a4a'],[1,'#ffd27a']]);
+    ctx.fillRect(0,0,W,H);
+    // sun
+    var sg = ctx.createRadialGradient(660, 330, 10, 660, 330, 150);
+    sg.addColorStop(0,'rgba(255,240,180,.95)'); sg.addColorStop(1,'rgba(255,170,80,0)');
+    ctx.fillStyle = sg; ctx.fillRect(480,170,360,320);
+    // far skyline
+    layer(0.12, 220, function(x,i){
+      var h = 90 + rnd(i,1)*110;
+      ctx.fillStyle = '#5a2250';
+      ctx.fillRect(x, FLOOR_Y-h, 150+rnd(i,2)*50, h);
+    });
+    // near skyline with lit windows
+    layer(0.3, 260, function(x,i){
+      var h = 130 + rnd(i,3)*150, w = 170 + rnd(i,4)*60;
+      ctx.fillStyle = '#2b1038';
+      ctx.fillRect(x, FLOOR_Y-h, w, h);
+      for(var wy = FLOOR_Y-h+14; wy < FLOOR_Y-20; wy += 26){
+        for(var wx = x+12; wx < x+w-16; wx += 24){
+          if(rnd(i*100+wx*0.1+wy, 5) > 0.55){ ctx.fillStyle = '#ffd86b'; ctx.fillRect(wx, wy, 10, 14); }
+        }
+      }
+    });
+    // billboards
+    layer(0.6, 560, function(x,i){
+      var bx = x + 40, by = FLOOR_Y - 250, bw = 330, bh = 120;
+      ctx.fillStyle = '#16091f';
+      ctx.fillRect(bx+60, by+bh, 12, 135); ctx.fillRect(bx+bw-72, by+bh, 12, 135);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(bx-6, by-6, bw+12, bh+12);
+      var hue = ['#c81e3a','#2b6fff','#12a35c','#9a2bd6','#e8a400'][Math.floor(rnd(i,6)*5)];
+      ctx.fillStyle = hue; ctx.fillRect(bx, by, bw, bh);
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 22px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(BILLBOARD_SLOGANS[((i % 7) + 7) % 7], bx+bw/2, by+bh/2, bw-20);
+    });
+    // street
+    ctx.fillStyle = vGrad([[0,'#000'],[0.74,'#1d1424'],[1,'#0e0a14']]);
+    ctx.fillRect(0, FLOOR_Y, W, H-FLOOR_Y);
+    ctx.fillStyle = '#ff5c8a'; ctx.fillRect(0, FLOOR_Y, W, 4);
+    layer(1, 150, function(x){ ctx.fillStyle = '#e8d36a'; ctx.fillRect(x, 500, 70, 6); });
+  }
+
+  // Round 3: The Feed (neon social media)
+  function drawBgFeed(){
+    ctx.fillStyle = vGrad([[0,'#050a24'],[0.6,'#240a52'],[1,'#4a0a62']]);
+    ctx.fillRect(0,0,W,H);
+    // giant phone screens
+    layer(0.22, 360, function(x,i){
+      var pw = 150, ph = 270, px = x + 60 + rnd(i,7)*70, py = 60 + rnd(i,8)*60;
+      var col = (i % 2 === 0) ? '#2be8ff' : '#ff2bd6';
+      ctx.globalAlpha = 0.55;
+      ctx.strokeStyle = col; ctx.lineWidth = 4; rrect(px, py, pw, ph, 18); ctx.stroke();
+      ctx.fillStyle = col; ctx.globalAlpha = 0.14; rrect(px, py, pw, ph, 18); ctx.fill();
+      ctx.globalAlpha = 0.7; ctx.fillStyle = col; ctx.font = 'bold 54px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      var icons = ['♥', '▶', '#', '★'];
+      ctx.fillText(icons[((i % 4) + 4) % 4], px+pw/2, py+ph/2);
+      ctx.globalAlpha = 1;
+    });
+    // floating likes / hashtags
+    layer(0.5, 200, function(x,i){
+      var t = (bgTime*0.25 + rnd(i,9)*3) % 1;
+      var fy = 420 - t*380;
+      ctx.globalAlpha = Math.sin(t*Math.PI) * 0.8;
+      ctx.fillStyle = (i % 3 === 0) ? '#ffd43a' : ((i % 3 === 1) ? '#ff2bd6' : '#2be8ff');
+      ctx.font = 'bold 26px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText((i % 2 === 0) ? '♥' : '#', x + 60 + rnd(i,10)*80, fy);
+      ctx.globalAlpha = 1;
+    });
+    // neon grid floor
+    ctx.fillStyle = '#12052a'; ctx.fillRect(0, FLOOR_Y, W, H-FLOOR_Y);
+    ctx.fillStyle = '#ff2bd6'; ctx.fillRect(0, FLOOR_Y, W, 3);
+    ctx.strokeStyle = 'rgba(255,43,214,.55)'; ctx.lineWidth = 1.5;
+    [20, 52, 96, 150].forEach(function(dy){
+      ctx.beginPath(); ctx.moveTo(0, FLOOR_Y+dy); ctx.lineTo(W, FLOOR_Y+dy); ctx.stroke();
+    });
+    ctx.strokeStyle = 'rgba(43,232,255,.5)';
+    layer(1, 90, function(x){
+      ctx.beginPath(); ctx.moveTo(x, FLOOR_Y); ctx.lineTo(x - 40 + (x-W/2)*0.35, H); ctx.stroke();
+    });
+  }
+
+  // Boss: the AI SLOP glitch void
+  function drawBgVoid(){
+    ctx.fillStyle = vGrad([[0,'#000000'],[0.6,'#14002a'],[1,'#2a0050']]);
+    ctx.fillRect(0,0,W,H);
+    // digital rain
+    layer(0.1, 40, function(x,i){
+      var speed = 0.3 + rnd(i,11)*0.7;
+      var ty = ((bgTime*speed + rnd(i,12)) % 1) * (H+160) - 160;
+      var g = ctx.createLinearGradient(0, ty, 0, ty+150);
+      g.addColorStop(0,'rgba(178,58,255,0)'); g.addColorStop(1,'rgba(178,58,255,.55)');
+      ctx.fillStyle = g; ctx.fillRect(x+14, ty, 6, 150);
+    });
+    // giant pulsing watermark
+    ctx.globalAlpha = 0.10 + Math.sin(bgTime*2)*0.03;
+    ctx.fillStyle = '#d060ff'; ctx.font = 'bold 190px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('SLOP', W/2, 200);
+    ctx.globalAlpha = 1;
+    // glitch bars
+    var seed = Math.floor(bgTime*9);
+    for(var gi = 0; gi < 5; gi++){
+      if(rnd(seed, gi+20) > 0.55){
+        ctx.fillStyle = (gi % 2) ? 'rgba(43,232,255,.18)' : 'rgba(255,43,214,.18)';
+        ctx.fillRect(0, rnd(seed, gi+30)*FLOOR_Y, W, 4 + rnd(seed, gi+40)*16);
+      }
+    }
+    // cracked floor with glow line
+    ctx.fillStyle = '#0b0016'; ctx.fillRect(0, FLOOR_Y, W, H-FLOOR_Y);
+    ctx.fillStyle = '#b23aff'; ctx.fillRect(0, FLOOR_Y, W, 3);
+    ctx.strokeStyle = 'rgba(178,58,255,.7)'; ctx.lineWidth = 2;
+    layer(1, 200, function(x,i){
+      ctx.beginPath();
+      ctx.moveTo(x + rnd(i,13)*160, FLOOR_Y+4);
+      ctx.lineTo(x + rnd(i,14)*160, FLOOR_Y + 45);
+      ctx.lineTo(x + rnd(i,15)*160, FLOOR_Y + 90);
+      ctx.lineTo(x + rnd(i,16)*160, H);
+      ctx.stroke();
+    });
+  }
+
+  var BG_DRAWERS = [drawBgSynthwave, drawBgBoulevard, drawBgFeed, drawBgVoid];
+  function drawBackground(){
+    var fn = BG_DRAWERS[waveIndex] || drawBgSynthwave;
+    fn();
+    ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
   }
 
   // Draws a chroma-keyed sprite, feet anchored at (x,y). nativeFacing is the
