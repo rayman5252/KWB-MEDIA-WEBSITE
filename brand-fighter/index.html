@@ -258,9 +258,10 @@
   // Sprites are generated on a flat chroma-key color; we key it out to alpha on load.
   var ASSET_SOURCES = {
     bg: { src: 'assets/bg-synthwave.png' },
-    hero: { src: 'assets/hero.png', key: [197,31,102] },
-    heroPunch: { src: 'assets/hero-punch.png', key: [255,0,255] },
-    heroKick: { src: 'assets/hero-kick.png', key: [255,0,255] },
+    // Hero art is pre-cut to transparent PNGs. Runtime keying removed the hero's red gloves, tie and skin shading.
+    hero: { src: 'assets/hero.png' },
+    heroPunch: { src: 'assets/hero-punch.png' },
+    heroKick: { src: 'assets/hero-kick.png' },
     VIDEO: { src: 'assets/enemy-video.png', key: [255,0,255] },
     SLOGAN: { src: 'assets/enemy-slogan.png', key: [255,0,255] },
     TREND: { src: 'assets/enemy-trend.png', key: [255,0,255] },
@@ -338,6 +339,8 @@
   }
   var sfx = {
     punch: function(){ beep(180,0.08,'square',0.09); },
+    gun: function(){ beep(220,0.05,'sawtooth',0.12); beep(70,0.1,'square',0.1); },
+    holster: function(){ beep(500,0.04,'square',0.06); setTimeout(function(){ beep(380,0.05,'square',0.06); }, 60); },
     kick: function(){ beep(120,0.12,'square',0.11); },
     hitPlayer: function(){ beep(90,0.18,'sawtooth',0.12); },
     hitEnemy: function(){ beep(300,0.07,'square',0.07); },
@@ -369,8 +372,10 @@
   // ---------- Input ----------
   var keys = {};
   var prevKeys = {};
+  var gunToggleQueued = false;   // hidden key G; queued from the event so a very quick tap is never missed
   window.addEventListener('keydown', function(e){
     unlockAudio();
+    if(e.code === 'KeyG' && !e.repeat){ gunToggleQueued = true; }
     keys[e.code] = true;
     if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space'].indexOf(e.code) !== -1){ e.preventDefault(); }
   });
@@ -429,7 +434,8 @@
       state:'idle', stateTimer:0, animT:0,
       attackCooldown:0, invuln:0, hitApplied:false,
       blocking:false, dead:false,
-      vy:0, jumpY:0, jumping:false, cycloneUsed:false
+      vy:0, jumpY:0, jumping:false, cycloneUsed:false,
+      gunOut:false, gunFireT:0
     };
   }
   var player = makePlayer();
@@ -453,6 +459,7 @@
 
   var enemies = [];
   var projectiles = [];
+  var bullets = [];          // hidden easter egg: the hero's pistol (press G)
   var GIRL_SPRITE_H = 145;   // the selfie girl's art is cropped tight and wider than tall, so she draws shorter
   var nextTrendIsGirl = false;
   function spawnEnemy(typeKey){
@@ -513,7 +520,7 @@
     if(!assetsReady) return;
     unlockAudio();
     player = makePlayer();
-    enemies = []; projectiles = []; particles = [];
+    enemies = []; projectiles = []; bullets = []; particles = [];
     waveIndex = 0;
     startWave(waveIndex);
   }
@@ -539,6 +546,7 @@
   }
 
   function beginPlaying(){
+    gunToggleQueued = false;   // ignore any G pressed on a menu / intro screen
     state = STATE.PLAYING;
     showScreen(null);
     hud.classList.remove('hidden');
@@ -633,7 +641,7 @@
   // ---------- Combat ----------
   function tryPlayerAttack(){
     if(player.attackCooldown > 0 || player.state==='hit' || player.dead) return;
-    if(justPressed('KeyZ') || justPressed('KeyJ')){
+    if((justPressed('KeyZ') || justPressed('KeyJ')) && !player.gunOut){
       player.state = 'punch'; player.stateTimer = 220; player.attackCooldown = 300;
       player.hitApplied = false;
       sfx.punch();
@@ -673,6 +681,78 @@
     });
     spawnHit(player.x, player.y - player.h*0.5, '#2be8ff', 16);
     shake(14, 0.25);
+  }
+
+  // ---- Hidden pistol (press G to draw / holster; PUNCH key fires while it's out) ----
+  // Fist positions in the 848x1264 hero art, converted to game pixels at draw time.
+  var GUN_HAND_IDLE = { px:690, py:345 };   // guard fist in hero.png
+  var GUN_HAND_FIRE = { px:740, py:375 };   // extended fist in hero-punch.png
+  var HERO_ART_W = 848, HERO_ART_H = 1264;
+  function gunHandPos(fire){
+    var s = PLAYER_SPRITE_H / HERO_ART_H;
+    var hnd = fire ? GUN_HAND_FIRE : GUN_HAND_IDLE;
+    return { dx:(hnd.px - HERO_ART_W/2) * s, dy:(HERO_ART_H - hnd.py) * s };
+  }
+  function toggleGun(){
+    player.gunOut = !player.gunOut;
+    player.gunFireT = 0;
+    showToast(player.gunOut ? 'LOCKED & LOADED!' : 'GUN HOLSTERED', 900);
+    if(player.gunOut){ sfx.gun(); } else { sfx.holster(); }
+  }
+  function fireGun(){
+    player.attackCooldown = 200;
+    player.gunFireT = 140;
+    var hp = gunHandPos(true);
+    var mx = player.x + player.facing*(hp.dx + 36);
+    var my = player.y + player.jumpY - hp.dy;
+    bullets.push({ x:mx, y:my, vx:player.facing*950, dmg:14, dead:false });
+    spawnHit(mx, my, '#ffd43a', 4);
+    sfx.gun();
+    shake(2, 0.05);
+  }
+  function updateBullets(dt){
+    bullets.forEach(function(b){
+      var x0 = b.x;
+      b.x += b.vx*dt;
+      var lo = Math.min(x0, b.x) - 8, hi = Math.max(x0, b.x) + 8;
+      var best = null;
+      enemies.forEach(function(e){
+        if(e.dead) return;
+        var hw = e.type.w/2;
+        if(e.x + hw >= lo && e.x - hw <= hi && b.y > e.y - e.spriteH && b.y < e.y + 10){
+          if(!best || Math.abs(e.x - x0) < Math.abs(best.x - x0)) best = e;
+        }
+      });
+      if(best){
+        damageEnemy(best, b.dmg, 90);
+        spawnHit(b.x, b.y, '#ffd43a', 6);
+        b.dead = true;
+      }
+    });
+    bullets = bullets.filter(function(b){ return !b.dead && b.x > camera.x-80 && b.x < camera.x+W+80; });
+  }
+  function drawGun(x, y, facing, fire){
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(facing, 1);
+    ctx.lineWidth = 2; ctx.strokeStyle = '#000';
+    // grip
+    ctx.fillStyle = '#6a4326'; ctx.fillRect(-5, 1, 11, 15); ctx.strokeRect(-5, 1, 11, 15);
+    // slide + barrel
+    ctx.fillStyle = '#aeb8c4'; ctx.fillRect(-7, -9, 42, 11); ctx.strokeRect(-7, -9, 42, 11);
+    ctx.fillStyle = '#eef3f8'; ctx.fillRect(-4, -7, 34, 2);
+    ctx.fillStyle = '#2a2f38'; ctx.fillRect(31, -7, 4, 7);
+    // trigger
+    ctx.fillStyle = '#000'; ctx.fillRect(7, 2, 2, 5);
+    if(fire){
+      // muzzle flash
+      ctx.fillStyle = '#fff6a0';
+      ctx.beginPath();
+      ctx.moveTo(35,-4); ctx.lineTo(48,-14); ctx.lineTo(44,-4); ctx.lineTo(58,-3); ctx.lineTo(44,1); ctx.lineTo(50,10); ctx.lineTo(35,-1);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ffd43a'; ctx.fillRect(36,-5,12,4);
+    }
+    ctx.restore();
   }
 
   function damageEnemy(e, dmg, kbForce){
@@ -755,8 +835,16 @@
     // ---- PLAYING ----
     if(player.invuln > 0) player.invuln -= dt*1000;
     if(player.attackCooldown > 0) player.attackCooldown -= dt*1000;
+    if(player.gunFireT > 0) player.gunFireT -= dt*1000;
 
     player.blocking = keys['KeyC'] && !player.jumping && player.state !== 'punch' && player.state !== 'kick' && player.state !== 'hit' && player.state !== 'cyclone';
+
+    // hidden key: G draws / holsters a pistol; while it's out the PUNCH key (Z / J) fires it
+    if(gunToggleQueued){ gunToggleQueued = false; if(!player.dead) toggleGun(); }
+    if(player.gunOut && (keys['KeyZ'] || keys['KeyJ']) && player.attackCooldown <= 0 && !player.dead &&
+       !player.blocking && player.state !== 'hit' && player.state !== 'kick' && player.state !== 'cyclone'){
+      fireGun();
+    }
 
     // jump trigger (ground only, not mid-attack)
     if((justPressed('ArrowUp')||justPressed('KeyW')) && !player.jumping && !player.dead &&
@@ -903,6 +991,8 @@
     });
     enemies = enemies.filter(function(e){ return !(e.dead && e.deathT > 0.6); });
 
+    updateBullets(dt);
+
     // projectiles
     projectiles.forEach(function(p){ p.x += p.vx*dt; });
     projectiles = projectiles.filter(function(p){
@@ -919,7 +1009,7 @@
     if(curWave.scroll){
       // reaching the right edge ends the level, no matter who is still on screen
       if(player.x >= levelLength-60){
-        enemies = []; projectiles = [];
+        enemies = []; projectiles = []; bullets = [];
         showToast('ROUND CLEAR!', 1200);
         nextWave();
       }
@@ -1183,7 +1273,19 @@
       } else {
         var heroImg = player.state === 'punch' && ASSETS.heroPunch ? ASSETS.heroPunch :
                       player.state === 'kick' && ASSETS.heroKick ? ASSETS.heroKick : ASSETS.hero;
+        var gunFiring = player.gunOut && player.gunFireT > 0;
+        // gun out: guard pose normally, arm extended while firing
+        if(player.gunOut && player.state !== 'kick' && player.state !== 'punch'){
+          heroImg = (gunFiring && ASSETS.heroPunch) ? ASSETS.heroPunch : ASSETS.hero;
+        }
         drawSprite(heroImg, player.x, py-bob, PLAYER_SPRITE_H, player.facing, 1, playerAlpha, 0);
+        if(player.gunOut && player.state !== 'kick' && player.state !== 'punch'){
+          var gh = gunHandPos(gunFiring);
+          var recoil = gunFiring ? -3 * (player.gunFireT/140) : 0;
+          ctx.globalAlpha = playerAlpha;
+          drawGun(player.x + player.facing*(gh.dx + recoil), py - bob - gh.dy, player.facing, gunFiring);
+          ctx.globalAlpha = 1;
+        }
       }
 
       enemies.slice().sort(function(a,b){return a.x-b.x;}).forEach(function(e){
@@ -1203,6 +1305,14 @@
           var bAlpha = Math.min(1, e.bubbleT/300);
           drawSpeechBubble(e.x, ey - e.spriteH - 4, e.bubbleText, bAlpha);
         }
+      });
+
+      // hero bullets
+      bullets.forEach(function(b){
+        var dir = b.vx > 0 ? 1 : -1;
+        ctx.fillStyle = 'rgba(255,212,58,.55)'; ctx.fillRect(dir > 0 ? b.x-34 : b.x, b.y-2, 34, 4);
+        ctx.fillStyle = '#fff6a0'; ctx.fillRect(dir > 0 ? b.x-18 : b.x, b.y-1.5, 18, 3);
+        ctx.fillStyle = '#fff'; ctx.fillRect(dir > 0 ? b.x-5 : b.x-1, b.y-2, 6, 4);
       });
 
       // projectiles
