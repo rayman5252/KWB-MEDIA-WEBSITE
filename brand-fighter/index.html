@@ -264,6 +264,7 @@
     VIDEO: { src: 'assets/enemy-video.png', key: [255,0,255] },
     SLOGAN: { src: 'assets/enemy-slogan.png', key: [255,0,255] },
     TREND: { src: 'assets/enemy-trend.png', key: [255,0,255] },
+    TREND_GIRL: { src: 'assets/enemy-trend-girl.png' }, // already cut out to transparent, no chroma key needed
     BOSS: { src: 'assets/boss-slop.png', key: [0,255,0] }
   };
   var ASSETS = {};
@@ -296,7 +297,7 @@
     function done(){
       remaining--;
       if(remaining <= 0){
-        ENEMY_SPRITES = { VIDEO: ASSETS.VIDEO, SLOGAN: ASSETS.SLOGAN, TREND: ASSETS.TREND, BOSS: ASSETS.BOSS };
+        ENEMY_SPRITES = { VIDEO: ASSETS.VIDEO, SLOGAN: ASSETS.SLOGAN, TREND: ASSETS.TREND, TREND_GIRL: ASSETS.TREND_GIRL, BOSS: ASSETS.BOSS };
         assetsReady = true;
         onReady();
       }
@@ -439,6 +440,7 @@
     VIDEO: ["What time's lunch?", "Audio? Who needs audio?", "Meh, good enough.", "We'll fix it in post!", "Shaky cam is a STYLE.", "Did we charge the battery?"],
     SLOGAN: ["Let's synergize this!", "Needs more... punch?", "Think Different, but generic.", "Circle back on 'circle back.'", "Disrupt. Innovate. Done!", "It's brand DNA, trust me."],
     TREND: ["Is this still trending?", "We NEED a dance challenge.", "Slap a filter on it!", "This'll go viral, promise!", "Everything's better memed.", "Hashtag it and ship it!"],
+    TREND_GIRL: ["Hold on, my good side!", "Wait, let me retake this!", "Smile! You're in my story!", "Link in bio!", "Too much to ask for one more take?", "No filter. Okay, one filter."],
     BOSS: ["Close enough, right?", "Consistency is overrated.", "Six fingers is a FEATURE.", "I trained on vibes alone."]
   };
 
@@ -451,9 +453,15 @@
 
   var enemies = [];
   var projectiles = [];
+  var GIRL_SPRITE_H = 145;   // the selfie girl's art is cropped tight and wider than tall, so she draws shorter
+  var nextTrendIsGirl = false;
   function spawnEnemy(typeKey){
     var t = ENEMY_TYPES[typeKey];
+    // Trend Chasers alternate guy / girl so exactly half are selfie girls
+    var girl = false;
+    if(typeKey === 'TREND'){ girl = nextTrendIsGirl; nextTrendIsGirl = !nextTrendIsGirl; }
     var e = {
+      girl: girl, spriteKey: girl ? 'TREND_GIRL' : typeKey, spriteH: girl ? GIRL_SPRITE_H : t.spriteH,
       type:t, x: camera.x + W + 40 + Math.random()*40, y:GROUND_Y, facing:-1,
       hp:t.hp, maxHp:t.hp, state:'walk', stateTimer:0, animT:Math.random()*10,
       windupT:0, cooldownT:300 + Math.random()*400, hitApplied:false,
@@ -515,6 +523,7 @@
     // Scrolling levels spawn enemies non-stop until the player reaches the right edge.
     spawnQueue = w.scroll ? Infinity : w.count;
     spawnCooldown = 0;
+    nextTrendIsGirl = Math.random() < 0.5;
     levelLength = w.length || W;
     camera.x = 0;
     player.x = 150;
@@ -835,7 +844,7 @@
       } else {
         e.bubbleCooldown -= dt*1000;
         if(e.bubbleCooldown <= 0 && e.state !== 'windup'){
-          var lines = ENEMY_LINES[e.type.key];
+          var lines = ENEMY_LINES[e.spriteKey];
           e.bubbleText = lines[Math.floor(Math.random()*lines.length)];
           e.bubbleT = 2200;
           e.bubbleCooldown = 3500 + Math.random()*3500;
@@ -1178,19 +1187,21 @@
       }
 
       enemies.slice().sort(function(a,b){return a.x-b.x;}).forEach(function(e){
-        var img = ENEMY_SPRITES[e.type.key];
+        var img = ENEMY_SPRITES[e.spriteKey];
         var alpha = e.dead ? Math.max(0,1-e.deathT/0.6) : 1;
         var ey = e.y + (e.dead?e.deathT*40:0);
         var ebob = (!e.dead && e.state==='walk') ? Math.sin(e.animT*10)*4 : 0;
         var pulse = e.type.boss ? 1 + Math.sin(e.animT*6)*0.04 : 1;
-        drawSprite(img, e.x, ey-ebob, e.type.spriteH, e.facing, -1, alpha, 0, pulse);
+        // The Trend Chaser art (guy and girl) is drawn facing right; the other enemies face left.
+        var nativeFacing = e.type.key === 'TREND' ? 1 : -1;
+        drawSprite(img, e.x, ey-ebob, e.spriteH, e.facing, nativeFacing, alpha, 0, pulse);
         if(e.state==='windup' && !e.dead){
           ctx.font='bold '+(e.type.boss?'16px':'10px')+' monospace'; ctx.fillStyle='#fff'; ctx.textAlign='center';
-          ctx.fillText(e.type.boss?'!!':'!', e.x, ey - e.type.spriteH - 6);
+          ctx.fillText(e.type.boss?'!!':'!', e.x, ey - e.spriteH - 6);
         }
         if(e.bubbleT > 0 && !e.dead){
           var bAlpha = Math.min(1, e.bubbleT/300);
-          drawSpeechBubble(e.x, ey - e.type.spriteH - 4, e.bubbleText, bAlpha);
+          drawSpeechBubble(e.x, ey - e.spriteH - 4, e.bubbleText, bAlpha);
         }
       });
 
