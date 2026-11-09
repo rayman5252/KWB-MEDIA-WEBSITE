@@ -263,6 +263,7 @@
     hero: { src: 'assets/hero.png' },
     heroPunch: { src: 'assets/hero-punch.png' },
     heroKick: { src: 'assets/hero-kick.png' },
+    heroGun: { src: 'assets/hero-gun.png' },   // hidden pistol pose (press G)
     VIDEO: { src: 'assets/enemy-video.png' },
     SLOGAN: { src: 'assets/enemy-slogan.png' },
     TREND: { src: 'assets/enemy-trend.png' },
@@ -685,14 +686,12 @@
   }
 
   // ---- Hidden pistol (press G to draw / holster; PUNCH key fires while it's out) ----
-  // Fist positions in the 848x1264 hero art, converted to game pixels at draw time.
-  var GUN_HAND_IDLE = { px:690, py:345 };   // guard fist in hero.png
-  var GUN_HAND_FIRE = { px:740, py:375 };   // extended fist in hero-punch.png
+  // The hero-gun.png pose (848x1264, same canvas as the other hero art) has the pistol's muzzle at this pixel.
+  var GUN_MUZZLE = { px:824, py:293 };
   var HERO_ART_W = 848, HERO_ART_H = 1264;
-  function gunHandPos(fire){
+  function gunMuzzlePos(){
     var s = PLAYER_SPRITE_H / HERO_ART_H;
-    var hnd = fire ? GUN_HAND_FIRE : GUN_HAND_IDLE;
-    return { dx:(hnd.px - HERO_ART_W/2) * s, dy:(HERO_ART_H - hnd.py) * s };
+    return { dx:(GUN_MUZZLE.px - HERO_ART_W/2) * s, dy:(HERO_ART_H - GUN_MUZZLE.py) * s };
   }
   function toggleGun(){
     player.gunOut = !player.gunOut;
@@ -703,9 +702,9 @@
   function fireGun(){
     player.attackCooldown = 200;
     player.gunFireT = 140;
-    var hp = gunHandPos(true);
-    var mx = player.x + player.facing*(hp.dx + 36);
-    var my = player.y + player.jumpY - hp.dy;
+    var mz = gunMuzzlePos();
+    var mx = player.x + player.facing*(mz.dx + 2);
+    var my = player.y + player.jumpY - mz.dy;
     bullets.push({ x:mx, y:my, vx:player.facing*950, dmg:14, dead:false });
     spawnHit(mx, my, '#ffd43a', 4);
     sfx.gun();
@@ -720,7 +719,8 @@
       enemies.forEach(function(e){
         if(e.dead) return;
         var hw = e.type.w/2;
-        if(e.x + hw >= lo && e.x - hw <= hi && b.y > e.y - e.spriteH && b.y < e.y + 10){
+        // forgiving vertical hitbox: the gun fires at head height, which is above the shorter enemies' sprites
+        if(e.x + hw >= lo && e.x - hw <= hi && b.y > e.y - e.spriteH - 40 && b.y < e.y + 10){
           if(!best || Math.abs(e.x - x0) < Math.abs(best.x - x0)) best = e;
         }
       });
@@ -732,27 +732,16 @@
     });
     bullets = bullets.filter(function(b){ return !b.dead && b.x > camera.x-80 && b.x < camera.x+W+80; });
   }
-  function drawGun(x, y, facing, fire){
+  // muzzle flash, drawn with its base at the pistol's muzzle (x, y) and pointing the way the hero faces
+  function drawMuzzleFlash(x, y, facing){
     ctx.save();
     ctx.translate(x, y);
     ctx.scale(facing, 1);
-    ctx.lineWidth = 2; ctx.strokeStyle = '#000';
-    // grip
-    ctx.fillStyle = '#6a4326'; ctx.fillRect(-5, 1, 11, 15); ctx.strokeRect(-5, 1, 11, 15);
-    // slide + barrel
-    ctx.fillStyle = '#aeb8c4'; ctx.fillRect(-7, -9, 42, 11); ctx.strokeRect(-7, -9, 42, 11);
-    ctx.fillStyle = '#eef3f8'; ctx.fillRect(-4, -7, 34, 2);
-    ctx.fillStyle = '#2a2f38'; ctx.fillRect(31, -7, 4, 7);
-    // trigger
-    ctx.fillStyle = '#000'; ctx.fillRect(7, 2, 2, 5);
-    if(fire){
-      // muzzle flash
-      ctx.fillStyle = '#fff6a0';
-      ctx.beginPath();
-      ctx.moveTo(35,-4); ctx.lineTo(48,-14); ctx.lineTo(44,-4); ctx.lineTo(58,-3); ctx.lineTo(44,1); ctx.lineTo(50,10); ctx.lineTo(35,-1);
-      ctx.closePath(); ctx.fill();
-      ctx.fillStyle = '#ffd43a'; ctx.fillRect(36,-5,12,4);
-    }
+    ctx.fillStyle = '#fff6a0';
+    ctx.beginPath();
+    ctx.moveTo(0,-4); ctx.lineTo(13,-14); ctx.lineTo(9,-4); ctx.lineTo(23,-3); ctx.lineTo(9,1); ctx.lineTo(15,10); ctx.lineTo(0,-1);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ffd43a'; ctx.fillRect(1,-5,12,4);
     ctx.restore();
   }
 
@@ -1274,17 +1263,16 @@
       } else {
         var heroImg = player.state === 'punch' && ASSETS.heroPunch ? ASSETS.heroPunch :
                       player.state === 'kick' && ASSETS.heroKick ? ASSETS.heroKick : ASSETS.hero;
-        var gunFiring = player.gunOut && player.gunFireT > 0;
-        // gun out: guard pose normally, arm extended while firing
-        if(player.gunOut && player.state !== 'kick' && player.state !== 'punch'){
-          heroImg = (gunFiring && ASSETS.heroPunch) ? ASSETS.heroPunch : ASSETS.hero;
-        }
-        drawSprite(heroImg, player.x, py-bob, PLAYER_SPRITE_H, player.facing, 1, playerAlpha, 0);
-        if(player.gunOut && player.state !== 'kick' && player.state !== 'punch'){
-          var gh = gunHandPos(gunFiring);
-          var recoil = gunFiring ? -3 * (player.gunFireT/140) : 0;
+        var gunPose = player.gunOut && player.state !== 'kick' && player.state !== 'punch' && ASSETS.heroGun;
+        var gunFiring = gunPose && player.gunFireT > 0;
+        // gun out: the aiming pose; a little recoil and a muzzle flash while firing
+        if(gunPose){ heroImg = ASSETS.heroGun; }
+        var recoil = gunFiring ? -3 * (player.gunFireT/140) : 0;
+        drawSprite(heroImg, player.x + player.facing*recoil, py-bob, PLAYER_SPRITE_H, player.facing, 1, playerAlpha, 0);
+        if(gunFiring){
+          var mzp = gunMuzzlePos();
           ctx.globalAlpha = playerAlpha;
-          drawGun(player.x + player.facing*(gh.dx + recoil), py - bob - gh.dy, player.facing, gunFiring);
+          drawMuzzleFlash(player.x + player.facing*(mzp.dx + recoil), py - bob - mzp.dy, player.facing);
           ctx.globalAlpha = 1;
         }
       }
