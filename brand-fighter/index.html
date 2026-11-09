@@ -255,18 +255,19 @@
   var levelLength = W;
 
   // ---------- Art assets ----------
-  // Sprites are generated on a flat chroma-key color; we key it out to alpha on load.
+  // All sprites are pre-cut to transparent PNGs (runtime chroma keying was eating colors that sat near the key color).
+  // chromaKeyToAlpha is kept for any future sprite that still ships on a flat background; just give its entry a `key`.
   var ASSET_SOURCES = {
     bg: { src: 'assets/bg-synthwave.png' },
     // Hero art is pre-cut to transparent PNGs. Runtime keying removed the hero's red gloves, tie and skin shading.
     hero: { src: 'assets/hero.png' },
     heroPunch: { src: 'assets/hero-punch.png' },
     heroKick: { src: 'assets/hero-kick.png' },
-    VIDEO: { src: 'assets/enemy-video.png', key: [255,0,255] },
-    SLOGAN: { src: 'assets/enemy-slogan.png', key: [255,0,255] },
-    TREND: { src: 'assets/enemy-trend.png', key: [255,0,255] },
+    VIDEO: { src: 'assets/enemy-video.png' },
+    SLOGAN: { src: 'assets/enemy-slogan.png' },
+    TREND: { src: 'assets/enemy-trend.png' },
     TREND_GIRL: { src: 'assets/enemy-trend-girl.png' }, // already cut out to transparent, no chroma key needed
-    BOSS: { src: 'assets/boss-slop.png', key: [0,255,0] }
+    BOSS: { src: 'assets/boss-slop.png' }
   };
   var ASSETS = {};
   var ENEMY_SPRITES = {};
