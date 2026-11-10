@@ -922,7 +922,10 @@ function hexAt(ev){
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const p=center(c,r); const dx=(x-p.x)/S, dy=(y-p.y)/(TILT*S); const d=dx*dx+dy*dy; if(d<bd){ bd=d; best=[c,r]; } }
   return bd<1.1?best:null;
 }
-function ownStack(c,r){ const l=unitsAtHex(c,r).filter(u=>u.nat===me); const cy=cityAt(c,r); const out=l.slice(); if(cy&&cy.owner===me) out.push(cy); return out; }
+function ownStack(c,r){ // top to bottom: aircraft, surface unit, passengers, then the city itself
+  const air=airAtList(c,r).filter(u=>u.nat===me), s=surfAt(c,r), out=air.slice();
+  if(s&&s.nat===me){ out.push(s); s.cargo.map(unitById).filter(x=>x&&x.hp>0).forEach(x=>out.push(x)); }
+  const cy=cityAt(c,r); if(cy&&cy.owner===me) out.push(cy); return out; }
 async function clickHex(c,r){
   if(busy||gameOver) return;
   const k=key(c,r);
@@ -1034,7 +1037,7 @@ function refreshUI(){
       +'<p>'+u.type.desc+'</p>'+(u.nat===me&&u.type.cap?'<p>Cargo: '+u.cargo.length+'/'+u.type.cap+'</p>':'')
       +(air&&u.nat===me&&!u.aboard&&u.fuel<=0&&!(cityAt(u.c,u.r)&&cityAt(u.c,u.r).owner===me)?'<div class="preview">Out of fuel. Land this turn or crash.</div>':'')
       +(u.nat===me&&u.fresh?'<p><i>Just built. Ready next turn.</i></p>':'');
-    const st=ownStack(u.c,u.r); if(u.nat===me&&st.length>1&&!u.aboard){ card.innerHTML+='<div class="stack"></div>'; const d=card.querySelector('.stack'); st.forEach(x=>{ const b=document.createElement('button'); b.className='sec'; b.textContent=x.type?x.type.name:x.name; b.onclick=()=>{ x.type?selectUnit(x):selectCity(x); }; d.appendChild(b); }); }
+    const st=ownStack(u.c,u.r); if(u.nat===me&&st.length>1){ card.innerHTML+='<div class="stack"></div>'; const d=card.querySelector('.stack'); st.forEach(x=>{ const b=document.createElement('button'); b.className='sec'; b.textContent=(x.type?x.type.name:x.name)+(x===u?' ●':''); b.onclick=()=>{ x.type?selectUnit(x):selectCity(x); }; d.appendChild(b); }); }
   } else if(selCity){
     const cy=selCity; card.innerHTML='<div class="top"><div><h2>'+cy.name+'</h2><div class="sub">'+(cy.cap>=0?'Capital of '+NAT[cy.cap].name:'City')+' · '+NAT[cy.owner].name+'</div></div></div><div class="stats" style="grid-template-columns:repeat(3,1fr)">'+'<div>INCOME<b>+'+(cy.cap>=0?3:2)+'</b></div><div>BUILT<b>'+cy.built+'/'+cityCap(cy)+'</b></div><div>PORT<b>'+(isCoastal(cy.c,cy.r)?'yes':'no')+'</b></div></div><p>Pick a unit below. It appears here or next to the city and can act next turn.</p>';
   } else if(inspect&&inspect.hex){ const [c,r]=inspect.hex; const ex=explored(c,r); const cy=cityAt(c,r); card.innerHTML=ex?'<h2 style="font-family:Cinzel,serif;font-size:16px;margin:0">'+terrName(c,r)+'</h2>'+(cy?'<div class="sub">Owner: '+(cy.owner>=0?NAT[cy.owner].name:'Neutral')+' · pays '+(cy.cap>=0?3:2)+' IP</div>':'')+'<p>'+(MAP[r][c]==='S'?'Open water. Ships and aircraft only.':MAP[r][c]==='F'?'Forest: slow going, +25% defense.':MAP[r][c]==='M'?'Mountains: very slow, +50% defense.':'Plains: easy going.')+'</p>':'<div class="empty">Unexplored territory.</div>'; }
