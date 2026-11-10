@@ -120,7 +120,7 @@
     <div id="shop"></div>
     <div id="cargo"></div>
     <div id="hint"></div>
-    <div class="btns"><button id="next" class="sec" title="Select the next unit that can still act (N)">Next Unit</button><button id="hold" class="sec" title="Finish this unit's turn (H)">Hold</button><button id="end">End Turn</button><button id="mute" class="sec" title="Sound on/off" style="flex:none">&#9834;</button></div>
+    <div class="btns"><button id="buy" class="sec" title="Open the production menu at your next city (B)">Buy</button><button id="next" class="sec" title="Select the next unit that can still act (N)">Next Unit</button><button id="hold" class="sec" title="Finish this unit's turn (H)">Hold</button><button id="end">End Turn</button><button id="mute" class="sec" title="Sound on/off" style="flex:none">&#9834;</button></div>
     <ul id="log"></ul>
   </aside>
 </div>
@@ -135,7 +135,7 @@
     <ul>
       <li><b>Goal:</b> capture the capital of every enemy nation. Your allies are AI commanders. Lose your own capital and you are out.</li>
       <li><b>Turns:</b> USA, UK, USSR, Germany/Italy, then Japan. Click a unit, click a blue hex to move, click a red hex to attack. End Turn when done.</li>
-      <li><b>Production:</b> click one of your cities to buy units with Industry Points (IP). Each city makes 1 unit per turn, capitals make 2. Ships need a coastal city. Cities pay IP every turn, so capture more of them.</li>
+      <li><b>Production:</b> click one of your cities, or press the Buy button, to buy units with Industry Points (IP). Each city makes 1 unit per turn, capitals make 2. Ships need a coastal city. Cities pay IP every turn, so capture more of them.</li>
       <li><b>Land:</b> infantry are cheap and take cities. Armor hits hard but is slow in forest and mountains. Units in forests, mountains and cities defend better.</li>
       <li><b>Sea:</b> transports carry 2 land units (move a land unit onto an adjacent transport, then sail and land on the coast). Battleships hit up to 2 hexes away. Submarines are hidden until something gets next to them and are deadly to ships.</li>
       <li><b>Air:</b> aircraft take off from cities and carriers, and must land again within 2 turns (bombers) or 1 turn after the sortie (fighters) or they crash. Fighters hunt aircraft, bombers smash ground and ships.</li>
@@ -978,7 +978,7 @@ const explored=(c,r)=>expl[teamOf(me)].has(key(c,r));
 addEventListener('keydown',ev=>{
   if(!$('title').classList.contains('hidden')) return;
   const k=ev.key.toLowerCase();
-  if(k==='n') nextUnit(); else if(k==='h') holdUnit(); else if(k==='e'||k==='enter'){ if(!$('overlay').classList.contains('hidden')) return; endClick(); }
+  if(k==='n') nextUnit(); else if(k==='h') holdUnit(); else if(k==='b') nextCity(); else if(k==='e'||k==='enter'){ if(!$('overlay').classList.contains('hidden')) return; endClick(); }
   else if(k==='escape'){ clearSel(); inspect=null; refreshUI(); }
   else if(k==='+'||k==='='){ setZoom(zoom*1.15); } else if(k==='-'){ setZoom(zoom/1.15); }
 });
@@ -992,6 +992,14 @@ async function endClick(){
   busy=true; try{ await endTurn(); }finally{ busy=false; } refreshUI();
 }
 $('end').onclick=()=>{ ac(); endClick(); };
+function nextCity(){
+  if(turnNat!==me||gameOver||busy) return;
+  const mc=cities.filter(c=>c.owner===me).sort((a,b)=>b.cap-a.cap); if(!mc.length) return;
+  const open=mc.filter(c=>c.built<cityCap(c)); const list=open.length?open:mc;
+  let i=selCity?list.indexOf(selCity)+1:0; if(i>=list.length||i<0) i=0;
+  selectCity(list[i]); centerOn(list[i].c,list[i].r);
+}
+$('buy').onclick=()=>{ ac(); nextCity(); };
 $('next').onclick=()=>{ ac(); nextUnit(); };
 $('hold').onclick=holdUnit;
 $('mute').onclick=()=>{ muted=!muted; try{ localStorage.setItem('wwMute',muted?'1':'0'); }catch(e){} $('mute').style.opacity=muted?.45:1; };
@@ -1047,9 +1055,9 @@ function refreshUI(){
   else if(shopType) hint='Click a green hex to place the new unit.';
   else if(sel){ hint=sel.done?'This unit has finished.':selTargets.length?'Red hexes can be attacked. Blue hexes are moves.':(selInfo&&selInfo.size?'Blue hexes show where it can move.':'No moves left.');
     if(sel.type.dom==='land'&&!sel.aboard) hint+=' Move onto an adjacent transport to board.'; if(sel.aboard&&sel.type.dom==='land') hint='Aboard: click an adjacent coastal land hex to unload.'; }
-  else hint=selCity?'Choose what to build.':'Click a unit or city. N = next unit, H = hold, E = end turn.';
+  else hint=selCity?'Choose what to build.':'Click a unit or city. B = buy units, N = next unit, H = hold, E = end turn.';
   $('hint').textContent=hint;
-  $('end').disabled=turnNat!==me||busy||gameOver; $('next').disabled=turnNat!==me||gameOver; $('hold').disabled=!sel||turnNat!==me;
+  $('end').disabled=turnNat!==me||busy||gameOver; $('next').disabled=turnNat!==me||gameOver; $('buy').disabled=turnNat!==me||gameOver||busy; $('hold').disabled=!sel||turnNat!==me;
   const idle=turnNat===me&&!busy&&!gameOver&&!units.some(u=>u.nat===me&&u.hp>0&&canAct(u));
   $('end').classList.toggle('pulse',!!idle);
 }
