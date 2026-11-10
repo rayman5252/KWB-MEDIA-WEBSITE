@@ -537,7 +537,7 @@ async function moveUnit(u,destKey,info){
   }
   if(bumped){ u.mp=0; log('Contact! '+NAT[bumped.nat].short+' '+bumped.type.name+' was lying in wait.', teamOf(u.nat)===teamOf(me)?'bad':'good'); addText(u.c,u.r,'AMBUSH!','#ff9a8a'); updateVision(); return; }
   const used=info._best.get(last)||0; u.mp=Math.max(0,mp0-used);
-  sfx('move');
+  sfx(u.type.dom==='air'?'air':u.type.key==='sub'?'ping':u.type.dom==='land'?'move':'');
   const tr=boardable(u,u.c,u.r);
   if(tr&&tr!==u){
     if(u.type.dom==='land'||u.type.dom==='air'){ u.aboard=tr.id; tr.cargo.push(u.id); u.mp=0; u.fuel=u.type.fuel||0; }
@@ -867,8 +867,26 @@ try{ muted=localStorage.getItem('wwMute')==='1'; }catch(e){}
 function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended') AC.resume(); return AC; }
 function tone(f,d,type,vol,slide,delay){ const a=ac(); if(!a) return; const t=a.currentTime+(delay||0), o=a.createOscillator(), g=a.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t); if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(20,f*slide),t+d); g.gain.setValueAtTime(vol||.1,t); g.gain.exponentialRampToValueAtTime(.001,t+d); o.connect(g); g.connect(a.destination); o.start(t); o.stop(t+d+.02); }
 function noise(d,vol,hp,delay){ const a=ac(); if(!a) return; const t=a.currentTime+(delay||0), n=Math.floor(a.sampleRate*d), b=a.createBuffer(1,n,a.sampleRate), ch=b.getChannelData(0); for(let i=0;i<n;i++) ch[i]=(Math.random()*2-1)*(1-i/n); const s=a.createBufferSource(); s.buffer=b; const f=a.createBiquadFilter(); f.type='lowpass'; f.frequency.value=hp||1800; const g=a.createGain(); g.gain.value=vol||.2; s.connect(f); f.connect(g); g.connect(a.destination); s.start(t); }
+// ---- recorded sounds (ElevenLabs via Fal), with the synth below as a fallback
+const SFXV={move:.45,click:.4,shot:.8,gun:.9,bomb:.85,boom:.9,sink:.85,capture:.8,fall:.8,turn:.7,buy:.8,win:.9,lose:.9,air:.6,ping:.6};
+const BUF={}, LOADING={};
+function loadSfx(n){ if(BUF[n]||LOADING[n]) return; const a=ac(); if(!a) return; LOADING[n]=1;
+  fetch('assets/audio/'+n+'.mp3').then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(b=>new Promise((res,rej)=>a.decodeAudioData(b,res,rej))).then(d=>{ BUF[n]=d; }).catch(()=>{ BUF[n]=null; }); }
+function preloadSfx(){ Object.keys(SFXV).forEach(loadSfx); }
+function playBuf(n){ const a=ac(), b=BUF[n]; if(!a||!b) return false; const s=a.createBufferSource(), g=a.createGain(); s.buffer=b; g.gain.value=SFXV[n]||.8; s.connect(g); g.connect(a.destination); s.start(); return true; }
+// ---- music
+const MUS={};
+function musicEl(k){ if(!MUS[k]){ const e=new Audio('assets/audio/music-'+k+'.mp3'); e.loop=true; e.preload='auto'; e.volume=0; MUS[k]=e; } return MUS[k]; }
+let musicWant=null;
+function setMusic(k){
+  musicWant=k; if(muted) k=null;
+  for(const name of ['title','battle']){ const e=musicEl(name); const target=(name===k)?(name==='title'?.5:.38):0;
+    if(name===k&&e.paused){ e.play().catch(()=>{}); }
+    const t0=nowMs(), v0=e.volume; (function f(){ const p=Math.min(1,(nowMs()-t0)/900); e.volume=Math.max(0,Math.min(1,v0+(target-v0)*p)); if(p<1) requestAnimationFrame(f); else if(target===0) e.pause(); })(); }
+}
 function sfx(n){
   if(muted||turboAI) return;
+  if(SFXV[n]!==undefined){ if(BUF[n]){ playBuf(n); return; } if(BUF[n]===undefined){ loadSfx(n); } else {} if(BUF[n]===null){} else if(n!=='click') return; }
   switch(n){
     case 'move': tone(180,.07,'square',.04,.7); break;
     case 'shot': noise(.12,.25,2600); tone(220,.08,'square',.05,.5); break;
@@ -881,6 +899,8 @@ function sfx(n){
     case 'turn': tone(440,.12,'triangle',.07); tone(660,.16,'triangle',.07,1,.1); break;
     case 'buy': tone(660,.07,'square',.05); tone(880,.1,'square',.05,1,.07); break;
     case 'click': tone(520,.04,'square',.03); break;
+    case 'air': noise(.5,.15,1400); break;
+    case 'ping': tone(1400,.6,'sine',.06,.9); break;
     case 'win': [392,494,587,784,988].forEach((f,i)=>tone(f,.25,'triangle',.1,1,i*.12)); break;
     case 'lose': [330,277,233,196,147].forEach((f,i)=>tone(f,.35,'sawtooth',.07,1,i*.2)); break;
   }
@@ -1005,7 +1025,7 @@ function nextCity(){
 $('buy').onclick=()=>{ ac(); nextCity(); };
 $('next').onclick=()=>{ ac(); nextUnit(); };
 $('hold').onclick=holdUnit;
-$('mute').onclick=()=>{ muted=!muted; try{ localStorage.setItem('wwMute',muted?'1':'0'); }catch(e){} $('mute').style.opacity=muted?.45:1; };
+$('mute').onclick=()=>{ muted=!muted; try{ localStorage.setItem('wwMute',muted?'1':'0'); }catch(e){} $('mute').style.opacity=muted?.45:1; setMusic(musicWant); };
 $('mute').style.opacity=muted?.45:1;
 function setZoom(z,cx,cy){
   const sc=$('scroller'); z=Math.max(.4,Math.min(1.8,z)); if(Math.abs(z-zoom)<1e-4) return;
@@ -1165,9 +1185,9 @@ function loop(){ if(dirty||busy||effects.length) draw(); requestAnimationFrame(l
 
 // ================================================================ end screen + boot
 function showEnd(win,why){
-  sfx(win?'win':'lose'); const o=$('overlay'), p=$('panel');
+  setMusic(null); sfx(win?'win':'lose'); const o=$('overlay'), p=$('panel');
   p.innerHTML='<h2>'+(win?'Victory!':'Defeat')+'</h2><p>'+why+'</p><p>'+(win?'The war is over, the maps are redrawn, and history will say you were obviously going to win. It will be wrong, but kind.':'The Axis and Allies of the world will tell the story differently. Mostly because you are not in it.')+'</p><p>Round '+round+' · '+cities.filter(c=>teamOf(me)===(c.owner>=0?teamOf(c.owner):-1)).length+' cities held</p><div class="btns" style="margin-top:14px"><button id="again">Play again</button><button id="other" class="sec">Change nation</button></div>';
-  o.classList.remove('hidden'); $('again').onclick=()=>{ o.classList.add('hidden'); startGame(me); }; $('other').onclick=()=>{ o.classList.add('hidden'); showTitle(); };
+  o.classList.remove('hidden'); $('again').onclick=()=>{ o.classList.add('hidden'); startGame(me); }; $('other').onclick=()=>{ o.classList.add('hidden'); showTitle(); setMusic('title'); };
 }
 function showTitle(){ $('title').classList.remove('hidden'); }
 function newGame(seed){
@@ -1181,7 +1201,7 @@ function newGame(seed){
   log('Germany holds the continent. The free world answers.','sys');
 }
 async function startGame(n,seed){
-  me=n; $('title').classList.add('hidden'); ac();
+  me=n; $('title').classList.add('hidden'); ac(); preloadSfx(); setMusic('battle');
   newGame(seed||((Math.random()*1e9)|0)); sizeCanvas(); dirty=true;
   const sc=$('scroller'); const cap=cities.find(c=>c.cap===me); if(cap){ const p=center(cap.c,cap.r); sc.scrollLeft=Math.max(0,p.x*zoom-sc.clientWidth/2); sc.scrollTop=Math.max(0,p.y*zoom-sc.clientHeight/2); }
   busy=true; refreshUI(); try{ await startTurn(0); }finally{ busy=false; } refreshUI();
@@ -1194,6 +1214,8 @@ async function startGame(n,seed){
   zoom=Math.max(.75,Math.min(1,($('stage').clientWidth-10)/BW)); sizeCanvas();
   addEventListener('resize',()=>{ DPR=Math.min(2,devicePixelRatio||1); sizeCanvas(); dirty=true; });
   nations=[0,1,2,3,4].map(()=>({alive:false,ip:0}));
+  const first=()=>{ ac(); preloadSfx(); if($('title').classList.contains('hidden')===false&&!musicWant) setMusic('title'); removeEventListener('pointerdown',first); removeEventListener('keydown',first); };
+  addEventListener('pointerdown',first); addEventListener('keydown',first);
   loop();
 })();
 
