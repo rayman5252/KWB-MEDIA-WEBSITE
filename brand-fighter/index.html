@@ -363,6 +363,7 @@
       gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+0.38);
       osc.stop(audioCtx.currentTime+0.4);
     },
+    explode: function(){ beep(70,0.45,'sawtooth',0.16); beep(45,0.55,'square',0.14); beep(150,0.25,'sawtooth',0.1); },
     victory: function(){ [440,550,660,880].forEach(function(f,i){ setTimeout(function(){beep(f,0.25,'triangle',0.1);}, i*150); }); },
     gameover: function(){ [300,250,200,150].forEach(function(f,i){ setTimeout(function(){beep(f,0.3,'sawtooth',0.1);}, i*150); }); }
   };
@@ -538,6 +539,7 @@
     spawnCooldown = 0;
     nextTrendIsGirl = Math.random() < 0.5;
     levelLength = w.length || W;
+    spawnBarrels();
     camera.x = 0;
     player.x = 150;
     player.jumping = false; player.vy = 0; player.jumpY = 0;
@@ -672,6 +674,15 @@
         shake(isKick?5:3, 0.08);
       }
     });
+    // a kick sends a gas barrel flying
+    if(isKick){
+      barrels.forEach(function(b){
+        if(b.dead || b.flying) return;
+        if(Math.abs(b.x - player.x) < range + BARREL_W/2 && Math.sign(b.x - player.x || 1) === player.facing){
+          kickBarrel(b, player.facing);
+        }
+      });
+    }
   }
 
   function applyCycloneHit(){
@@ -685,8 +696,71 @@
         spawnHit(e.x, e.y - e.type.h*0.6, '#2be8ff', 8);
       }
     });
+    // the cyclone kick also boots any nearby barrel away from the hero
+    barrels.forEach(function(b){
+      if(b.dead || b.flying) return;
+      if(Math.abs(b.x - player.x) < range + BARREL_W/2){
+        kickBarrel(b, Math.sign(b.x - player.x) || player.facing);
+      }
+    });
     spawnHit(player.x, player.y - player.h*0.5, '#2be8ff', 16);
     shake(14, 0.25);
+  }
+
+  // ---------- Gas barrels (Round 3) ----------
+  // Shoot one and it blows up on the spot. Kick one and it flies until it hits an enemy, then blows up.
+  var BARREL_W = 44, BARREL_H = 64, BLAST_R = 150, BLAST_DMG = 60, BARREL_KICK_SPEED = 560;
+  var barrels = [];
+  var blasts = [];
+  function spawnBarrels(){
+    barrels = []; blasts = [];
+    if(waveIndex !== 2) return;   // Round 3 only
+    [800, 1500, 2150].forEach(function(bx){
+      barrels.push({ x:bx, y:GROUND_Y, vx:0, rot:0, flying:false, dead:false, fuse:0 });
+    });
+  }
+  function kickBarrel(b, dir){
+    b.flying = true;
+    b.vx = dir * BARREL_KICK_SPEED;
+    spawnHit(b.x, b.y - 20, '#fff', 6);
+    shake(4, 0.08);
+    sfx.kick();
+  }
+  function explodeBarrel(b){
+    if(b.dead) return;
+    b.dead = true;
+    blasts.push({ x:b.x, y:b.y - BARREL_H/2, age:0 });
+    spawnHit(b.x, b.y - 30, '#ff9a2b', 26);
+    spawnHit(b.x, b.y - 30, '#ffd43a', 18);
+    spawnHit(b.x, b.y - 30, '#fff', 8);
+    shake(16, 0.35);
+    sfx.explode();
+    enemies.forEach(function(e){
+      if(e.dead) return;
+      if(Math.abs(e.x - b.x) < BLAST_R + e.type.w/2){
+        damageEnemy(e, BLAST_DMG, 0);
+        if(!e.dead){ e.kbVX = (Math.sign(e.x - b.x) || 1) * 320; e.kbT = 220; }
+      }
+    });
+    // chain reaction: other barrels caught in the blast go off a split second later
+    barrels.forEach(function(o){
+      if(!o.dead && o !== b && o.fuse <= 0 && Math.abs(o.x - b.x) < BLAST_R){ o.fuse = 0.15; }
+    });
+  }
+  function updateBarrels(dt){
+    barrels.forEach(function(b){
+      if(b.dead) return;
+      if(b.fuse > 0){ b.fuse -= dt; if(b.fuse <= 0){ explodeBarrel(b); } return; }
+      if(!b.flying) return;
+      b.x += b.vx*dt;
+      b.rot += Math.sign(b.vx) * 14 * dt;
+      var hitEnemy = enemies.some(function(e){ return !e.dead && Math.abs(e.x - b.x) < e.type.w/2 + BARREL_W/2; });
+      if(hitEnemy){ explodeBarrel(b); return; }
+      if(b.x < camera.x - 100 || b.x > camera.x + W + 100){ b.dead = true; }   // sailed off-screen without hitting anyone
+    });
+    barrels = barrels.filter(function(b){ return !b.dead; });
+    blasts.forEach(function(s){ s.age += dt; });
+    blasts = blasts.filter(function(s){ return s.age < 0.5; });
   }
 
   // ---- Hidden pistol (press G to draw / holster; PUNCH key fires while it's out) ----
@@ -728,7 +802,18 @@
           if(!best || Math.abs(e.x - x0) < Math.abs(best.x - x0)) best = e;
         }
       });
-      if(best){
+      // gas barrels are shootable too; whichever is nearer along the bullet's path takes the hit
+      var bestBarrel = null;
+      barrels.forEach(function(br){
+        if(br.dead) return;
+        if(br.x + BARREL_W/2 >= lo && br.x - BARREL_W/2 <= hi && b.y > br.y - BARREL_H - 140 && b.y < br.y + 10){
+          if(!bestBarrel || Math.abs(br.x - x0) < Math.abs(bestBarrel.x - x0)) bestBarrel = br;
+        }
+      });
+      if(bestBarrel && (!best || Math.abs(bestBarrel.x - x0) < Math.abs(best.x - x0))){
+        explodeBarrel(bestBarrel);
+        b.dead = true;
+      } else if(best){
         damageEnemy(best, b.dmg, 90);
         spawnHit(b.x, b.y, '#ffd43a', 6);
         b.dead = true;
@@ -985,6 +1070,7 @@
     enemies = enemies.filter(function(e){ return !(e.dead && e.deathT > 0.6); });
 
     updateBullets(dt);
+    updateBarrels(dt);
 
     // projectiles
     projectiles.forEach(function(p){ p.x += p.vx*dt; });
@@ -1004,7 +1090,7 @@
       if(player.x >= finishX()){
         spawnHit(finishX(), GROUND_Y - 200, '#ffd43a', 30);
         spawnHit(finishX(), GROUND_Y - 200, '#fff', 20);
-        enemies = []; projectiles = []; bullets = [];
+        enemies = []; projectiles = []; bullets = []; barrels = []; blasts = [];
         showToast('ROUND CLEAR!', 1200);
         nextWave();
       }
@@ -1303,6 +1389,39 @@
     ctx.restore();
   }
 
+  function drawBarrels(){
+    barrels.forEach(function(b){
+      var w = BARREL_W, h = BARREL_H;
+      ctx.save();
+      ctx.translate(b.x, b.y - h/2);
+      if(b.flying){ ctx.rotate(b.rot); }
+      ctx.fillStyle = '#b5192f'; rrect(-w/2, -h/2, w, h, 8); ctx.fill();
+      ctx.fillStyle = '#e04a60'; ctx.fillRect(-w/2 + 5, -h/2 + 5, 6, h - 10);        // highlight
+      ctx.fillStyle = '#4a0a14';
+      ctx.fillRect(-w/2, -h/2 + 9, w, 5); ctx.fillRect(-w/2, h/2 - 14, w, 5);       // steel bands
+      ctx.fillStyle = '#ffd43a'; ctx.fillRect(-w/2 + 6, -10, w - 12, 20);            // hazard label
+      ctx.fillStyle = '#111'; ctx.font = 'bold 12px monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('GAS', 0, 1);
+      ctx.strokeStyle = '#000'; ctx.lineWidth = 2; rrect(-w/2, -h/2, w, h, 8); ctx.stroke();
+      ctx.restore();
+    });
+    ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+  }
+
+  function drawBlasts(){
+    blasts.forEach(function(s){
+      var t = s.age / 0.5;
+      var r = BLAST_R * (0.25 + 0.75 * Math.min(1, t * 2.2));
+      var g = ctx.createRadialGradient(s.x, s.y, 4, s.x, s.y, r);
+      g.addColorStop(0,    'rgba(255,255,220,' + (1 - t) + ')');
+      g.addColorStop(0.35, 'rgba(255,190,60,'  + (0.9 * (1 - t)) + ')');
+      g.addColorStop(0.75, 'rgba(230,60,20,'   + (0.6 * (1 - t)) + ')');
+      g.addColorStop(1,    'rgba(120,20,0,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(s.x, s.y, r, 0, Math.PI*2); ctx.fill();
+    });
+  }
+
   function render(){
     ctx.save();
     if(shakeMag > 0){
@@ -1314,6 +1433,7 @@
       ctx.save();
       ctx.translate(-camera.x, 0);
       if(WAVES[waveIndex].scroll){ drawFinishPost(); }
+      drawBarrels();
       var flashPlayer = player.invuln > 0;
       var py = player.y + player.jumpY;
       var bob = (player.state==='walk') ? Math.sin(player.animT*10)*4 : (player.state==='idle'?Math.sin(player.animT*2)*1.5:0);
@@ -1380,6 +1500,7 @@
         ctx.restore();
       });
 
+      drawBlasts();
       drawParticles();
       ctx.restore();
       if(WAVES[waveIndex].scroll){ drawGoalArrow(); }
