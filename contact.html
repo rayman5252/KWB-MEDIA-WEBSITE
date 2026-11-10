@@ -63,16 +63,17 @@
     <div>
       <h2>Drop Us a Line!</h2>
       <p class="form-sent" hidden>Thanks! Your message is on its way. We'll get back to you soon.</p>
-      <form class="contact-form" action="https://formsubmit.co/ray@kwbmedia.com" method="POST">
-        <input type="hidden" name="_subject" value="New message from the KWB Media website">
-        <input type="hidden" name="_template" value="table">
-        <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off">
+      <form class="contact-form" action="https://api.web3forms.com/submit" method="POST">
+        <input type="hidden" name="access_key" value="a374c8bc-a054-4cd7-a985-15338ccbdc93">
+        <input type="hidden" name="subject" value="New message from the KWB Media website">
+        <input type="hidden" name="from_name" value="KWB Media Website">
+        <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off">
         <input type="text" name="name" placeholder="Name" required>
         <input type="email" name="email" placeholder="Email*" required>
         <textarea name="message" rows="5" placeholder="Message" required></textarea>
         <button type="submit" class="btn">Send</button>
       </form>
-      <!-- Form delivered by FormSubmit.co to ray@kwbmedia.com. The first submission sends a one-time activation email to that inbox. -->
+      <!-- Form delivered by Web3Forms (api.web3forms.com) to ray@kwbmedia.com. The access key is public by design; the recipient is set in the Web3Forms dashboard. -->
     </div>
   </div>
 </section>
@@ -91,7 +92,7 @@
 </script>
 <script>
 (function(){var here=location.href.split('#')[0].split('?')[0];
-document.querySelectorAll('form[action^="https://formsubmit.co/"]').forEach(function(f){var n=document.createElement('input');n.type='hidden';n.name='_next';n.value=here+'?sent=1';f.appendChild(n);});
+document.querySelectorAll('form[action^="https://api.web3forms.com/"]').forEach(function(f){var n=document.createElement('input');n.type='hidden';n.name='redirect';n.value=here+'?sent=1';f.appendChild(n);});
 if(/[?&]sent=1/.test(location.search)){document.querySelectorAll('.form-sent').forEach(function(p){p.hidden=false;p.scrollIntoView({block:'center'});});}})();
 </script>
 </body>
