@@ -291,3 +291,11 @@ a.blog-card h3 { margin-top:6px; }
 @media (max-width:800px){
   .pkg-grid, .pkg-points { grid-template-columns:1fr; }
 }
+
+/* ===== Services page jump links ===== */
+.svc-nav { display:flex; flex-wrap:wrap; justify-content:center; gap:6px 4px; margin:22px auto 0; max-width:var(--maxw); font-size:.82rem; }
+.svc-nav a { color:#d4d4d4; text-transform:uppercase; letter-spacing:1px; font-weight:600; padding:6px 12px; border:1px solid var(--line); border-radius:999px; background:rgba(0,0,0,.35); transition:color .2s, border-color .2s, background .2s; }
+.svc-nav a:hover, .svc-nav a:focus-visible { color:#fff; border-color:var(--accent); background:var(--accent); }
+/* keep jump targets from hiding under the sticky header */
+#social-media, #packages, #video-production, #editing, #animation, #ai-services, #tape-transfers { scroll-margin-top:100px; }
+@media (max-width:800px){ .svc-nav { font-size:.75rem; } #social-media, #packages, #video-production, #editing, #animation, #ai-services, #tape-transfers { scroll-margin-top:16px; } }
