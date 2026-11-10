@@ -94,6 +94,13 @@
   #title details{max-width:760px;margin:22px auto 0;text-align:left;background:#000a;border-radius:8px;padding:8px 14px;font-size:14px;line-height:1.5}
   #title summary{cursor:pointer;font-family:Cinzel,Georgia,serif;color:var(--gold)}
   #title ul{margin:8px 0 4px;padding-left:20px}
+  .bgshow{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+  .bgshow i{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;animation:bgf 27s infinite}
+  .bgshow i:nth-child(2){animation-delay:9s}.bgshow i:nth-child(3){animation-delay:18s}
+  @keyframes bgf{0%{opacity:0}8%{opacity:.3}33%{opacity:.3}41%{opacity:0}100%{opacity:0}}
+  #title>*:not(.bgshow){position:relative;z-index:1}
+  #overlay{overflow:hidden}.panel{position:relative;z-index:1}
+  @media (prefers-reduced-motion:reduce){.bgshow i{animation:none}.bgshow i:first-child{opacity:.3}}
   @media (max-width:820px){
     #app{flex-direction:column}
     #stage{flex:none;height:60vh}
@@ -118,8 +125,9 @@
   </aside>
 </div>
 <div id="tip"></div>
-<div id="overlay" class="hidden"><div class="panel" id="panel"></div></div>
+<div id="overlay" class="hidden"><div class="bgshow" aria-hidden="true"><i style="background-image:url(assets/bg1.jpg)"></i><i style="background-image:url(assets/bg2.jpg)"></i><i style="background-image:url(assets/bg3.jpg)"></i></div><div class="panel" id="panel"></div></div>
 <div id="title">
+  <div class="bgshow" aria-hidden="true"><i style="background-image:url(assets/bg1.jpg)"></i><i style="background-image:url(assets/bg2.jpg)"></i><i style="background-image:url(assets/bg3.jpg)"></i></div>
   <h2>Hex Command: WWII</h2>
   <div class="tag">Germany holds mainland Europe. The free world has one move left. Pick your nation, build your forces and take the enemy capitals before they take yours.</div>
   <div id="picker"></div>
