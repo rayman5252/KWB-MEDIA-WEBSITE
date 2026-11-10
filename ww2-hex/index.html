@@ -1,0 +1,1169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hex Command: WWII</title>
+<meta name="description" content="A turn-based WWII hex strategy game from KWB Media. Command the UK, USA, USSR, Germany/Italy or Japan with infantry, armor, fighters, bombers, transports, carriers, submarines and battleships.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#161a12; --panel:#232a1b; --panel2:#2f3824; --ink:#1d2114; --paper:#e6dcb8; --paper2:#cbbd8c;
+    --gold:#e0c36a; --red:#d6453d; --green:#7bd26a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--paper);font-family:Georgia,serif}
+  #app{display:flex;height:100vh}
+  #stage{flex:1;position:relative;min-width:0;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,#2c3a46 0%,#16212a 70%,#0c1217 100%)}
+  #scroller{position:absolute;inset:0;overflow:auto;scrollbar-color:#6f7a4e #12170d}
+  canvas{position:absolute;left:0;top:0;display:block;touch-action:pan-x pan-y}
+  #side{width:340px;flex:none;background:linear-gradient(#2a3320,#1b2114);border-left:3px solid #0b0e08;padding:12px;display:flex;flex-direction:column;gap:9px;overflow:auto}
+  h1{font-family:Cinzel,Georgia,serif;font-size:20px;margin:0;letter-spacing:.06em;color:var(--gold);text-align:center}
+  a.back{display:block;text-align:center;text-decoration:none;font-family:Cinzel,Georgia,serif;font-size:13px;letter-spacing:.04em;color:var(--gold);background:#00000040;border:1px solid #00000060;border-radius:6px;padding:6px 10px}
+  a.back:hover,a.back:focus-visible{background:#00000070;outline:2px solid var(--gold)}
+  #turn{display:flex;justify-content:space-between;align-items:center;font-size:14px;background:#00000040;border:1px solid #00000060;border-radius:6px;padding:6px 10px}
+  #turn b{font-family:Cinzel,Georgia,serif}
+  .pill{padding:2px 9px;border-radius:99px;font-size:12px;font-weight:bold;color:#10130a}
+  #factions{display:flex;flex-direction:column;gap:3px;font-size:12.5px}
+  .frow{display:grid;grid-template-columns:10px 1fr auto auto auto;gap:8px;align-items:center;background:#00000035;border-radius:5px;padding:4px 8px}
+  .frow.active{outline:2px solid var(--gold)}
+  .frow.out{opacity:.4;text-decoration:line-through}
+  .frow.me .n{font-weight:bold}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .frow span.n{white-space:nowrap}
+  .frow span.m{opacity:.85;font-size:12px;white-space:nowrap}
+  #card{background:var(--paper);color:var(--ink);border-radius:8px;padding:9px;min-height:130px;border:2px solid var(--paper2);box-shadow:inset 0 0 18px #0003}
+  #card .top{display:flex;gap:10px;align-items:center}
+  #card img{width:64px;height:56px;object-fit:contain;flex:none;filter:drop-shadow(0 2px 2px #0006)}
+  #card h2{margin:0;font-family:Cinzel,Georgia,serif;font-size:16px}
+  #card .sub{font-size:12px;opacity:.75}
+  #card .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:7px 0;text-align:center;font-size:11px}
+  #card .stats div{background:#0001;border-radius:4px;padding:3px 0}
+  #card .stats b{display:block;font-size:15px}
+  #card p{margin:4px 0 0;font-size:12.5px;line-height:1.35}
+  #card .preview{margin-top:6px;padding:5px 7px;background:#a3352c22;border-left:3px solid var(--red);font-size:12.5px}
+  #card .empty{opacity:.7;font-style:italic;font-size:13px;padding:8px 0}
+  #card .stack{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+  #card .stack button{font-size:11px;padding:4px 7px}
+  #shop,#cargo{background:#00000035;border-radius:6px;padding:7px}
+  #shop:empty,#cargo:empty{display:none}
+  #shop h3,#cargo h3{margin:0 0 5px;font-family:Cinzel,Georgia,serif;font-size:13px;color:var(--gold);display:flex;justify-content:space-between}
+  #shop .grid,#cargo .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px}
+  #shop button,#cargo button{font-size:12px;padding:6px 6px;display:flex;justify-content:space-between;gap:4px}
+  #shop button.on{outline:3px solid var(--green)}
+  #shop button:disabled,#cargo button:disabled{pointer-events:none}
+  #tip{position:fixed;z-index:30;width:250px;background:var(--paper);color:var(--ink);border:2px solid #6f7a4e;border-radius:8px;padding:9px 10px;box-shadow:0 8px 24px #000a;pointer-events:none;display:none;font-size:12.5px;line-height:1.35}
+  #tip h4{margin:0 0 3px;font-family:Cinzel,Georgia,serif;font-size:14px}
+  #hint{font-size:12.5px;line-height:1.4;opacity:.92;min-height:34px}
+  .btns{display:flex;gap:8px}
+  button{font-family:Cinzel,Georgia,serif;font-weight:700;font-size:14px;letter-spacing:.04em;border:0;border-radius:6px;padding:9px 12px;cursor:pointer;color:#20240f;background:linear-gradient(#ecd681,#b99a35);box-shadow:0 2px 0 #6b5712}
+  button:hover:not(:disabled){filter:brightness(1.08)}
+  button:active:not(:disabled){transform:translateY(1px);box-shadow:0 1px 0 #6b5712}
+  button:disabled{opacity:.4;cursor:default}
+  button.sec{background:linear-gradient(#d6d2b4,#a9a47d);box-shadow:0 2px 0 #5d5a3d}
+  button.pulse:not(:disabled){animation:pl 1s infinite}
+  @keyframes pl{50%{filter:brightness(1.3)}}
+  .btns button{flex:1;white-space:nowrap;padding:9px 6px;font-size:13px}
+  #log{list-style:none;margin:0;padding:8px;background:#00000040;border-radius:6px;flex:1;min-height:90px;overflow:auto;font-size:12px;line-height:1.45}
+  #log li{padding:1px 0}#log .sys{color:var(--gold)}#log .bad{color:#ff9a8a}#log .good{color:#9ae58a}
+  #banner{position:absolute;left:0;right:0;top:34%;text-align:center;font-family:Cinzel,Georgia,serif;font-size:clamp(26px,4.5vw,54px);color:var(--gold);text-shadow:0 3px 12px #000,0 0 30px #000;pointer-events:none;opacity:0;letter-spacing:.1em}
+  #banner.show{animation:ban 1.4s ease-out}
+  @keyframes ban{0%{opacity:0;transform:scale(.8)}15%{opacity:1;transform:scale(1)}75%{opacity:1}100%{opacity:0;transform:scale(1.05)}}
+  #overlay{position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:12;padding:16px}
+  #overlay.hidden{display:none}
+  .panel{max-width:560px;background:var(--paper);color:var(--ink);border-radius:12px;padding:24px 28px;border:3px solid var(--gold);text-align:center;box-shadow:0 10px 50px #000}
+  .panel h2{font-family:Cinzel,Georgia,serif;font-size:32px;margin:0 0 6px;letter-spacing:.05em}
+  .panel p{line-height:1.5;margin:8px 0;font-size:15px}
+  #title{position:fixed;inset:0;z-index:10;overflow:auto;padding:26px 18px 40px;text-align:center;
+    background:radial-gradient(ellipse at 50% 20%,#34442c 0%,#161c11 70%,#0a0d07 100%)}
+  #title.hidden{display:none}
+  #title h2{font-family:Cinzel,Georgia,serif;font-size:clamp(36px,7vw,78px);margin:6px 0 0;color:var(--gold);letter-spacing:.06em;text-shadow:0 4px 18px #000}
+  #title .tag{font-size:clamp(14px,2vw,19px);margin:6px auto 18px;max-width:760px;color:#e8dfbd;text-shadow:0 2px 8px #000}
+  #picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;max-width:1160px;margin:0 auto}
+  .ncard{background:linear-gradient(#2b3522,#1a2114);border:2px solid #4b5a36;border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:transform .12s,border-color .12s}
+  .ncard:hover,.ncard:focus-visible{transform:translateY(-3px);border-color:var(--gold);outline:none}
+  .ncard .team{font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.8}
+  .ncard h3{margin:4px 0 6px;font-family:Cinzel,Georgia,serif;font-size:19px;color:var(--gold)}
+  .ncard .art{display:flex;justify-content:center;align-items:flex-end;gap:2px;height:84px}
+  .ncard .art img{flex:1 1 0;min-width:0;max-width:33%;max-height:78px;width:auto;object-fit:contain;filter:drop-shadow(0 3px 3px #000a)}
+  .ncard p{font-size:12.5px;line-height:1.4;margin:6px 0 0;color:#d9d1b0}
+  .ncard .go{margin-top:10px}
+  #title details{max-width:760px;margin:22px auto 0;text-align:left;background:#000a;border-radius:8px;padding:8px 14px;font-size:14px;line-height:1.5}
+  #title summary{cursor:pointer;font-family:Cinzel,Georgia,serif;color:var(--gold)}
+  #title ul{margin:8px 0 4px;padding-left:20px}
+  @media (max-width:820px){
+    #app{flex-direction:column}
+    #stage{flex:none;height:60vh}
+    #side{width:auto;flex:1;border-left:0;border-top:3px solid #0b0e08;padding:10px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage"><div id="scroller"><canvas id="board"></canvas></div><div id="banner"></div></div>
+  <aside id="side">
+    <h1>Hex Command: WWII</h1>
+    <a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a>
+    <div id="turn"></div>
+    <div id="factions"></div>
+    <div id="card"></div>
+    <div id="shop"></div>
+    <div id="cargo"></div>
+    <div id="hint"></div>
+    <div class="btns"><button id="next" class="sec" title="Select the next unit that can still act (N)">Next Unit</button><button id="hold" class="sec" title="Finish this unit's turn (H)">Hold</button><button id="end">End Turn</button><button id="mute" class="sec" title="Sound on/off" style="flex:none">&#9834;</button></div>
+    <ul id="log"></ul>
+  </aside>
+</div>
+<div id="tip"></div>
+<div id="overlay" class="hidden"><div class="panel" id="panel"></div></div>
+<div id="title">
+  <h2>Hex Command: WWII</h2>
+  <div class="tag">Germany holds mainland Europe. The free world has one move left. Pick your nation, build your forces and take the enemy capitals before they take yours.</div>
+  <div id="picker"></div>
+  <details><summary>How to play</summary>
+    <ul>
+      <li><b>Goal:</b> capture the capital of every enemy nation. Your allies are AI commanders. Lose your own capital and you are out.</li>
+      <li><b>Turns:</b> USA, UK, USSR, Germany/Italy, then Japan. Click a unit, click a blue hex to move, click a red hex to attack. End Turn when done.</li>
+      <li><b>Production:</b> click one of your cities to buy units with Industry Points (IP). Each city makes 1 unit per turn, capitals make 2. Ships need a coastal city. Cities pay IP every turn, so capture more of them.</li>
+      <li><b>Land:</b> infantry are cheap and take cities. Armor hits hard but is slow in forest and mountains. Units in forests, mountains and cities defend better.</li>
+      <li><b>Sea:</b> transports carry 2 land units (move a land unit onto an adjacent transport, then sail and land on the coast). Battleships hit up to 2 hexes away. Submarines are hidden until something gets next to them and are deadly to ships.</li>
+      <li><b>Air:</b> aircraft take off from cities and carriers, and must land again within 2 turns (bombers) or 1 turn after the sortie (fighters) or they crash. Fighters hunt aircraft, bombers smash ground and ships.</li>
+      <li><b>Fog of war:</b> you and your allies only see what your units and cities can see.</li>
+    </ul>
+  </details>
+  <p style="margin-top:18px"><a class="back" style="display:inline-block;padding:9px 18px;font-size:15px" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a></p>
+</div>
+<script>
+'use strict';
+// ================================================================ data
+const COLS=32, ROWS=22, S=32, SQ=Math.sqrt(3), TILT=0.78, PAD=24;
+const NAT=[
+  {id:'usa',  name:'United States',   short:'USA',   team:0, color:'#4da3ff', blurb:'Industrial giant across the ocean. Deep pockets, carriers and bombers. Cross the sea and liberate the continent.'},
+  {id:'uk',   name:'United Kingdom',  short:'UK',    team:0, color:'#35d0b5', blurb:'A small island fortress with a proud navy and Spitfires. Hold the Channel, then hit back.'},
+  {id:'ussr', name:'Soviet Union',    short:'USSR',  team:0, color:'#e0483f', blurb:'Endless infantry and armor on the land front. Slow to start, brutal to stop.'},
+  {id:'axis', name:'Germany & Italy', short:'GER/ITA', team:1, color:'#d6d6d6', blurb:'Master of mainland Europe, with panzers, U-boats and a head start. Finish the job before the world wakes up.'},
+  {id:'japan',name:'Japan',           short:'JPN',   team:1, color:'#f09a3a', blurb:'An island empire of carriers and transports. Take the Pacific and the Asian mainland.'}
+];
+const TEAMS=[{name:'Allies',nats:[0,1,2]},{name:'Axis',nats:[3,4]}];
+const UT={
+  infantry:  {key:'infantry',  name:'Infantry',          dom:'land', mv:2, hp:10, atk:4,  def:4, cost:3,  vis:2, range:1, desc:'Cheap and sturdy. Takes cities. Boards transports.'},
+  armor:     {key:'armor',     name:'Armored Division',  dom:'land', mv:3, hp:12, atk:7,  def:5, cost:6,  vis:2, range:1, desc:'Hard-hitting. Wrecks infantry. Slow in forest and mountains.'},
+  fighter:   {key:'fighter',   name:'Fighter Squadron',  dom:'air',  mv:6, hp:8,  atk:6,  def:6, cost:5,  vis:4, range:1, fuel:1, desc:'Hunts aircraft. Land at a city or carrier by the end of your next turn.'},
+  bomber:    {key:'bomber',    name:'Bomber Wing',       dom:'air',  mv:5, hp:8,  atk:9,  def:3, cost:8,  vis:3, range:1, fuel:2, desc:'Devastates ground units and ships. Cannot hit aircraft. Fragile.'},
+  transport: {key:'transport', name:'Troop Transport',   dom:'sea',  mv:4, hp:8,  atk:0,  def:2, cost:5,  vis:2, range:1, cap:2, desc:'Carries 2 land units. Unarmed. Keep it escorted.'},
+  carrier:   {key:'carrier',   name:'Aircraft Carrier',  dom:'sea',  mv:4, hp:16, atk:3,  def:6, cost:12, vis:3, range:1, cap:2, desc:'Floating airbase for 2 aircraft. Weak guns.'},
+  sub:       {key:'sub',       name:'Submarine',         dom:'sea',  mv:3, hp:8,  atk:6,  def:2, cost:6,  vis:2, range:1, desc:'Hidden unless an enemy is adjacent. Kills ships. Cannot hit land or air.'},
+  battleship:{key:'battleship',name:'Battleship',        dom:'sea',  mv:3, hp:18, atk:9,  def:8, cost:14, vis:3, range:2, desc:'Big guns hit up to 2 hexes away, including the coast.'}
+};
+const SHOP_ORDER=['infantry','armor','fighter','bomber','transport','carrier','sub','battleship'];
+const START_FORCES=[
+  {ip:18, u:{infantry:4,armor:2,fighter:2,bomber:1,transport:2,carrier:1,sub:1,battleship:1}},
+  {ip:14, u:{infantry:4,armor:1,fighter:2,bomber:1,transport:1,sub:1,battleship:1}},
+  {ip:14, u:{infantry:6,armor:3,fighter:2,bomber:1}},
+  {ip:16, u:{infantry:7,armor:3,fighter:2,bomber:2,transport:1,sub:2,battleship:1}},
+  {ip:16, u:{infantry:4,armor:1,fighter:2,bomber:1,transport:2,carrier:1,sub:1,battleship:1}}
+];
+const TERR={S:{name:'Sea'},P:{name:'Plains'},F:{name:'Forest'},M:{name:'Mountains'}};
+const CITY_NAMES=[
+  ['Washington','New York','Norfolk','San Francisco','Chicago'],
+  ['London','Portsmouth','Liverpool','Glasgow'],
+  ['Moscow','Stalingrad','Leningrad','Kiev','Baku'],
+  ['Berlin','Paris','Warsaw','Rome','Vienna','Copenhagen','Brussels'],
+  ['Tokyo','Osaka','Nagasaki','Okinawa','Sapporo']
+];
+const NEUTRAL_NAMES=['Cairo','Casablanca','Cape Town','Lagos','Calcutta','Shanghai','Manila','Honolulu','Midway','Reykjavik','Havana','Singapore','Tehran','Nairobi','Batavia','Perth'];
+
+// ================================================================ hex helpers (flat-top, odd-q columns shifted down)
+const inb=(c,r)=>c>=0&&r>=0&&c<COLS&&r<ROWS;
+const key=(c,r)=>c+','+r;
+const NB_EVEN=[[1,-1],[1,0],[0,1],[-1,0],[-1,-1],[0,-1]];
+const NB_ODD=[[1,0],[1,1],[0,1],[-1,1],[-1,0],[0,-1]];
+function neighbors(c,r){ const d=(c&1)?NB_ODD:NB_EVEN, out=[]; for(const [dc,dr] of d){ const nc=c+dc,nr=r+dr; if(inb(nc,nr)) out.push([nc,nr]); } return out; }
+const toCube=(c,r)=>{ const x=c, z=r-(c-(c&1))/2; return {x,y:-x-z,z}; };
+function hexDist(a,b){ const p=toCube(a.c,a.r), q=toCube(b.c,b.r); return Math.max(Math.abs(p.x-q.x),Math.abs(p.y-q.y),Math.abs(p.z-q.z)); }
+function within(c,r,n){ const out=[]; for(let rr=Math.max(0,r-n-1);rr<=Math.min(ROWS-1,r+n+1);rr++) for(let cc=Math.max(0,c-n);cc<=Math.min(COLS-1,c+n);cc++){ if(hexDist({c,r},{c:cc,r:rr})<=n) out.push([cc,rr]); } return out; }
+const center=(c,r)=>({x:PAD+S+1.5*S*c, y:PAD+TILT*SQ*S*(r+0.5*(c&1))+TILT*SQ*S/2});
+
+// ================================================================ random + noise
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function makeNoise(rnd,gw,gh){
+  const g=[]; for(let i=0;i<=gw;i++){ g[i]=[]; for(let j=0;j<=gh;j++) g[i][j]=rnd(); }
+  return (u,v)=>{ // u,v in 0..1
+    const x=u*gw, y=v*gh, i=Math.min(gw-1,Math.floor(x)), j=Math.min(gh-1,Math.floor(y)), fx=x-i, fy=y-j;
+    const sx=fx*fx*(3-2*fx), sy=fy*fy*(3-2*fy);
+    const a=g[i][j]*(1-sx)+g[i+1][j]*sx, b=g[i][j+1]*(1-sx)+g[i+1][j+1]*sx; return a*(1-sy)+b*sy;
+  };
+}
+
+// ================================================================ state
+let MAP=[], REG=[], seedNow=1;
+let units=[], cities=[], nextId=1;
+let nations=[];          // {alive, ip}
+let me=0, turnNat=0, round=1, gameOver=false;
+let vis=[new Set(),new Set()], expl=[new Set(),new Set()];
+const unitById=id=>units.find(u=>u.id===id);
+const terr=(c,r)=>MAP[r][c];
+const isLand=(c,r)=>MAP[r][c]!=='S';
+const cityAt=(c,r)=>cities.find(x=>x.c===c&&x.r===r);
+const teamOf=n=>NAT[n].team;
+const isEnemyNat=(a,b)=>teamOf(a)!==teamOf(b);
+const aliveUnits=()=>units.filter(u=>u.hp>0);
+const surfAt=(c,r)=>units.find(u=>u.hp>0&&!u.aboard&&u.type.dom!=='air'&&u.c===c&&u.r===r);
+const airAtList=(c,r)=>units.filter(u=>u.hp>0&&!u.aboard&&u.type.dom==='air'&&u.c===c&&u.r===r);
+const unitsAtHex=(c,r)=>{ const s=surfAt(c,r); return (s?[s]:[]).concat(airAtList(c,r)); };
+const isCoastal=(c,r)=>neighbors(c,r).some(([a,b])=>MAP[b][a]==='S');
+function makeUnit(type,nat,c,r){ const t=UT[type]; const u={id:nextId++,type:t,nat,c,r,hp:t.hp,mp:t.mv,done:false,fuel:t.fuel||0,cargo:[],aboard:null,hit:0}; units.push(u); return u; }
+
+// ================================================================ map generation
+const BLOBS=[
+  // home territories (nat) and neutral land (-1)
+  {n:0,u:.12,v:.50,rx:.105,ry:.30},
+  {n:1,u:.315,v:.25,rx:.045,ry:.115},
+  {n:3,u:.50,v:.37,rx:.115,ry:.27},
+  {n:3,u:.485,v:.68,rx:.035,ry:.115},
+  {n:2,u:.725,v:.30,rx:.125,ry:.29},
+  {n:4,u:.925,v:.50,rx:.04,ry:.22},
+  {n:4,u:.89,v:.80,rx:.035,ry:.075},
+  {n:-1,u:.52,v:.915,rx:.17,ry:.08,name:'af'},
+  {n:-1,u:.78,v:.66,rx:.075,ry:.10,name:'as'},
+  {n:-1,u:.63,v:.80,rx:.032,ry:.06},
+  {n:-1,u:.40,v:.08,rx:.04,ry:.06},
+  {n:-1,u:.22,v:.87,rx:.05,ry:.07},
+  {n:-1,u:.68,v:.07,rx:.05,ry:.045},
+  {n:-1,u:.76,v:.90,rx:.045,ry:.06},
+  {n:-1,u:.08,v:.10,rx:.05,ry:.06}
+];
+function generateMap(seed){
+  const rnd=mulberry32(seed);
+  const nA=makeNoise(rnd,6,5), nB=makeNoise(rnd,9,7), nE=makeNoise(rnd,5,4), nF=makeNoise(rnd,7,6);
+  const blobs=BLOBS.map(b=>({...b,u:b.u+(rnd()-.5)*.03,v:b.v+(rnd()-.5)*.03}));
+  MAP=[]; REG=[];
+  for(let r=0;r<ROWS;r++){ MAP[r]=[]; REG[r]=[]; }
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const x=(c+0.5)/COLS, y=(r+0.5+(c&1)*0.5)/(ROWS+0.5);
+    let best=-9,bn=-1;
+    for(const b of blobs){ const du=(x-b.u)/b.rx, dv=(y-b.v)/b.ry, s=1-(du*du+dv*dv); if(s>best){ best=s; bn=b.n; } }
+    const nz=nA(x,y)*0.6+nB(x,y)*0.4;
+    const land=best+(nz-.5)*0.7>0.10;
+    MAP[r][c]=land?'P':'S'; REG[r][c]=land?bn:-2;
+  }
+  // carve straits so island nations really are islands
+  const island=new Set([0,1,4]);
+  for(let pass=0;pass<2;pass++) for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(MAP[r][c]==='S') continue; const rg=REG[r][c];
+    for(const [a,b] of neighbors(c,r)){ if(MAP[b][a]==='S') continue; const og=REG[b][a];
+      if(og!==rg && (island.has(og)&&!island.has(rg)||island.has(rg)&&island.has(og)&&og!==rg)){ if(!island.has(rg)||island.has(og)){ MAP[r][c]='S'; REG[r][c]=-2; break; } } }
+  }
+  // fill single-hex lakes, drop single-hex specks
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const nb=neighbors(c,r);
+    if(MAP[r][c]==='S' && nb.length===6 && nb.every(([a,b])=>MAP[b][a]!=='S')){ MAP[r][c]='P'; REG[r][c]=REG[nb[0][1]][nb[0][0]]; }
+  }
+  // terrain
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(MAP[r][c]==='S') continue; const x=(c+.5)/COLS, y=(r+.5)/ROWS;
+    const e=nE(x,y)*0.65+nA(x*1.7%1,y*1.7%1)*0.35, f=nF(x,y);
+    MAP[r][c]= e>0.66 ? 'M' : (f>0.56 ? 'F' : 'P');
+  }
+  return rnd;
+}
+function landHexesOfRegions(ns){ const out=[]; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(MAP[r][c]!=='S'&&ns.includes(REG[r][c])) out.push([c,r]); return out; }
+function landComponent(c,r){ const seen=new Set([key(c,r)]), q=[[c,r]]; while(q.length){ const [a,b]=q.pop(); for(const [x,y] of neighbors(a,b)){ const k=key(x,y); if(!seen.has(k)&&MAP[y][x]!=='S'){ seen.add(k); q.push([x,y]); } } } return seen; }
+function pickCities(){
+  cities=[];
+  const rnd=mulberry32(seedNow*7+11);
+  const used=new Set();
+  const add=(c,r,owner,cap,name)=>{ MAP[r][c]='P'; cities.push({c,r,owner,cap,name,built:0}); };
+  const tooClose=(c,r,d)=>cities.some(x=>hexDist(x,{c,r})<d);
+  const capOf=[[.12,.5],[.315,.25],[.725,.3],[.5,.37],[.925,.5]];   // USA, UK, USSR, AXIS, JPN by NAT index: remapped below
+  const capPos={0:[.12,.50],1:[.315,.25],2:[.725,.30],3:[.50,.37],4:[.925,.50]};
+  for(let n=0;n<5;n++){
+    const homes=landHexesOfRegions([n]); if(!homes.length) continue;
+    const [pu,pv]=capPos[n]; let bestH=homes[0],bd=1e9;
+    for(const h of homes){ const d=Math.hypot((h[0]+.5)/COLS-pu,(h[1]+.5)/ROWS-pv); if(d<bd){ bd=d; bestH=h; } }
+    // ring of land around the capital keeps it from being a lonely speck
+    const names=CITY_NAMES[n].slice(); const want={0:4,1:3,2:4,3:6,4:4}[n];
+    add(bestH[0],bestH[1],n,n,names.shift());
+    const spread=homes.filter(h=>hexDist({c:h[0],r:h[1]},{c:bestH[0],r:bestH[1]})>=3);
+    let tries=0;
+    while(cities.filter(x=>x.owner===n).length<want && tries<400){ tries++;
+      const pool=spread.length?spread:homes; const h=pool[Math.floor(rnd()*pool.length)];
+      const needCoast=cities.filter(x=>x.owner===n&&isCoastal(x.c,x.r)).length===0;
+      if(tooClose(h[0],h[1],tries>200?3:4)) continue;
+      if(needCoast && cities.filter(x=>x.owner===n).length>=want-1 && !isCoastal(h[0],h[1])) continue;
+      add(h[0],h[1],n,-1,names.shift()||('Base '+tries));
+    }
+    // guarantee a port for every nation
+    if(!cities.some(x=>x.owner===n&&isCoastal(x.c,x.r))){
+      const coast=homes.filter(h=>isCoastal(h[0],h[1])&&!tooClose(h[0],h[1],2));
+      if(coast.length){ const h=coast[0]; add(h[0],h[1],n,-1,names.shift()||'Port'); }
+    }
+  }
+  // neutral cities
+  const nn=NEUTRAL_NAMES.slice().sort(()=>rnd()-.5); let ni=0;
+  const neutralBlobs=BLOBS.map((b,i)=>b).filter(b=>b.n===-1);
+  const neutralHexes=landHexesOfRegions([-1]);
+  const comps=[]; const seenK=new Set();
+  for(const h of neutralHexes){ if(seenK.has(key(h[0],h[1]))) continue; const comp=landComponent(h[0],h[1]); comp.forEach(k=>seenK.add(k)); comps.push([...comp].map(k=>k.split(',').map(Number))); }
+  for(const comp of comps){
+    const count=Math.max(1,Math.min(4,Math.round(comp.length/14))); let t=0, placed=0;
+    while(placed<count&&t<200){ t++; const h=comp[Math.floor(rnd()*comp.length)];
+      if(REG[h[1]][h[0]]!==-1) continue; if(tooClose(h[0],h[1],4)) continue;
+      add(h[0],h[1],-1,-1,nn[ni++%nn.length]); placed++; }
+  }
+  // cities share the hex with nothing else; keep the capital hex plains
+}
+function spawnStartingUnits(){
+  for(let n=0;n<5;n++){
+    const mine=cities.filter(x=>x.owner===n); if(!mine.length) continue;
+    nations[n]={alive:true, ip:START_FORCES[n].ip};
+    const order=Object.keys(START_FORCES[n].u);
+    for(const t of order){ for(let i=0;i<START_FORCES[n].u[t];i++){ const spots=[]; for(const cy of mine){ const sp=placeTiles(n,t,cy,true); for(const s of sp) spots.push(s); } if(!spots.length) continue; const s=spots[i%spots.length]; const u=makeUnit(t,n,s[0],s[1]); u.done=false; } }
+  }
+}
+
+// ================================================================ placement
+const cityCap=cy=>cy.cap>=0?2:1;
+function placeTiles(nat,type,cy,free){
+  const t=UT[type], out=[];
+  if(t.dom==='land'){
+    if(!surfAt(cy.c,cy.r)) out.push([cy.c,cy.r]);
+    for(const [c,r] of neighbors(cy.c,cy.r)){ if(MAP[r][c]==='S'||surfAt(c,r)) continue; const o=cityAt(c,r); if(o&&teamOf(nat)!==ownerTeam(o)) continue; out.push([c,r]); }
+  } else if(t.dom==='sea'){
+    if(!isCoastal(cy.c,cy.r)) return out;
+    if(!surfAt(cy.c,cy.r)) out.push([cy.c,cy.r]);
+    for(const [c,r] of within(cy.c,cy.r,free?2:1)){ if(MAP[r][c]==='S'&&!surfAt(c,r)) out.push([c,r]); }
+  } else {
+    if(airAtList(cy.c,cy.r).length<3) out.push([cy.c,cy.r]);
+  }
+  return out;
+}
+const ownerTeam=cy=>cy.owner<0?-1:teamOf(cy.owner);
+const income=n=>cities.filter(c=>c.owner===n).reduce((s,c)=>s+(c.cap>=0?3:2),0);
+
+// ================================================================ vision
+function computeVision(team){
+  const s=new Set();
+  const addR=(c,r,n)=>{ for(const [a,b] of within(c,r,n)) s.add(key(a,b)); };
+  for(const u of units){ if(u.hp<=0||u.aboard||teamOf(u.nat)!==team) continue; addR(u.c,u.r,u.type.vis); }
+  for(const cy of cities){ if(cy.owner>=0&&teamOf(cy.owner)===team) addR(cy.c,cy.r,2); }
+  vis[team]=s; s.forEach(k=>expl[team].add(k));
+}
+function updateVision(){ computeVision(0); computeVision(1); }
+function seenBy(u,team){
+  if(u.hp<=0||u.aboard) return false;
+  if(teamOf(u.nat)===team) return true;
+  if(!vis[team].has(key(u.c,u.r))) return false;
+  if(u.type.key==='sub'){ return units.some(x=>x.hp>0&&!x.aboard&&teamOf(x.nat)===team&&hexDist(x,u)<=1); }
+  return true;
+}
+
+// ================================================================ movement
+const isAllyPort=(u,c,r)=>{ const cy=cityAt(c,r); return !!cy && cy.owner>=0 && teamOf(cy.owner)===teamOf(u.nat) && isCoastal(c,r); };
+function boardable(u,c,r){ // a friendly transport/carrier here with room?
+  const o=surfAt(c,r); if(!o||o.nat!==u.nat) return null;
+  if(u.type.dom==='land' && o.type.key==='transport' && o.cargo.length<o.type.cap) return o;
+  if(u.type.dom==='air' && o.type.key==='carrier' && o.cargo.length<o.type.cap) return o;
+  return null;
+}
+function enemyBlocks(u,c,r){ const o=surfAt(c,r); if(o&&isEnemyNat(u.nat,o.nat)&&seenBy(o,teamOf(u.nat))) return true; if(u.type.dom==='air'){ const a=airAtList(c,r).find(x=>isEnemyNat(u.nat,x.nat)&&seenBy(x,teamOf(u.nat))); if(a) return true; } return false; }
+function stepCost(u,c,r,mpLeft){
+  const dom=u.type.dom, T=MAP[r][c];
+  if(enemyBlocks(u,c,r)) return Infinity;
+  let sc;
+  if(dom==='air') sc=1;
+  else if(dom==='sea'){ if(T==='S') sc=1; else if(isAllyPort(u,c,r)) sc=1; else return Infinity; }
+  else { if(T==='S'){ if(boardable(u,c,r)) return 1; return Infinity; } sc=T==='F'?2:T==='M'?3:1; }
+  if(sc>mpLeft+1e-9){ if(mpLeft>=u.type.mv-1e-9) sc=mpLeft; else return Infinity; }
+  return sc;
+}
+function canStop(u,c,r){
+  const dom=u.type.dom;
+  if(dom==='air'){
+    if(boardable(u,c,r)) return true;
+    const cy=cityAt(c,r), base=cy&&cy.owner>=0&&teamOf(cy.owner)===teamOf(u.nat);
+    const n=airAtList(c,r).length;
+    return base ? n<3 : n===0;
+  }
+  if(dom==='land') return !surfAt(c,r) || !!boardable(u,c,r);
+  return !surfAt(c,r);
+}
+function reach(u){
+  const out=new Map();
+  if(u.hp<=0||u.done) return out;
+  if(u.aboard&&u.type.dom==='land'){
+    const tr=unitById(u.aboard); if(!tr||u.mp<=0) return out;
+    for(const [c,r] of neighbors(tr.c,tr.r)){ if(MAP[r][c]==='S') continue; if(surfAt(c,r)) continue; out.set(key(c,r),{c,r,cost:u.mp,prev:null,unload:true}); }
+    return out;
+  }
+  if(u.mp<=0) return out;
+  const best=new Map([[key(u.c,u.r),0]]), prev=new Map(), pq=[[0,u.c,u.r]];
+  while(pq.length){
+    pq.sort((a,b)=>a[0]-b[0]); const [cost,c,r]=pq.shift(); if(cost>best.get(key(c,r))+1e-9) continue;
+    if(u.type.dom==='land'&&MAP[r][c]==='S') continue;           // boarding ends the move
+    for(const [nc,nr] of neighbors(c,r)){
+      const sc=stepCost(u,nc,nr,u.mp-cost); if(sc===Infinity) continue;
+      const nco=cost+sc, k=key(nc,nr); if(nco>u.mp+1e-9) continue;
+      if(best.has(k)&&best.get(k)<=nco+1e-9) continue;
+      best.set(k,nco); prev.set(k,key(c,r)); pq.push([nco,nc,nr]);
+    }
+  }
+  for(const [k,cost] of best){ if(k===key(u.c,u.r)) continue; const [c,r]=k.split(',').map(Number); if(!canStop(u,c,r)) continue; out.set(k,{c,r,cost,prev:prev.get(k)}); }
+  out._prev=prev; out._best=best;
+  return out;
+}
+function pathTo(info,u,c,r){
+  const prev=info._prev, path=[]; let k=key(c,r);
+  if(!prev) return [[c,r]];
+  while(k&&k!==key(u.c,u.r)){ const [a,b]=k.split(',').map(Number); path.unshift([a,b]); k=prev.get(k); }
+  return path;
+}
+
+// ================================================================ combat
+function canHit(a,d){
+  const ak=a.type.key, dd=d.type.dom;
+  if(ak==='transport') return false;
+  if(a.type.dom==='land'){ if(a.aboard) return dd==='land'; return dd!=='sea'; }
+  if(ak==='sub') return dd==='sea';
+  if(ak==='bomber') return dd!=='air';
+  return true;
+}
+function matchup(a,d){
+  const ak=a.type.key, dk=d.type.key, dd=d.type.dom;
+  let m=1;
+  if(dd==='air' && a.type.dom!=='air') m=ak==='infantry'?0.4:ak==='armor'?0.3:ak==='battleship'?0.4:0.5;
+  else if(ak==='armor'&&dk==='infantry') m=1.25;
+  else if(ak==='infantry'&&dk==='armor') m=0.65;
+  else if(ak==='sub') m=dk==='sub'?0.9:1.35;
+  else if(dk==='sub'&&a.type.dom==='sea') m=0.5;
+  else if(dk==='sub'&&a.type.dom==='air') m=0.6;
+  else if(ak==='fighter') m=dk==='bomber'?1.5:(dd==='air'?1:0.5);
+  else if(ak==='bomber'&&(dk==='armor'||dk==='transport')) m=1.2;
+  if(a.aboard) m*=0.7;
+  return m;
+}
+function defBonus(d){
+  if(d.type.dom!=='land'||d.aboard) return 1;
+  const T=MAP[d.r][d.c]; let m=T==='F'?1.25:T==='M'?1.5:1; const cy=cityAt(d.c,d.r); if(cy) m=Math.max(m,cy.cap>=0?1.5:1.3); return m;
+}
+function calcDmg(a,d){ const atk=a.type.atk*matchup(a,d)*(0.5+0.5*a.hp/a.type.hp); return Math.max(1,Math.round(atk*10/(10+d.type.def*defBonus(d)))); }
+function targetsFrom(u,c,r){
+  const team=teamOf(u.nat), out=[];
+  for(const [cc,rr] of within(c,r,u.type.range)){ if(cc===c&&rr===r) continue;
+    for(const t of unitsAtHex(cc,rr)){ if(isEnemyNat(u.nat,t.nat)&&seenBy(t,team)&&canHit(u,t)) out.push(t); } }
+  return out;
+}
+function counterDmg(a,d,dmg){ // d survived, a attacked from its current hex
+  if(d.hp<=0) return 0; if(!canHit(d,a)) return 0; if(hexDist(a,d)>d.type.range) return 0; if(d.type.atk<=0) return 0;
+  if(a.aboard) return 0;
+  return Math.round(calcDmg(d,a)*0.6);
+}
+function previewAttack(a,d){ const dmg=calcDmg(a,d); const k=dmg>=d.hp; const ctr=k?0:counterDmg(a,d,dmg); return {dmg,kill:k,counter:Math.min(ctr,a.hp)}; }
+
+// ================================================================ capture / defeat / end
+function captureCity(u){
+  const cy=cityAt(u.c,u.r); if(!cy||u.type.dom!=='land'||u.aboard) return false;
+  if(cy.owner===u.nat||(cy.owner>=0&&teamOf(cy.owner)===teamOf(u.nat))) return false;
+  const old=cy.owner; cy.owner=u.nat;
+  log(NAT[u.nat].short+' captures '+cy.name+(old>=0?' from '+NAT[old].short:'')+'.', teamOf(u.nat)===teamOf(me)?'good':'bad');
+  sfx('capture');
+  if(cy.cap>=0 && cy.cap!==u.nat && nations[cy.cap].alive) defeatNation(cy.cap,u.nat);
+  return true;
+}
+function defeatNation(x,by){
+  nations[x].alive=false;
+  for(const u of units){ if(u.nat===x&&u.hp>0){ u.hp=0; u.dead=true; } }
+  for(const cy of cities){ if(cy.owner===x) cy.owner=by; }
+  log(NAT[x].name.toUpperCase()+' HAS FALLEN!','sys'); banner(NAT[x].short+' capital captured!'); sfx('fall');
+  checkEnd();
+}
+function checkEnd(){
+  if(gameOver) return;
+  const dead=t=>TEAMS[t].nats.every(n=>!nations[n].alive);
+  const myT=teamOf(me);
+  if(!nations[me].alive){ gameOver=true; showEnd(false,'Your capital has fallen.'); return; }
+  if(dead(1-myT)){ gameOver=true; showEnd(true,'Every enemy capital has been captured.'); }
+}
+
+// ================================================================ effects + animation helpers
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let effects=[], busy=false, turboAI=false;
+const nowMs=()=>performance.now();
+function addText(c,r,text,color){ const p=center(c,r); effects.push({x:p.x,y:p.y-30,text,color,t0:nowMs(),life:1100,type:'text'}); }
+function addBoom(c,r,big){ const p=center(c,r); effects.push({x:p.x,y:p.y-10,t0:nowMs(),life:big?900:500,type:'boom',big}); }
+const visibleToMe=(c,r)=>vis[teamOf(me)].has(key(c,r));
+function tween(ms,fn){ return new Promise(res=>{ const t0=nowMs(); (function f(){ const p=Math.min(1,(nowMs()-t0)/ms); fn(p); if(p<1) requestAnimationFrame(f); else res(); })(); }); }
+function syncCargo(u){ for(const id of u.cargo){ const x=unitById(id); if(x){ x.c=u.c; x.r=u.r; } } }
+function killUnit(x,by){
+  if(x.hp>0) x.hp=0; x.dead=true;
+  addBoom(x.c,x.r,x.type.dom==='sea'); sfx(x.type.dom==='sea'?'sink':'boom');
+  log(NAT[x.nat].short+' '+x.type.name+' destroyed'+(by?' by '+NAT[by.nat].short+' '+by.type.name:'')+'.', teamOf(x.nat)===teamOf(me)?'bad':'good');
+  if(x.aboard){ const tr=unitById(x.aboard); if(tr) tr.cargo=tr.cargo.filter(i=>i!==x.id); }
+  for(const id of x.cargo){ const c=unitById(id); if(c){ c.hp=0; c.dead=true; } }
+  x.cargo=[];
+}
+
+// ================================================================ moving
+async function moveUnit(u,destKey,info){
+  const dest=info.get(destKey); if(!dest) return;
+  const wasHidden=!visibleToMe(u.c,u.r);
+  if(u.aboard&&u.type.dom==='land'){ // unload onto adjacent land
+    const tr=unitById(u.aboard); if(tr) tr.cargo=tr.cargo.filter(i=>i!==u.id);
+    u.aboard=null; u.c=dest.c; u.r=dest.r; u.mp=0; u.done=true;
+    sfx('move'); updateVision(); captureCity(u); updateVision(); return;
+  }
+  if(u.aboard){ const tr=unitById(u.aboard); if(tr) tr.cargo=tr.cargo.filter(i=>i!==u.id); u.aboard=null; }
+  const path=pathTo(info,u,dest.c,dest.r), start=info._best, mp0=u.mp;
+  let last=key(u.c,u.r), bumped=null;
+  for(const [c,r] of path){
+    const occ=surfAt(c,r);
+    const eAir=u.type.dom==='air'?airAtList(c,r).find(x=>isEnemyNat(u.nat,x.nat)):null;
+    if((occ&&isEnemyNat(u.nat,occ.nat))||eAir){ bumped=occ||eAir; break; }
+    const show=!turboAI&&(visibleToMe(u.c,u.r)||visibleToMe(c,r));
+    const a=center(u.c,u.r), b=center(c,r);
+    if(show){ u.ox=a.x; u.oy=a.y; await tween(130,p=>{ u.ox=a.x+(b.x-a.x)*p; u.oy=a.y+(b.y-a.y)*p; }); u.ox=u.oy=undefined; }
+    u.c=c; u.r=r; syncCargo(u); last=key(c,r); updateVision();
+  }
+  if(bumped){ u.mp=0; log('Contact! '+NAT[bumped.nat].short+' '+bumped.type.name+' was lying in wait.', teamOf(u.nat)===teamOf(me)?'bad':'good'); addText(u.c,u.r,'AMBUSH!','#ff9a8a'); updateVision(); return; }
+  const used=info._best.get(last)||0; u.mp=Math.max(0,mp0-used);
+  sfx('move');
+  const tr=boardable(u,u.c,u.r);
+  if(tr&&tr!==u){
+    if(u.type.dom==='land'||u.type.dom==='air'){ u.aboard=tr.id; tr.cargo.push(u.id); u.mp=0; u.fuel=u.type.fuel||0; }
+  }
+  if(u.type.dom==='land') captureCity(u);
+  updateVision();
+}
+
+// ================================================================ attacking
+async function attackUnit(a,d){
+  const pv=previewAttack(a,d);
+  a.done=true; a.mp=0;
+  const show=!turboAI&&(visibleToMe(a.c,a.r)||visibleToMe(d.c,d.r));
+  if(show){ const pa=center(a.c,a.r), pd=center(d.c,d.r); a.ox=pa.x; a.oy=pa.y;
+    await tween(110,p=>{ a.ox=pa.x+(pd.x-pa.x)*0.35*p; a.oy=pa.y+(pd.y-pa.y)*0.35*p; });
+    sfx(a.type.key==='battleship'||a.type.key==='sub'?'gun':a.type.dom==='air'?'bomb':'shot');
+    d.hit=nowMs(); addText(d.c,d.r,'-'+pv.dmg,'#ff7a6a');
+    await tween(110,p=>{ a.ox=pa.x+(pd.x-pa.x)*0.35*(1-p); a.oy=pa.y+(pd.y-pa.y)*0.35*(1-p); });
+    a.ox=a.oy=undefined;
+  }
+  const dx=d.c, dy=d.r, dWasLandSurf=d.type.dom==='land'&&!d.aboard;
+  d.hp-=pv.dmg; log(NAT[a.nat].short+' '+a.type.name+' hits '+NAT[d.nat].short+' '+d.type.name+' for '+pv.dmg+'.', teamOf(a.nat)===teamOf(me)?'':'');
+  if(d.hp<=0){
+    killUnit(d,a);
+    if(a.type.dom==='land'&&!a.aboard&&dWasLandSurf&&hexDist(a,{c:dx,r:dy})===1&&!surfAt(dx,dy)){
+      // advance into the vacated hex
+      if(show){ const pa=center(a.c,a.r), pd=center(dx,dy); await tween(130,p=>{ a.ox=pa.x+(pd.x-pa.x)*p; a.oy=pa.y+(pd.y-pa.y)*p; }); a.ox=a.oy=undefined; }
+      a.c=dx; a.r=dy; updateVision(); captureCity(a);
+    }
+  } else if(pv.counter>0){
+    a.hp-=pv.counter; a.hit=nowMs(); if(show){ addText(a.c,a.r,'-'+pv.counter,'#ffb84a'); await sleep(160); }
+    if(a.hp<=0) killUnit(a,d);
+  }
+  updateVision();
+}
+
+// ================================================================ production
+function canBuild(nat,type,cy){
+  if(cy.owner!==nat) return false; if(cy.built>=cityCap(cy)) return false;
+  if(nations[nat].ip<UT[type].cost) return false;
+  return placeTiles(nat,type,cy,false).length>0;
+}
+function buyUnit(nat,type,cy,c,r){
+  nations[nat].ip-=UT[type].cost; cy.built++;
+  const u=makeUnit(type,nat,c,r); u.done=true; u.mp=0; u.fresh=true; updateVision(); return u;
+}
+
+// ================================================================ turn flow
+function resetUnitsFor(n){
+  for(const u of units){ if(u.nat!==n||u.hp<=0) continue; u.mp=u.type.mv; u.done=false; u.fresh=false;
+    if(u.type.dom==='air'){
+      const cy=cityAt(u.c,u.r), based=u.aboard||(cy&&cy.owner>=0&&teamOf(cy.owner)===teamOf(n));
+      if(based) u.fuel=u.type.fuel; else u.fuel-=1;
+    } }
+}
+function crashCheck(n){
+  for(const u of units){ if(u.nat!==n||u.hp<=0||u.type.dom!=='air'||u.aboard) continue;
+    const cy=cityAt(u.c,u.r), based=cy&&cy.owner>=0&&teamOf(cy.owner)===teamOf(n);
+    if(!based&&u.fuel<=0){ log(NAT[n].short+' '+u.type.name+' ran out of fuel and crashed.', n===me||teamOf(n)===teamOf(me)?'bad':''); killUnit(u,null); }
+  }
+}
+function airborneWarnings(n){ return units.filter(u=>u.nat===n&&u.hp>0&&u.type.dom==='air'&&!u.aboard&&u.fuel<=0&&!(cityAt(u.c,u.r)&&teamOf(cityAt(u.c,u.r).owner)===teamOf(n))); }
+async function startTurn(n){
+  if(gameOver) return;
+  turnNat=n;
+  units=units.filter(u=>u.hp>0);
+  cities.forEach(cy=>{ if(cy.owner===n) cy.built=0; });
+  const inc=income(n); nations[n].ip+=inc;
+  resetUnitsFor(n);
+  updateVision(); refreshUI();
+  if(n===me){ banner('Your turn'); log('— Round '+round+': '+NAT[n].name+' (+'+inc+' IP) —','sys'); sfx('turn'); refreshUI(); nextUnit(true); }
+  else { await aiTurn(n); if(!gameOver) await endTurn(); }
+}
+async function endTurn(){
+  if(gameOver) return;
+  crashCheck(turnNat); clearSel();
+  let n=turnNat; do{ n=(n+1)%5; if(n===0) round++; }while(!nations[n].alive);
+  await startTurn(n);
+}
+
+// ================================================================ AI
+const AIS={};
+function multiBFS(seeds,passable){
+  const d=new Map(), buckets=[];
+  for(const s of seeds){ const k=key(s.c,s.r); if(!d.has(k)||d.get(k)>s.d){ d.set(k,s.d); (buckets[s.d]=buckets[s.d]||[]).push([s.c,s.r]); } }
+  for(let i=0;i<buckets.length;i++){ const b=buckets[i]; if(!b) continue;
+    for(const [c,r] of b){ if(d.get(key(c,r))!==i) continue;
+      for(const [a,bb] of neighbors(c,r)){ if(!passable(a,bb)) continue; const k=key(a,bb), nd=i+1; if(!d.has(k)||d.get(k)>nd){ d.set(k,nd); (buckets[nd]=buckets[nd]||[]).push([a,bb]); } } } }
+  return d;
+}
+const isTeamCity=(cy,team)=>cy.owner>=0&&teamOf(cy.owner)===team;
+function landField(team){
+  const seeds=[]; for(const cy of cities){ if(isTeamCity(cy,team)) continue; seeds.push({c:cy.c,r:cy.r,d:(cy.cap>=0?0:1)}); }
+  return multiBFS(seeds,(c,r)=>MAP[r][c]!=='S');
+}
+function seaPass(team){ return (c,r)=>{ if(MAP[r][c]==='S') return true; const cy=cityAt(c,r); return !!cy&&isTeamCity(cy,team)&&isCoastal(c,r); }; }
+function threatAt(n,c,r){
+  const team=teamOf(n); let t=0;
+  for(const e of units){ if(e.hp<=0||e.aboard||!isEnemyNat(n,e.nat)||e.type.atk<=0||!seenBy(e,team)) continue;
+    const d=hexDist(e,{c,r}), reachD=e.type.mv+e.type.range; if(d<=reachD) t+=e.type.atk*(e.hp/e.type.hp)/(1+d*.25); }
+  return t;
+}
+function attackScore(u,t,h){
+  const dmg=calcDmg(u,t), kill=dmg>=t.hp;
+  let val=t.type.cost*Math.min(dmg,t.hp)/t.type.hp*(kill?1.5:1);
+  const cy=cityAt(t.c,t.r); if(cy&&!isTeamCity(cy,teamOf(u.nat))) val+=kill?3:0.5;
+  let ctr=0;
+  if(!kill&&canHit(t,u)&&t.type.atk>0&&hexDist(h,t)<=t.type.range) ctr=Math.round(calcDmg(t,u)*0.6);
+  const loss=u.type.cost*Math.min(ctr,u.hp)/u.type.hp*(Math.min(ctr,u.hp)>=u.hp?1.6:1);
+  return val*2.2-loss*1.3;
+}
+async function aiActUnit(u,n,fieldFn,opt){
+  opt=opt||{};
+  const info=reach(u), cands=[{c:u.c,r:u.r,stay:true,cost:0}];
+  for(const [,v] of info) cands.push(v);
+  let best=null;
+  for(const h of cands){
+    if(opt.filter&&!opt.filter(h)) continue;
+    let s=0; const f=fieldFn?fieldFn(h.c,h.r):0; s-=((f===undefined||f===Infinity)?60:f)*(opt.pw||1.2);
+    if(u.type.dom==='land'){
+      const cy=cityAt(h.c,h.r); if(cy&&!isTeamCity(cy,teamOf(n))) s+=25; else if(cy) s+=1;
+      const T=MAP[h.r][h.c]; s+=T==='M'?1.2:T==='F'?.8:0;
+    }
+    if(opt.bonus) s+=opt.bonus(h);
+    s-=threatAt(n,h.c,h.r)*0.12*(u.type.cost/5);
+    let att=null;
+    if(u.type.atk>0&&!(opt.noAttack)){
+      for(const t of targetsFrom(u,h.c,h.r)){ const sc=attackScore(u,t,h); if(!att||sc>att.sc) att={t,sc}; }
+      if(att&&att.sc<=0.2) att=null;
+    }
+    if(att) s+=att.sc;
+    if(!best||s>best.s) best={s,h,att};
+  }
+  if(!best) return;
+  if(!best.h.stay){ await moveUnit(u,key(best.h.c,best.h.r),info); if(u.hp<=0||gameOver) return; if(u.c!==best.h.c||u.r!==best.h.r) return; }
+  if(best.att&&best.att.t.hp>0&&!u.done&&targetsFrom(u,u.c,u.r).includes(best.att.t)) await attackUnit(u,best.att.t);
+}
+
+function basesFor(u){ // friendly landing spots
+  const n=u.nat, team=teamOf(n), out=[];
+  for(const cy of cities){ if(isTeamCity(cy,team)) out.push({c:cy.c,r:cy.r}); }
+  for(const x of units){ if(x.hp>0&&x.nat===n&&x.type.key==='carrier') out.push({c:x.c,r:x.r}); }
+  return out;
+}
+const nearestBaseDist=(u,c,r)=>{ let m=99; for(const b of basesFor(u)){ const d=hexDist(b,{c,r}); if(d<m) m=d; } return m; };
+async function aiAir(u,n){
+  const info=reach(u);
+  const landings=[]; for(const [,v] of info){ if(canStop(u,v.c,v.r)){ const cy=cityAt(v.c,v.r), car=boardable(u,v.c,v.r);
+    if(car||(cy&&isTeamCity(cy,teamOf(n)))) landings.push(v); } }
+  const atBase=(()=>{ if(u.aboard) return true; const cy=cityAt(u.c,u.r); return !!cy&&isTeamCity(cy,teamOf(n)); })();
+  const mustLand=u.fuel<=0&&!atBase;
+  let best=null;
+  if(!mustLand){
+    const cands=[{c:u.c,r:u.r,stay:true,cost:0}]; for(const [,v] of info) cands.push(v);
+    for(const h of cands){
+      if(!canStop(u,h.c,h.r)&&!h.stay) continue;
+      if(u.type.key==='bomber'&&u.fuel<=0) continue;
+      const nb=nearestBaseDist(u,h.c,h.r); if(nb>u.type.mv) continue;
+      if(u.fuel<1&&!atBase) continue;
+      for(const t of targetsFrom(u,h.c,h.r)){ if(u.aboard&&false) continue;
+        let sc=attackScore(u,t,h);
+        if(u.type.key==='fighter'&&t.type.dom==='air') sc*=1.4;
+        sc-=threatAt(n,h.c,h.r)*0.05;
+        if(sc>1&&(!best||sc>best.sc)) best={sc,h,t}; }
+    }
+  }
+  if(best){
+    if(!best.h.stay){ await moveUnit(u,key(best.h.c,best.h.r),info); if(u.hp<=0||gameOver||u.c!==best.h.c||u.r!==best.h.r) return; }
+    if(best.t.hp>0&&targetsFrom(u,u.c,u.r).includes(best.t)) await attackUnit(u,best.t);
+    return;
+  }
+  // nothing worth hitting: head home
+  if(atBase&&!mustLand) return;
+  let L=null,ld=1e9;
+  for(const v of landings){ const d=hexDist(u,v); if(d<ld){ ld=d; L=v; } }
+  if(L){ await moveUnit(u,key(L.c,L.r),info); return; }
+  // cannot reach a base: close the distance
+  let tgt=null,td=1e9; for(const b of basesFor(u)){ const d=hexDist(u,b); if(d<td){ td=d; tgt=b; } }
+  if(!tgt) return;
+  let bh=null,bd=1e9; for(const [,v] of info){ if(!canStop(u,v.c,v.r)) continue; const d=hexDist(v,tgt); if(d<bd){ bd=d; bh=v; } }
+  if(bh) await moveUnit(u,key(bh.c,bh.r),info);
+}
+
+// ---- sea
+function enemySeaTargets(n){
+  const team=teamOf(n), seeds=[];
+  for(const e of units){ if(e.hp<=0||e.aboard||!isEnemyNat(n,e.nat)||!seenBy(e,team)) continue;
+    if(e.type.dom==='sea') seeds.push({c:e.c,r:e.r,d:e.type.key==='transport'?0:1}); }
+  if(!seeds.length){
+    for(const cy of cities){ if(isTeamCity(cy,team)||cy.owner<0||!isCoastal(cy.c,cy.r)) continue;
+      for(const [a,b] of neighbors(cy.c,cy.r)) if(MAP[b][a]==='S') seeds.push({c:a,r:b,d:cy.cap>=0?2:4}); }
+  }
+  return seeds;
+}
+async function aiNaval(u,n,M){
+  if(u.type.key==='carrier'){ if(u.cargo.length===0&&M.gather&&false){} return; }
+  if(!M.navField){ M.navField=multiBFS(enemySeaTargets(n),seaPass(teamOf(n))); }
+  await aiActUnit(u,n,(c,r)=>M.navField.get(key(c,r)),{pw:0.9});
+}
+// ---- land + transports
+async function aiLand(u,n,M){
+  const stranded=!M.lf.has(key(u.c,u.r));
+  if(u.aboard) return;
+  if(!stranded){
+    await aiActUnit(u,n,(c,r)=>M.lf.get(key(c,r)),{filter:h=>MAP[h.r][h.c]!=='S'&&!boardable(u,h.c,h.r)});
+  } else {
+    if(!M.portF) M.portF=M.gather?multiBFS([{c:M.gather.c,r:M.gather.r,d:0}],(c,r)=>MAP[r][c]!=='S'):new Map();
+    await aiActUnit(u,n,(c,r)=>MAP[r][c]==='S'?0:M.portF.get(key(c,r)),{
+      filter:h=>MAP[h.r][h.c]!=='S'||!!boardable(u,h.c,h.r),
+      bonus:h=>boardable(u,h.c,h.r)?45:0, pw:1.0 });
+  }
+}
+function moveByField(u,field,n){
+  const info=reach(u); let best=null,bv=field.get(key(u.c,u.r)); if(bv===undefined) bv=999;
+  const thr0=threatAt(n,u.c,u.r)*0.3;
+  bv+=thr0;
+  for(const [,v] of info){ if(!canStop(u,v.c,v.r)) continue; const f=field.get(key(v.c,v.r)); if(f===undefined) continue;
+    const sc=f+threatAt(n,v.c,v.r)*0.3; if(sc<bv-0.5){ bv=sc; best=v; } }
+  if(best) return moveUnit(u,key(best.c,best.r),info);
+}
+async function aiUnload(u,n,M){
+  let landed=0;
+  for(const id of u.cargo.slice()){ const cu=unitById(id); if(!cu||cu.hp<=0||cu.done||cu.mp<=0) continue;
+    const info=reach(cu); let best=null,bv=1e9;
+    for(const [,v] of info){ if(!v.unload) continue; const f=M.lf.get(key(v.c,v.r)); if(f===undefined) continue;
+      const cy=cityAt(v.c,v.r); const sc=f-(cy&&!isTeamCity(cy,teamOf(n))?5:0)+threatAt(n,v.c,v.r)*0.2; if(sc<bv){ bv=sc; best=v; } }
+    if(best){ await moveUnit(cu,key(best.c,best.r),info); landed++; }
+  }
+  return landed;
+}
+async function aiTransport(u,n,M){
+  const cargo=u.cargo.map(unitById).filter(x=>x&&x.hp>0);
+  if(cargo.length){ if(await aiUnload(u,n,M)>0) return; }
+  const near=units.filter(x=>x.nat===n&&x.hp>0&&x.type.dom==='land'&&!x.aboard&&!M.lf.has(key(x.c,x.r))&&hexDist(x,u)<=3).length;
+  const full=cargo.length>=u.type.cap;
+  if(cargo.length===0||(!full&&near>0&&(u.wait||0)<2)){
+    if(cargo.length>0) u.wait=(u.wait||0)+1;
+    if(M.gatherField) await moveByField(u,M.gatherField,n);
+    return;
+  }
+  u.wait=0;
+  if(!M.landField) M.landField=buildLandingField(n,M);
+  await moveByField(u,M.landField,n);
+}
+function buildLandingField(n,M){
+  const team=teamOf(n), seeds=[];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ if(MAP[r][c]==='S') continue; const f=M.lf.get(key(c,r)); if(f===undefined) continue;
+    const cy=cityAt(c,r); if(cy&&isTeamCity(cy,team)&&false) continue;
+    for(const [a,b] of neighbors(c,r)) if(MAP[b][a]==='S') seeds.push({c:a,r:b,d:Math.floor(f*0.5)}); }
+  return multiBFS(seeds,seaPass(team));
+}
+
+// ---- production
+function aiBuy(n,lf){
+  const team=teamOf(n), mine=units.filter(u=>u.nat===n&&u.hp>0);
+  if(mine.length>=28) return;
+  const cnt=t=>mine.filter(u=>u.type.key===t).length;
+  const strand=mine.filter(u=>u.type.dom==='land'&&(u.aboard||!lf.has(key(u.c,u.r)))).length;
+  const mine_c=cities.filter(c=>c.owner===n).sort((a,b)=>b.cap-a.cap);
+  for(const cy of mine_c){
+    let guard=0;
+    while(cy.built<cityCap(cy)&&guard++<4){
+      const W=[]; const add=(t,w)=>{ if(w>0&&canBuild(n,t,cy)) W.push([t,w]); };
+      const needT=Math.ceil(strand/2)>cnt('transport')&&cnt('transport')<3;
+      add('transport',needT?7:0);
+      add('infantry',strand>=6&&needT?2:5);
+      add('armor',3);
+      add('fighter',cnt('fighter')<4?2:0.5);
+      add('bomber',cnt('bomber')<3?2:0.5);
+      add('sub',cnt('sub')<2?1.2:0.3);
+      add('battleship',nations[n].ip>=16&&cnt('battleship')<2?1.2:0);
+      if(!W.length) break;
+      let tot=0; for(const w of W) tot+=w[1]; let x=Math.random()*tot, pick=W[0][0];
+      for(const w of W){ x-=w[1]; if(x<=0){ pick=w[0]; break; } }
+      const spots=placeTiles(n,pick,cy,false); if(!spots.length) break;
+      let sp=spots[0];
+      if(UT[pick].dom==='land'){ let bv=1e9; for(const s of spots){ const f=lf.get(key(s[0],s[1])); const v=f===undefined?50:f; if(v<bv){ bv=v; sp=s; } } }
+      const u=buyUnit(n,pick,cy,sp[0],sp[1]); mine.push(u);
+    }
+  }
+}
+
+async function aiTurn(n){
+  const team=teamOf(n), M=AIS[n]={};
+  M.lf=landField(team);
+  const mineU=()=>units.filter(u=>u.nat===n&&u.hp>0);
+  try{ aiBuy(n,M.lf); }catch(e){ console.error('aiBuy',e); }
+  // gather city for stranded land units
+  const stranded=mineU().filter(u=>u.type.dom==='land'&&!u.aboard&&!M.lf.has(key(u.c,u.r)));
+  if(stranded.length){
+    let cx=0,cr=0; stranded.forEach(u=>{ cx+=u.c; cr+=u.r; }); cx/=stranded.length; cr/=stranded.length;
+    let bg=null,bd=1e9; for(const cy of cities){ if(cy.owner!==n||!isCoastal(cy.c,cy.r)) continue; const d=Math.hypot(cy.c-cx,cy.r-cr); if(d<bd){ bd=d; bg=cy; } }
+    M.gather=bg;
+    if(bg){ const seeds=[]; if(!surfAt(bg.c,bg.r)||true) seeds.push({c:bg.c,r:bg.r,d:0}); for(const [a,b] of neighbors(bg.c,bg.r)) if(MAP[b][a]==='S') seeds.push({c:a,r:b,d:0}); M.gatherField=multiBFS(seeds,seaPass(team)); }
+  } else if(mineU().some(u=>u.type.key==='transport')){
+    // nobody waiting: park at a home port
+    const bg=cities.find(cy=>cy.owner===n&&isCoastal(cy.c,cy.r)); M.gather=bg||null;
+    if(bg){ const seeds=[{c:bg.c,r:bg.r,d:0}]; for(const [a,b] of neighbors(bg.c,bg.r)) if(MAP[b][a]==='S') seeds.push({c:a,r:b,d:0}); M.gatherField=multiBFS(seeds,seaPass(team)); }
+  }
+  const phases=[
+    u=>u.type.dom==='air',
+    u=>u.type.dom==='sea'&&u.type.key!=='transport',
+    u=>u.type.dom==='land',
+    u=>u.type.key==='transport'
+  ];
+  for(const ph of phases){
+    const list=mineU().filter(ph).filter(u=>!u.done&&!u.fresh);
+    for(const u of list){
+      if(gameOver||u.hp<=0) continue;
+      try{
+        const t=u.type.dom;
+        if(t==='air') await aiAir(u,n);
+        else if(t==='sea'&&u.type.key==='transport') await aiTransport(u,n,M);
+        else if(t==='sea') await aiNaval(u,n,M);
+        else await aiLand(u,n,M);
+      }catch(e){ console.error('ai',n,u.type.key,e); }
+      if(!turboAI&&visibleToMe(u.c,u.r)) await sleep(35);
+    }
+    updateVision();
+  }
+  if(!turboAI) await sleep(200);
+}
+
+// ================================================================ audio (synth)
+let AC=null, muted=false;
+try{ muted=localStorage.getItem('wwMute')==='1'; }catch(e){}
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended') AC.resume(); return AC; }
+function tone(f,d,type,vol,slide,delay){ const a=ac(); if(!a) return; const t=a.currentTime+(delay||0), o=a.createOscillator(), g=a.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t); if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(20,f*slide),t+d); g.gain.setValueAtTime(vol||.1,t); g.gain.exponentialRampToValueAtTime(.001,t+d); o.connect(g); g.connect(a.destination); o.start(t); o.stop(t+d+.02); }
+function noise(d,vol,hp,delay){ const a=ac(); if(!a) return; const t=a.currentTime+(delay||0), n=Math.floor(a.sampleRate*d), b=a.createBuffer(1,n,a.sampleRate), ch=b.getChannelData(0); for(let i=0;i<n;i++) ch[i]=(Math.random()*2-1)*(1-i/n); const s=a.createBufferSource(); s.buffer=b; const f=a.createBiquadFilter(); f.type='lowpass'; f.frequency.value=hp||1800; const g=a.createGain(); g.gain.value=vol||.2; s.connect(f); f.connect(g); g.connect(a.destination); s.start(t); }
+function sfx(n){
+  if(muted||turboAI) return;
+  switch(n){
+    case 'move': tone(180,.07,'square',.04,.7); break;
+    case 'shot': noise(.12,.25,2600); tone(220,.08,'square',.05,.5); break;
+    case 'gun': noise(.3,.35,900); tone(90,.3,'sawtooth',.1,.4); break;
+    case 'bomb': tone(500,.35,'sine',.08,.2); noise(.3,.3,700,.3); break;
+    case 'boom': noise(.45,.4,700); tone(70,.4,'sawtooth',.12,.4); break;
+    case 'sink': noise(.7,.3,500); tone(140,.8,'triangle',.1,.25); break;
+    case 'capture': [392,494,587,784].forEach((f,i)=>tone(f,.18,'triangle',.09,1,i*.09)); break;
+    case 'fall': [330,262,196,131].forEach((f,i)=>tone(f,.3,'sawtooth',.07,1,i*.18)); break;
+    case 'turn': tone(440,.12,'triangle',.07); tone(660,.16,'triangle',.07,1,.1); break;
+    case 'buy': tone(660,.07,'square',.05); tone(880,.1,'square',.05,1,.07); break;
+    case 'click': tone(520,.04,'square',.03); break;
+    case 'win': [392,494,587,784,988].forEach((f,i)=>tone(f,.25,'triangle',.1,1,i*.12)); break;
+    case 'lose': [330,277,233,196,147].forEach((f,i)=>tone(f,.35,'sawtooth',.07,1,i*.2)); break;
+  }
+}
+
+// ================================================================ UI state + helpers
+const $=id=>document.getElementById(id);
+const cv=$('board'), ctx=cv.getContext('2d');
+const BW=PAD*2+S*2+1.5*S*(COLS-1), BH=Math.ceil(PAD*2+TILT*SQ*S*(ROWS+0.5));
+let zoom=1, DPR=Math.min(2,window.devicePixelRatio||1);
+let sel=null, selInfo=null, selTargets=[], selCity=null, shopType=null, placeSpots=[], hover=null, inspect=null, dirty=true;
+let terrainCanvas=null;
+const IMG={};
+function img(nat,type){ const k=NAT[nat].id+'_'+type; if(!IMG[k]){ const i=new Image(); i.onload=()=>{dirty=true;}; i.src='assets/u_'+k+'.png'; IMG[k]=i; } return IMG[k]; }
+function log(msg,cls){ const li=document.createElement('li'); if(cls) li.className=cls; li.textContent=msg; const L=$('log'); L.appendChild(li); while(L.children.length>140) L.removeChild(L.firstChild); L.scrollTop=L.scrollHeight; }
+function banner(t){ const b=$('banner'); b.textContent=t; b.classList.remove('show'); void b.offsetWidth; b.classList.add('show'); }
+const mine=u=>u.nat===me;
+function terrName(c,r){ const cy=cityAt(c,r); return (cy?(cy.cap>=0?'Capital: ':'City: ')+cy.name+' · ':'')+TERR[MAP[r][c]].name; }
+function clearSel(){ sel=null; selInfo=null; selTargets=[]; selCity=null; shopType=null; placeSpots=[]; dirty=true; if(typeof refreshUI==='function') refreshUI(); }
+function selectUnit(u){ sel=u; selCity=null; shopType=null; placeSpots=[]; inspect=null; recalc(); sfx('click'); refreshUI(); }
+function recalc(){ if(!sel||sel.hp<=0){ selInfo=null; selTargets=[]; return; } selInfo=sel.done?new Map():reach(sel); selTargets=sel.done||(sel.aboard&&sel.type.dom!=='land')?[]:targetsFrom(sel,sel.c,sel.r); dirty=true; }
+function selectCity(cy){ sel=null; selInfo=null; selTargets=[]; selCity=cy; shopType=null; placeSpots=[]; inspect=null; dirty=true; sfx('click'); refreshUI(); }
+function canAct(u){ return u.hp>0&&!u.done&&!u.fresh&&(u.mp>0||targetsFrom(u,u.c,u.r).length>0); }
+function nextUnit(first){
+  if(turnNat!==me||gameOver) return;
+  const list=units.filter(u=>u.nat===me&&u.hp>0&&!u.aboard&&canAct(u));
+  const cargoList=units.filter(u=>u.nat===me&&u.hp>0&&u.aboard&&canAct(u));
+  const all=list.concat(cargoList);
+  if(!all.length){ clearSel(); $('hint').textContent='All units have acted. Buy units at your cities, or End Turn.'; return; }
+  let i=sel?all.indexOf(sel)+1:0; if(i>=all.length) i=0;
+  selectUnit(all[i]); centerOn(all[i].c,all[i].r);
+}
+function centerOn(c,r){ const p=center(c,r), sc=$('scroller'); sc.scrollTo({left:p.x*zoom-sc.clientWidth/2,top:p.y*zoom-sc.clientHeight/2,behavior:'smooth'}); }
+
+// ================================================================ input
+function hexAt(ev){
+  const rect=cv.getBoundingClientRect(); const x=(ev.clientX-rect.left)/zoom, y=(ev.clientY-rect.top)/zoom;
+  let best=null,bd=1e9;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const p=center(c,r); const dx=(x-p.x)/S, dy=(y-p.y)/(TILT*S); const d=dx*dx+dy*dy; if(d<bd){ bd=d; best=[c,r]; } }
+  return bd<1.1?best:null;
+}
+function ownStack(c,r){ const l=unitsAtHex(c,r).filter(u=>u.nat===me); const cy=cityAt(c,r); const out=l.slice(); if(cy&&cy.owner===me) out.push(cy); return out; }
+async function clickHex(c,r){
+  if(busy||gameOver) return;
+  const k=key(c,r);
+  if(turnNat===me){
+    if(selCity&&shopType&&placeSpots.some(s=>s[0]===c&&s[1]===r)){ doBuy(c,r); return; }
+    if(sel&&!sel.done){
+      const tgt=selTargets.find(t=>t.c===c&&t.r===r&&(t===surfAt(c,r)||t.type.dom==='air'));
+      const enemiesHere=selTargets.filter(t=>t.c===c&&t.r===r);
+      if(enemiesHere.length){ const t=enemiesHere.find(x=>x.type.dom!=='air')||enemiesHere[0]; busy=true; try{ await attackUnit(sel,t); }finally{ busy=false; } recalc(); refreshUI(); return; }
+      if(selInfo&&selInfo.has(k)){ busy=true; const u=sel; try{ await moveUnit(u,k,selInfo); }finally{ busy=false; } if(u.hp>0){ sel=u; recalc(); } else clearSel(); refreshUI(); return; }
+    }
+    const st=ownStack(c,r);
+    if(st.length){ let i=0; const cur=sel||selCity; const j=st.indexOf(cur); if(j>=0) i=(j+1)%st.length; const x=st[i]; if(x.type) selectUnit(x); else selectCity(x); return; }
+  }
+  // inspect
+  const vs=unitsAtHex(c,r).filter(u=>seenBy(u,teamOf(me)));
+  if(vs.length&&!vs.every(u=>u.nat===me)){ inspect=vs[0]; if(turnNat!==me||!sel){ sel=null; selInfo=null; selTargets=[]; selCity=null; } }
+  else { inspect={hex:[c,r]}; if(!sel&&!selCity){} else { sel=null; selInfo=null; selTargets=[]; selCity=null; shopType=null; placeSpots=[]; } }
+  dirty=true; refreshUI();
+}
+function doBuy(c,r){
+  const cy=selCity, t=shopType; if(!canBuild(me,t,cy)) return;
+  const u=buyUnit(me,t,cy,c,r); sfx('buy'); log('Produced '+u.type.name+' at '+cy.name+'.','good');
+  shopType=null; placeSpots=[]; refreshUI(); dirty=true;
+}
+function pickShop(t){
+  if(turnNat!==me||!selCity||busy) return; const cy=selCity; if(!canBuild(me,t,cy)) return;
+  const spots=placeTiles(me,t,cy,false);
+  if(spots.length===1){ shopType=t; doBuy(spots[0][0],spots[0][1]); return; }
+  shopType=shopType===t?null:t; placeSpots=shopType?spots:[]; sfx('click'); dirty=true; refreshUI();
+}
+cv.addEventListener('click',ev=>{ ac(); const h=hexAt(ev); if(h) clickHex(h[0],h[1]); });
+cv.addEventListener('contextmenu',ev=>{ ev.preventDefault(); if(!busy){ clearSel(); inspect=null; refreshUI(); } });
+cv.addEventListener('mousemove',ev=>{
+  const h=hexAt(ev); const tip=$('tip');
+  hover=h; dirty=true;
+  if(!h){ tip.style.display='none'; return; }
+  const [c,r]=h, ex=explored(c,r); let html='';
+  if(!ex){ html='<h4>Unexplored</h4>Send units or aircraft this way.'; }
+  else {
+    const vs=unitsAtHex(c,r).filter(u=>seenBy(u,teamOf(me)));
+    html='<h4>'+terrName(c,r)+'</h4>';
+    const cy=cityAt(c,r); if(cy) html+='Owner: '+(cy.owner>=0?NAT[cy.owner].name:'Neutral')+'<br>';
+    for(const u of vs){ html+='<b style="color:'+(teamOf(u.nat)===teamOf(me)?'#2a6b1f':'#a3352c')+'">'+NAT[u.nat].short+' '+u.type.name+'</b> HP '+u.hp+'/'+u.type.hp+'<br>';
+      if(sel&&selTargets.includes(u)){ const pv=previewAttack(sel,u); html+='<i>Attack: deal '+pv.dmg+(pv.kill?' (destroyed)':'')+', take '+pv.counter+'</i><br>'; } }
+    if(!vs.length&&!cy) html+=ex&&!visibleToMe(c,r)?'<i>Last seen. Not visible now.</i>':'';
+  }
+  tip.innerHTML=html; tip.style.display='block';
+  tip.style.left=Math.min(innerWidth-270,ev.clientX+16)+'px'; tip.style.top=Math.min(innerHeight-130,ev.clientY+14)+'px';
+});
+cv.addEventListener('mouseleave',()=>{ $('tip').style.display='none'; hover=null; dirty=true; });
+const explored=(c,r)=>expl[teamOf(me)].has(key(c,r));
+addEventListener('keydown',ev=>{
+  if(!$('title').classList.contains('hidden')) return;
+  const k=ev.key.toLowerCase();
+  if(k==='n') nextUnit(); else if(k==='h') holdUnit(); else if(k==='e'||k==='enter'){ if(!$('overlay').classList.contains('hidden')) return; endClick(); }
+  else if(k==='escape'){ clearSel(); inspect=null; refreshUI(); }
+  else if(k==='+'||k==='='){ setZoom(zoom*1.15); } else if(k==='-'){ setZoom(zoom/1.15); }
+});
+function holdUnit(){ if(!sel||busy) return; sel.done=true; sel.mp=0; const u=sel; sfx('click'); recalc(); refreshUI(); nextUnit(); }
+async function endClick(){
+  if(busy||turnNat!==me||gameOver) return;
+  const idle=units.filter(u=>u.nat===me&&u.hp>0&&canAct(u)).length;
+  const air=airborneWarnings(me).length;
+  if(air&&!window.__confirmedAir){ log('Warning: '+air+' aircraft are out of fuel and will crash unless they land. Press End Turn again to confirm.','bad'); window.__confirmedAir=true; return; }
+  window.__confirmedAir=false;
+  busy=true; try{ await endTurn(); }finally{ busy=false; } refreshUI();
+}
+$('end').onclick=()=>{ ac(); endClick(); };
+$('next').onclick=()=>{ ac(); nextUnit(); };
+$('hold').onclick=holdUnit;
+$('mute').onclick=()=>{ muted=!muted; try{ localStorage.setItem('wwMute',muted?'1':'0'); }catch(e){} $('mute').style.opacity=muted?.45:1; };
+$('mute').style.opacity=muted?.45:1;
+function setZoom(z){ zoom=Math.max(.5,Math.min(1.6,z)); sizeCanvas(); dirty=true; }
+function sizeCanvas(){ cv.style.width=BW*zoom+'px'; cv.style.height=BH*zoom+'px'; cv.width=Math.round(BW*zoom*DPR); cv.height=Math.round(BH*zoom*DPR); }
+
+// ================================================================ side panel
+function refreshUI(){
+  const T=$('turn');
+  T.innerHTML='<span>Round <b>'+round+'</b></span><span class="pill" style="background:'+NAT[turnNat].color+'">'+(turnNat===me?'YOUR TURN':NAT[turnNat].short+' moving')+'</span><span>IP <b>'+nations[me].ip+'</b> (+'+income(me)+')</span>';
+  let f=''; for(const n of [0,1,2,3,4]){ const nn=nations[n]; f+='<div class="frow'+(turnNat===n?' active':'')+(nn.alive?'':' out')+(n===me?' me':'')+'"><span class="dot" style="background:'+NAT[n].color+'"></span><span class="n">'+NAT[n].name+(n===me?' (you)':'')+'</span><span class="m">'+(teamOf(n)===teamOf(me)?'ally':'enemy')+'</span><span class="m">'+cities.filter(c=>c.owner===n).length+' cities</span><span class="m">'+units.filter(u=>u.nat===n&&u.hp>0).length+' units</span></div>'; }
+  $('factions').innerHTML=f;
+  const card=$('card'), subj=sel||(inspect&&inspect.type?inspect:null);
+  if(subj&&subj.hp>0){
+    const u=subj, air=u.type.dom==='air';
+    const stat=(l,v)=>'<div>'+l+'<b>'+v+'</b></div>';
+    card.innerHTML='<div class="top"><img src="assets/u_'+NAT[u.nat].id+'_'+u.type.key+'.png" alt=""><div><h2>'+u.type.name+'</h2><div class="sub">'+NAT[u.nat].name+' · '+terrName(u.c,u.r)+(u.aboard?' · aboard':'')+'</div></div></div>'
+      +'<div class="stats">'+stat('HP',u.hp+'/'+u.type.hp)+stat('MOVE',(u.nat===me?(Math.round(u.mp*10)/10)+'/':'')+u.type.mv)+stat('ATK',u.type.atk)+stat('DEF',u.type.def)+stat(air?'FUEL':'RNG',air?(u.nat===me?u.fuel:u.type.fuel):u.type.range)+'</div>'
+      +'<p>'+u.type.desc+'</p>'+(u.nat===me&&u.type.cap?'<p>Cargo: '+u.cargo.length+'/'+u.type.cap+'</p>':'')
+      +(air&&u.nat===me&&!u.aboard&&u.fuel<=0&&!(cityAt(u.c,u.r)&&cityAt(u.c,u.r).owner===me)?'<div class="preview">Out of fuel. Land this turn or crash.</div>':'')
+      +(u.nat===me&&u.fresh?'<p><i>Just built. Ready next turn.</i></p>':'');
+    const st=ownStack(u.c,u.r); if(u.nat===me&&st.length>1&&!u.aboard){ card.innerHTML+='<div class="stack"></div>'; const d=card.querySelector('.stack'); st.forEach(x=>{ const b=document.createElement('button'); b.className='sec'; b.textContent=x.type?x.type.name:x.name; b.onclick=()=>{ x.type?selectUnit(x):selectCity(x); }; d.appendChild(b); }); }
+  } else if(selCity){
+    const cy=selCity; card.innerHTML='<div class="top"><div><h2>'+cy.name+'</h2><div class="sub">'+(cy.cap>=0?'Capital of '+NAT[cy.cap].name:'City')+' · '+NAT[cy.owner].name+'</div></div></div><div class="stats" style="grid-template-columns:repeat(3,1fr)">'+'<div>INCOME<b>+'+(cy.cap>=0?3:2)+'</b></div><div>BUILT<b>'+cy.built+'/'+cityCap(cy)+'</b></div><div>PORT<b>'+(isCoastal(cy.c,cy.r)?'yes':'no')+'</b></div></div><p>Pick a unit below. It appears here or next to the city and can act next turn.</p>';
+  } else if(inspect&&inspect.hex){ const [c,r]=inspect.hex; const ex=explored(c,r); const cy=cityAt(c,r); card.innerHTML=ex?'<h2 style="font-family:Cinzel,serif;font-size:16px;margin:0">'+terrName(c,r)+'</h2>'+(cy?'<div class="sub">Owner: '+(cy.owner>=0?NAT[cy.owner].name:'Neutral')+' · pays '+(cy.cap>=0?3:2)+' IP</div>':'')+'<p>'+(MAP[r][c]==='S'?'Open water. Ships and aircraft only.':MAP[r][c]==='F'?'Forest: slow going, +25% defense.':MAP[r][c]==='M'?'Mountains: very slow, +50% defense.':'Plains: easy going.')+'</p>':'<div class="empty">Unexplored territory.</div>'; }
+  else card.innerHTML='<div class="empty">'+(turnNat===me?'Click one of your units or cities.':'Enemy movements are underway…')+'</div>';
+  // shop
+  const sh=$('shop'); sh.innerHTML='';
+  if(selCity&&turnNat===me&&selCity.owner===me){
+    const cy=selCity; sh.innerHTML='<h3><span>Produce at '+cy.name+'</span><span>'+nations[me].ip+' IP</span></h3><div class="grid"></div>'; const g=sh.querySelector('.grid');
+    for(const t of SHOP_ORDER){ const b=document.createElement('button'); const ok=canBuild(me,t,cy); b.disabled=!ok; b.className=shopType===t?'on':''; b.innerHTML='<span>'+UT[t].name.replace('Aircraft ','').replace('Armored Division','Armor').replace('Fighter Squadron','Fighter').replace('Bomber Wing','Bomber').replace('Troop ','')+'</span><span>'+UT[t].cost+'</span>'; b.title=UT[t].desc+(!ok&&cy.built>=cityCap(cy)?' (city already built its limit)':'')+(!ok&&UT[t].dom==='sea'&&!isCoastal(cy.c,cy.r)?' (needs a coastal city)':''); b.onclick=()=>pickShop(t); g.appendChild(b); }
+  }
+  const cg=$('cargo'); cg.innerHTML='';
+  const hub=sel&&(sel.cargo.length?sel:sel.aboard?unitById(sel.aboard):null);
+  if(hub&&hub.cargo.length){ cg.innerHTML='<h3><span>'+hub.type.name+' cargo</span></h3><div class="grid"></div>'; const g=cg.querySelector('.grid'); hub.cargo.map(unitById).filter(Boolean).forEach(x=>{ const b=document.createElement('button'); b.className=x===sel?'':'sec'; b.innerHTML='<span>'+x.type.name+'</span><span>'+x.hp+'hp</span>'; b.onclick=()=>selectUnit(x); g.appendChild(b); });
+    const b=document.createElement('button'); b.className='sec'; b.textContent=hub===sel?'(vessel selected)':'Select vessel'; b.onclick=()=>selectUnit(hub); g.appendChild(b); }
+  // hint
+  let hint='';
+  if(turnNat!==me) hint='Waiting for '+NAT[turnNat].name+'…';
+  else if(shopType) hint='Click a green hex to place the new unit.';
+  else if(sel){ hint=sel.done?'This unit has finished.':selTargets.length?'Red hexes can be attacked. Blue hexes are moves.':(selInfo&&selInfo.size?'Blue hexes show where it can move.':'No moves left.');
+    if(sel.type.dom==='land'&&!sel.aboard) hint+=' Move onto an adjacent transport to board.'; if(sel.aboard&&sel.type.dom==='land') hint='Aboard: click an adjacent coastal land hex to unload.'; }
+  else hint=selCity?'Choose what to build.':'Click a unit or city. N = next unit, H = hold, E = end turn.';
+  $('hint').textContent=hint;
+  $('end').disabled=turnNat!==me||busy||gameOver; $('next').disabled=turnNat!==me||gameOver; $('hold').disabled=!sel||turnNat!==me;
+  const idle=turnNat===me&&!busy&&!gameOver&&!units.some(u=>u.nat===me&&u.hp>0&&canAct(u));
+  $('end').classList.toggle('pulse',!!idle);
+}
+
+// ================================================================ rendering
+const hexPath=(c2,x,y,s)=>{ c2.beginPath(); for(let i=0;i<6;i++){ const a=i*Math.PI/3; const px=x+S*s*Math.cos(a), py=y+TILT*S*s*Math.sin(a); i?c2.lineTo(px,py):c2.moveTo(px,py); } c2.closePath(); };
+function buildTerrain(){
+  const t=document.createElement('canvas'); t.width=Math.round(BW*2); t.height=Math.round(BH*2); const g=t.getContext('2d'); g.scale(2,2);
+  const rnd=mulberry32(seedNow*13+5);
+  const COL={S:['#1d4a6b','#1f5073'],P:['#9aa862','#a5b26b'],F:['#5f8447','#678d4d'],M:['#8a8576','#948f80']};
+  g.fillStyle='#143a55'; g.fillRect(0,0,BW,BH);
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const p=center(c,r), T=MAP[r][c], cc=COL[T]; hexPath(g,p.x,p.y,1); g.fillStyle=cc[(c+r)&1]; g.fill();
+    if(T==='S'){ g.strokeStyle='#ffffff14'; g.lineWidth=1; for(let i=0;i<2;i++){ const wx=p.x-10+rnd()*20, wy=p.y-6+rnd()*12; g.beginPath(); g.moveTo(wx-6,wy); g.quadraticCurveTo(wx-3,wy-3,wx,wy); g.quadraticCurveTo(wx+3,wy+3,wx+6,wy); g.stroke(); } }
+    else if(T==='F'){ for(let i=0;i<4;i++){ const tx=p.x-14+rnd()*28, ty=p.y-6+rnd()*14; g.fillStyle='#2f5a2e'; g.beginPath(); g.moveTo(tx,ty-9); g.lineTo(tx-5,ty+2); g.lineTo(tx+5,ty+2); g.closePath(); g.fill(); g.fillStyle='#3d6d3a'; g.beginPath(); g.moveTo(tx,ty-9); g.lineTo(tx-2,ty+2); g.lineTo(tx+3,ty+2); g.closePath(); g.fill(); } }
+    else if(T==='M'){ for(let i=0;i<2;i++){ const tx=p.x-8+i*14, ty=p.y+5-i*3, h=17-i*4; g.fillStyle='#6b6657'; g.beginPath(); g.moveTo(tx,ty-h); g.lineTo(tx-10,ty); g.lineTo(tx+10,ty); g.closePath(); g.fill(); g.fillStyle='#e8e6dc'; g.beginPath(); g.moveTo(tx,ty-h); g.lineTo(tx-4,ty-h+7); g.lineTo(tx+4,ty-h+7); g.closePath(); g.fill(); } }
+    else if(rnd()<.25){ g.fillStyle='#ffffff10'; g.beginPath(); g.arc(p.x-10+rnd()*20,p.y-5+rnd()*10,2,0,7); g.fill(); }
+    // shoreline hint
+    if(T!=='S'){ const nb=(c&1)?NB_ODD:NB_EVEN; for(let i=0;i<6;i++){ const nc=c+nb[i][0], nr=r+nb[i][1]; if(inb(nc,nr)&&MAP[nr][nc]==='S'){ const a1=i*Math.PI/3-Math.PI/3*0, k=[0,1,2,3,4,5];
+          // edge between corner i and i+1 faces neighbor direction; direction order differs, so stroke all land edges next to sea via midpoint test
+          } } }
+  }
+  // coast strokes: draw each land hex edge whose midpoint is nearer a sea hex
+  g.strokeStyle='#e8e0b0aa'; g.lineWidth=1.6; g.lineCap='round';
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ if(MAP[r][c]==='S') continue; const p=center(c,r);
+    for(let i=0;i<6;i++){ const a1=i*Math.PI/3, a2=(i+1)*Math.PI/3; const mx=p.x+S*(Math.cos(a1)+Math.cos(a2))/2*1.0, my=p.y+TILT*S*(Math.sin(a1)+Math.sin(a2))/2*1.0;
+      // outward point
+      const ox=p.x+(mx-p.x)*2.02, oy=p.y+(my-p.y)*2.02; let sea=true; const ph=ox, pv=oy; let hit=null,bd=1e9;
+      for(const [nc,nr] of neighbors(c,r)){ const q=center(nc,nr), d=(q.x-ox)**2+(q.y-oy)**2; if(d<bd){ bd=d; hit=[nc,nr]; } }
+      const inside=hit&&bd<(S*.6)**2; if(inside&&MAP[hit[1]][hit[0]]!=='S') continue; if(!inside) sea=true;
+      if(inside||true){ g.beginPath(); g.moveTo(p.x+S*Math.cos(a1),p.y+TILT*S*Math.sin(a1)); g.lineTo(p.x+S*Math.cos(a2),p.y+TILT*S*Math.sin(a2)); if(inside) g.stroke(); } } }
+  g.strokeStyle='#00000026'; g.lineWidth=.6;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const p=center(c,r); hexPath(g,p.x,p.y,1); g.stroke(); }
+  terrainCanvas=t;
+}
+function drawCity(g,cy,owned){
+  const p=center(cy.c,cy.r), col=cy.owner>=0?NAT[cy.owner].color:'#bbb';
+  g.save(); g.translate(p.x,p.y+3);
+  g.fillStyle='#00000040'; g.beginPath(); g.ellipse(0,9,15,5,0,0,7); g.fill();
+  const bl=[[-10,-2,7,10],[-3,-8,8,16],[5,-3,6,11]];
+  for(const [x,y,w,h] of bl){ g.fillStyle='#d7cfb4'; g.fillRect(x,y+4,w,h); g.fillStyle='#8c8369'; g.fillRect(x+w*.6,y+4,w*.4,h); g.fillStyle='#4a4435'; g.fillRect(x+1.5,y+7,2,2); g.fillRect(x+1.5,y+12,2,2); }
+  if(cy.cap>=0){ g.fillStyle='#e0c36a'; g.beginPath(); for(let i=0;i<5;i++){ const a=-Math.PI/2+i*2*Math.PI/5, b=a+Math.PI/5; g.lineTo(Math.cos(a)*6,-14+Math.sin(a)*6); g.lineTo(Math.cos(b)*2.6,-14+Math.sin(b)*2.6); } g.fill(); }
+  g.fillStyle=col; g.strokeStyle='#000a'; g.lineWidth=1; g.beginPath(); g.moveTo(-14,-10); g.lineTo(-14,6); g.stroke(); g.beginPath(); g.moveTo(-14,-10); g.lineTo(-6,-7); g.lineTo(-14,-4); g.closePath(); g.fill(); g.stroke();
+  g.restore();
+}
+function drawUnit(g,u,t){
+  const p=center(u.c,u.r); let x=u.ox!==undefined?u.ox:p.x, y=u.oy!==undefined?u.oy:p.y;
+  const air=u.type.dom==='air', cy=cityAt(u.c,u.r);
+  if(air){ y-=cy||boardable?10:10; x+=7; }
+  else if(cy) y+=6;
+  const im=img(u.nat,u.type.key), w=air?S*1.45:S*1.75;
+  const isMe=teamOf(u.nat)===teamOf(me);
+  const dim=u.nat===me&&turnNat===me&&(u.done||u.fresh);
+  g.save();
+  if(dim) g.globalAlpha=.6;
+  if(u.hit&&t-u.hit<260){ g.translate((Math.random()-.5)*4,(Math.random()-.5)*3); }
+  if(air){ g.fillStyle='#0004'; g.beginPath(); g.ellipse(x-4,y+22,12,4,0,0,7); g.fill(); }
+  if(im.complete&&im.naturalWidth){ const h=w*im.naturalHeight/im.naturalWidth; g.drawImage(im,x-w/2,y+S*.58-h,w,h); }
+  else { g.fillStyle=NAT[u.nat].color; g.beginPath(); g.arc(x,y,9,0,7); g.fill(); }
+  if(u.hit&&t-u.hit<260){ g.globalCompositeOperation='source-atop'; }
+  g.restore();
+  // nation pip + hp bar
+  const bx=x-13, by=y+S*.58+1;
+  g.fillStyle='#000b'; g.fillRect(bx-1,by-1,26,6);
+  const f=u.hp/u.type.hp; g.fillStyle=f>.6?'#6fd05c':f>.3?'#e0c36a':'#e0483f'; g.fillRect(bx,by,24*f,4);
+  g.fillStyle=NAT[u.nat].color; g.fillRect(bx-4,by-1,3,6);
+  if(u.cargo.length){ g.fillStyle='#000c'; g.fillRect(x+11,y-S*.55,13,11); g.fillStyle='#fff'; g.font='bold 9px Georgia'; g.textAlign='center'; g.fillText('+'+u.cargo.length,x+17.5,y-S*.55+9); }
+  if(air&&u.nat===me&&!u.aboard&&u.fuel<=0){ g.fillStyle='#e0483f'; g.font='bold 14px Georgia'; g.textAlign='center'; g.fillText('!',x+14,y-S*.5); }
+  if(u.nat===me&&turnNat===me&&canAct(u)&&u!==sel){ g.fillStyle='#e0c36a'; g.beginPath(); g.arc(x-14,y-S*.45,2.6,0,7); g.fill(); }
+}
+function draw(){
+  const t=nowMs(); const g=ctx;
+  g.setTransform(DPR*zoom,0,0,DPR*zoom,0,0); g.clearRect(0,0,BW,BH);
+  if(terrainCanvas) g.drawImage(terrainCanvas,0,0,BW,BH);
+  const team=teamOf(me), V=vis[team], E=expl[team];
+  // ownership rings
+  for(const cy of cities){ const k=key(cy.c,cy.r); if(!E.has(k)) continue; const p=center(cy.c,cy.r); if(cy.owner>=0){ hexPath(g,p.x,p.y,.94); g.strokeStyle=NAT[cy.owner].color; g.lineWidth=2.2; g.stroke(); } drawCity(g,cy); }
+  // territory tint for owned cities' neighbourhood is skipped: fog + rings are enough
+  // highlights
+  const hl=(c,r,fill,stroke,w)=>{ const p=center(c,r); hexPath(g,p.x,p.y,.96); if(fill){ g.fillStyle=fill; g.fill(); } if(stroke){ g.strokeStyle=stroke; g.lineWidth=w||2; g.stroke(); } };
+  if(selInfo&&sel) for(const [,v] of selInfo) hl(v.c,v.r,v.unload?'#8fe08a40':'#6ab4ff3a','#6ab4ffcc',1.4);
+  for(const s of placeSpots) hl(s[0],s[1],'#6fe06a55','#9cff8f',2.2);
+  // units: surface first, then air
+  const seen=units.filter(u=>u.hp>0&&!u.aboard&&seenBy(u,team));
+  seen.filter(u=>u.type.dom!=='air').forEach(u=>drawUnit(g,u,t));
+  seen.filter(u=>u.type.dom==='air').forEach(u=>drawUnit(g,u,t));
+  // target rings
+  if(sel) for(const tg of selTargets){ const p=center(tg.c,tg.r); hexPath(g,p.x,p.y,.96); g.fillStyle='#ff3b2f30'; g.fill(); g.strokeStyle='#ff5a4a'; g.lineWidth=2.4; g.stroke(); }
+  if(sel&&!sel.aboard||sel&&sel.aboard){ const p=center(sel.c,sel.r); hexPath(g,p.x,p.y,1); g.strokeStyle='#ffe27a'; g.lineWidth=3; g.stroke(); }
+  if(selCity){ const p=center(selCity.c,selCity.r); hexPath(g,p.x,p.y,1); g.strokeStyle='#ffe27a'; g.lineWidth=3; g.stroke(); }
+  if(hover&&inb(hover[0],hover[1])){ const p=center(hover[0],hover[1]); hexPath(g,p.x,p.y,.98); g.strokeStyle='#ffffff99'; g.lineWidth=1.2; g.stroke(); }
+  // fog
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const k=key(c,r); if(V.has(k)) continue; const p=center(c,r); hexPath(g,p.x,p.y,1.01); g.fillStyle=E.has(k)?'#0a121acc'.replace('cc','80'):'#070b10f2'; g.fill(); }
+  // effects
+  effects=effects.filter(e=>t-e.t0<e.life);
+  for(const e of effects){ const p=(t-e.t0)/e.life;
+    if(e.type==='text'){ g.globalAlpha=1-p*p; g.fillStyle=e.color; g.strokeStyle='#000'; g.lineWidth=3; g.font='bold 17px Georgia'; g.textAlign='center'; g.strokeText(e.text,e.x,e.y-p*26); g.fillText(e.text,e.x,e.y-p*26); g.globalAlpha=1; }
+    else if(e.type==='boom'){ const R=(e.big?46:30)*(0.3+p); g.globalAlpha=1-p; const gr=g.createRadialGradient(e.x,e.y,2,e.x,e.y,R); gr.addColorStop(0,'#fff6b0'); gr.addColorStop(.5,'#ff8a2a'); gr.addColorStop(1,'#a3200000'); g.fillStyle=gr; g.beginPath(); g.arc(e.x,e.y,R,0,7); g.fill(); g.globalAlpha=1; } }
+  dirty=effects.length>0||units.some(u=>u.hit&&t-u.hit<300)||busy;
+}
+function loop(){ if(dirty||busy||effects.length) draw(); requestAnimationFrame(loop); }
+
+// ================================================================ end screen + boot
+function showEnd(win,why){
+  sfx(win?'win':'lose'); const o=$('overlay'), p=$('panel');
+  p.innerHTML='<h2>'+(win?'Victory!':'Defeat')+'</h2><p>'+why+'</p><p>'+(win?'The war is over, the maps are redrawn, and history will say you were obviously going to win. It will be wrong, but kind.':'The Axis and Allies of the world will tell the story differently. Mostly because you are not in it.')+'</p><p>Round '+round+' · '+cities.filter(c=>teamOf(me)===(c.owner>=0?teamOf(c.owner):-1)).length+' cities held</p><div class="btns" style="margin-top:14px"><button id="again">Play again</button><button id="other" class="sec">Change nation</button></div>';
+  o.classList.remove('hidden'); $('again').onclick=()=>{ o.classList.add('hidden'); startGame(me); }; $('other').onclick=()=>{ o.classList.add('hidden'); showTitle(); };
+}
+function showTitle(){ $('title').classList.remove('hidden'); }
+function newGame(seed){
+  seedNow=seed; units=[]; cities=[]; nextId=1; effects=[]; busy=false; gameOver=false; round=1; turnNat=0;
+  nations=[0,1,2,3,4].map(()=>({alive:false,ip:0}));
+  vis=[new Set(),new Set()]; expl=[new Set(),new Set()];
+  generateMap(seed); pickCities(); spawnStartingUnits();
+  for(const cy of cities){ if(cy.cap>=0) for(const [a,b] of within(cy.c,cy.r,3)) { expl[teamOf(cy.cap)].add(key(a,b)); } }
+  updateVision(); buildTerrain();
+  $('log').innerHTML=''; clearSel(); inspect=null;
+  log('Germany holds the continent. The free world answers.','sys');
+}
+async function startGame(n,seed){
+  me=n; $('title').classList.add('hidden'); ac();
+  newGame(seed||((Math.random()*1e9)|0)); sizeCanvas(); dirty=true;
+  const sc=$('scroller'); const cap=cities.find(c=>c.cap===me); if(cap){ const p=center(cap.c,cap.r); sc.scrollLeft=Math.max(0,p.x*zoom-sc.clientWidth/2); sc.scrollTop=Math.max(0,p.y*zoom-sc.clientHeight/2); }
+  busy=true; refreshUI(); try{ await startTurn(0); }finally{ busy=false; } refreshUI();
+}
+(function boot(){
+  const pk=$('picker');
+  NAT.forEach((n,i)=>{ const d=document.createElement('div'); d.className='ncard'; d.tabIndex=0;
+    d.innerHTML='<div class="team">'+TEAMS[n.team].name+'</div><h3>'+n.name+'</h3><div class="art"><img src="assets/u_'+n.id+'_infantry.png" alt=""><img src="assets/u_'+n.id+'_armor.png" alt=""><img src="assets/u_'+n.id+'_battleship.png" alt=""></div><p>'+n.blurb+'</p><div class="go"><button>Command '+n.short+'</button></div>';
+    const go=()=>startGame(i,parseInt(new URLSearchParams(location.search).get('seed'))||0); d.onclick=go; d.onkeydown=e=>{ if(e.key==='Enter'||e.key===' ') go(); }; pk.appendChild(d); });
+  zoom=Math.max(.75,Math.min(1,($('stage').clientWidth-10)/BW)); sizeCanvas();
+  addEventListener('resize',()=>{ DPR=Math.min(2,devicePixelRatio||1); sizeCanvas(); dirty=true; });
+  nations=[0,1,2,3,4].map(()=>({alive:false,ip:0}));
+  loop();
+})();
+
+</script>
+</body>
+</html>
