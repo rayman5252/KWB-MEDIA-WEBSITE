@@ -493,6 +493,10 @@
   var spawnQueue = 0;
   var spawnCooldown = 0;
 
+  // Finish post: a third of a screen in from the end of the world, so when the camera
+  // hits its right-hand limit the post sits about a third of the way in from the screen edge.
+  function finishX(){ return levelLength - Math.round(W/3); }
+
   // ---------- Game state machine ----------
   var STATE = { MENU:'MENU', INTRO:'INTRO', PLAYING:'PLAYING', VICTORY:'VICTORY', GAMEOVER:'GAMEOVER' };
   var state = STATE.MENU;
@@ -899,9 +903,8 @@
       spawnCooldown -= dt*1000;
       var w = WAVES[waveIndex];
       var activeCount = enemies.filter(function(e){return !e.dead;}).length;
-      // stop feeding in new enemies once the player is right at the end of the level
-      var nearEnd = w.scroll && player.x >= levelLength - 160;
-      if(spawnCooldown <= 0 && activeCount < w.maxActive && !nearEnd){
+      // enemies keep coming right up until the player touches the finish post
+      if(spawnCooldown <= 0 && activeCount < w.maxActive){
         spawnEnemy(w.type);
         if(spawnQueue !== Infinity) spawnQueue--;
         spawnCooldown = 500 + Math.random()*400;
@@ -997,8 +1000,10 @@
     // wave clear check: enemies defeated, and (for scrolling levels) the end reached
     var curWave = WAVES[waveIndex];
     if(curWave.scroll){
-      // reaching the right edge ends the level, no matter who is still on screen
-      if(player.x >= levelLength-60){
+      // touching the finish post ends the level, no matter who is still on screen
+      if(player.x >= finishX()){
+        spawnHit(finishX(), GROUND_Y - 200, '#ffd43a', 30);
+        spawnHit(finishX(), GROUND_Y - 200, '#fff', 20);
         enemies = []; projectiles = []; bullets = [];
         showToast('ROUND CLEAR!', 1200);
         nextWave();
@@ -1009,7 +1014,7 @@
 
     // HUD updates
     playerBar.style.width = Math.max(0,(player.hp/player.maxHp*100)) + '%';
-    if(curWave.scroll){ progressBar.style.width = Math.min(100, Math.max(0, player.x/levelLength*100)) + '%'; }
+    if(curWave.scroll){ progressBar.style.width = Math.min(100, Math.max(0, player.x/finishX()*100)) + '%'; }
     var bossE = enemies.find(function(e){return e.type.boss;});
     if(bossE){ bossBar.style.width = Math.max(0,(bossE.hp/bossE.maxHp*100)) + '%'; }
 
@@ -1239,6 +1244,65 @@
     ctx.restore();
   }
 
+  // The finish post: tall striped pole, glowing beacon, waving checkered flag and a FINISH sign.
+  function drawFinishPost(){
+    var px = finishX(), by = GROUND_Y + 4, poleH = 250, top = by - poleH;
+    var pulse = 0.5 + 0.5*Math.sin(bgTime*4);
+    ctx.save();
+    // ground glow + light beam so it reads from across the screen
+    var rg = ctx.createRadialGradient(px, by, 4, px, by, 90);
+    rg.addColorStop(0, 'rgba(255,212,58,' + (0.55 + pulse*0.25) + ')'); rg.addColorStop(1, 'rgba(255,212,58,0)');
+    ctx.fillStyle = rg; ctx.fillRect(px-90, by-30, 180, 60);
+    var bg = ctx.createLinearGradient(0, top-40, 0, by);
+    bg.addColorStop(0, 'rgba(255,212,58,0)'); bg.addColorStop(1, 'rgba(255,212,58,' + (0.16 + pulse*0.08) + ')');
+    ctx.fillStyle = bg; ctx.fillRect(px-34, top-40, 68, poleH+40);
+    // base plate
+    ctx.fillStyle = '#222'; ctx.fillRect(px-22, by-8, 44, 8);
+    ctx.fillStyle = '#ffd43a'; ctx.fillRect(px-22, by-8, 44, 3);
+    // pole: red and white barber stripes
+    for(var sy = 0; sy < poleH; sy += 16){
+      ctx.fillStyle = ((sy/16) % 2 === 0) ? '#ffffff' : '#c81e3a';
+      ctx.fillRect(px-5, by-8-sy-16, 10, 16);
+    }
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.strokeRect(px-5, top-8, 10, poleH);
+    // gold ball on top
+    ctx.fillStyle = '#ffd43a'; ctx.beginPath(); ctx.arc(px, top-14, 9, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#000'; ctx.stroke();
+    // waving checkered flag, flying toward the start so it points back at the player
+    var cell = 8, cols = 14, rows = 8;
+    for(var c = 0; c < cols; c++){
+      var amp = 1 + c*0.55;
+      var wy = Math.sin(bgTime*7 - c*0.55) * amp;
+      for(var r = 0; r < rows; r++){
+        ctx.fillStyle = ((c + r) % 2 === 0) ? '#ffffff' : '#111';
+        ctx.fillRect(px - 5 - (c+1)*cell, top - 4 + r*cell + wy, cell + 0.6, cell + 0.6);
+      }
+    }
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
+    ctx.strokeRect(px - 5 - cols*cell, top - 4, cols*cell, rows*cell);
+    // FINISH sign
+    var sw = 104, sh = 28, sx = px - sw/2, sy2 = top - 74;
+    ctx.fillStyle = '#000'; ctx.fillRect(sx-3, sy2-3, sw+6, sh+6);
+    ctx.fillStyle = '#ffd43a'; ctx.fillRect(sx, sy2, sw, sh);
+    ctx.fillStyle = '#c81e3a'; ctx.font = '14px "Press Start 2P", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('FINISH', px, sy2 + sh/2 + 1);
+    ctx.restore();
+  }
+
+  // Screen-space pointer shown while the finish post is still off to the right
+  function drawGoalArrow(){
+    var sxp = finishX() - camera.x;
+    if(sxp < W - 30) return;
+    var bob = Math.sin(bgTime*8) * 6;
+    ctx.save();
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.font = '14px "Press Start 2P", monospace';
+    ctx.fillStyle = '#000'; ctx.fillText('GOAL ▶', W - 8 + bob + 2, 262);
+    ctx.fillStyle = '#ffd43a'; ctx.fillText('GOAL ▶', W - 10 + bob, 260);
+    ctx.restore();
+  }
+
   function render(){
     ctx.save();
     if(shakeMag > 0){
@@ -1249,6 +1313,7 @@
     if(state === STATE.PLAYING){
       ctx.save();
       ctx.translate(-camera.x, 0);
+      if(WAVES[waveIndex].scroll){ drawFinishPost(); }
       var flashPlayer = player.invuln > 0;
       var py = player.y + player.jumpY;
       var bob = (player.state==='walk') ? Math.sin(player.animT*10)*4 : (player.state==='idle'?Math.sin(player.animT*2)*1.5:0);
@@ -1317,6 +1382,7 @@
 
       drawParticles();
       ctx.restore();
+      if(WAVES[waveIndex].scroll){ drawGoalArrow(); }
     }
     ctx.restore();
   }
