@@ -382,7 +382,7 @@
         audioCtx = new (window.AudioContext||window.webkitAudioContext)();
         masterGain = audioCtx.createGain(); masterGain.gain.value = muted ? 0 : 1; masterGain.connect(audioCtx.destination);
         sfxGain = audioCtx.createGain(); sfxGain.gain.value = 0.9; sfxGain.connect(masterGain);
-        musicGain = audioCtx.createGain(); musicGain.gain.value = 0.5; musicGain.connect(masterGain);
+        musicGain = audioCtx.createGain(); musicGain.gain.value = 0.35; musicGain.connect(masterGain);
       }catch(e){}
       loadAudioFiles();
       if(state === STATE.MENU){ playMusic('music-title'); }
