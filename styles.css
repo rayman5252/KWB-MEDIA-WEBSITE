@@ -258,3 +258,36 @@ a.blog-card h3 { margin-top:6px; }
 .post-cta .btn { background:var(--accent); border-color:var(--accent); margin-top:10px; }
 .blog-list { display:grid; gap:24px; }
 @media (max-width:700px){ .post h1 { font-size:1.8rem; } .post .author-box { flex-direction:column; text-align:center; } }
+
+/* ===== Social media packages (Services page) ===== */
+.pkg-wrap { margin-top:56px; }
+.pkg-title { font-size:1.7rem !important; text-align:center; margin:0 0 6px !important; }
+.pkg-sub { text-align:center; color:var(--muted) !important; margin-bottom:28px; }
+.pkg-story h4, .pkg-points h4 { color:var(--accent-text); text-transform:uppercase; letter-spacing:1px; font-size:.95rem; margin:0 0 8px; }
+.pkg-pick { text-align:center; font-size:1.5rem !important; margin:44px 0 24px !important; }
+.pkg-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; align-items:stretch; }
+.pkg { display:flex; flex-direction:column; background:rgba(22,22,22,.92); border:1px solid var(--line); border-radius:10px; overflow:hidden; transition:transform .3s, box-shadow .3s; }
+.pkg:hover { transform:translateY(-6px); box-shadow:0 16px 34px rgba(0,0,0,.6); }
+.pkg-head { background:var(--surface-2); text-align:center; padding:22px 16px 18px; border-bottom:3px solid var(--accent); }
+.pkg-name { font-family:'Squada One',sans-serif; font-size:1.5rem; letter-spacing:2px; text-transform:uppercase; color:#fff; }
+.pkg-price { font-size:2.1rem; font-weight:700; color:#fff; line-height:1.2; }
+.pkg-price span { font-size:1.1rem; font-weight:600; color:var(--muted); }
+.pkg-body { display:flex; flex-direction:column; flex:1; padding:20px 22px 24px; }
+.pkg-tag { font-style:italic; text-align:center; color:var(--accent-text); font-weight:600; margin-bottom:12px; }
+.pkg-body ul { list-style:none; padding:0; margin:0 0 18px; flex:1; }
+.pkg-body li { position:relative; padding-left:20px; margin-bottom:10px; color:#d4d4d4; line-height:1.45; }
+.pkg-body li::before { content:""; position:absolute; left:0; top:.55em; width:7px; height:7px; border-radius:50%; background:var(--accent); }
+.pkg-ideal { border-top:1px solid var(--line); padding-top:14px; margin-bottom:16px; text-align:center; font-style:italic; color:var(--accent-text); font-size:.95rem; }
+.pkg .btn { text-align:center; }
+.pkg-best { border:2px solid var(--accent); box-shadow:0 0 28px rgba(200,30,58,.3); }
+.pkg-best .pkg-head { background:var(--accent); border-bottom-color:#fff; }
+.pkg-best .pkg-price span { color:rgba(255,255,255,.85); }
+.pkg-points { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; margin:36px 0; }
+.pkg-points p { margin:0; font-size:.95rem; }
+.pkg-cta { text-align:center; background:rgba(10,10,10,.85); border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; padding:30px 24px; }
+.pkg-cta h3 { margin-top:0 !important; }
+.pkg-cta .btn { margin:6px 0 14px; }
+.pkg-cta p { margin:0; }
+@media (max-width:800px){
+  .pkg-grid, .pkg-points { grid-template-columns:1fr; }
+}
