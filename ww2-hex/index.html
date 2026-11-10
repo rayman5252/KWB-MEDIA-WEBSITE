@@ -537,7 +537,7 @@ async function moveUnit(u,destKey,info){
   }
   if(bumped){ u.mp=0; log('Contact! '+NAT[bumped.nat].short+' '+bumped.type.name+' was lying in wait.', teamOf(u.nat)===teamOf(me)?'bad':'good'); addText(u.c,u.r,'AMBUSH!','#ff9a8a'); updateVision(); return; }
   const used=info._best.get(last)||0; u.mp=Math.max(0,mp0-used);
-  sfx(u.type.dom==='air'?'air':u.type.key==='sub'?'ping':u.type.dom==='land'?'move':'');
+  sfx(u.type.dom==='air'?'air':u.type.key==='sub'?'ping':u.type.key==='infantry'?'march':u.type.dom==='land'?'move':'');
   const tr=boardable(u,u.c,u.r);
   if(tr&&tr!==u){
     if(u.type.dom==='land'||u.type.dom==='air'){ u.aboard=tr.id; tr.cargo.push(u.id); u.mp=0; u.fuel=u.type.fuel||0; }
@@ -868,7 +868,7 @@ function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioCont
 function tone(f,d,type,vol,slide,delay){ const a=ac(); if(!a) return; const t=a.currentTime+(delay||0), o=a.createOscillator(), g=a.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t); if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(20,f*slide),t+d); g.gain.setValueAtTime(vol||.1,t); g.gain.exponentialRampToValueAtTime(.001,t+d); o.connect(g); g.connect(a.destination); o.start(t); o.stop(t+d+.02); }
 function noise(d,vol,hp,delay){ const a=ac(); if(!a) return; const t=a.currentTime+(delay||0), n=Math.floor(a.sampleRate*d), b=a.createBuffer(1,n,a.sampleRate), ch=b.getChannelData(0); for(let i=0;i<n;i++) ch[i]=(Math.random()*2-1)*(1-i/n); const s=a.createBufferSource(); s.buffer=b; const f=a.createBiquadFilter(); f.type='lowpass'; f.frequency.value=hp||1800; const g=a.createGain(); g.gain.value=vol||.2; s.connect(f); f.connect(g); g.connect(a.destination); s.start(t); }
 // ---- recorded sounds (ElevenLabs via Fal), with the synth below as a fallback
-const SFXV={move:.45,shot:.8,gun:.9,bomb:.85,boom:.9,sink:.85,capture:.8,fall:.8,turn:.7,buy:.8,win:.9,lose:.9,air:.6,ping:.6};
+const SFXV={move:.45,march:.55,shot:.8,gun:.9,bomb:.85,boom:.9,sink:.85,capture:.8,fall:.8,turn:.7,buy:.8,win:.9,lose:.9,air:.6,ping:.6};
 const BUF={}, LOADING={};
 function loadSfx(n){ if(BUF[n]||LOADING[n]) return; const a=ac(); if(!a) return; LOADING[n]=1;
   fetch('assets/audio/'+n+'.mp3').then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(b=>new Promise((res,rej)=>a.decodeAudioData(b,res,rej))).then(d=>{ BUF[n]=d; }).catch(()=>{ BUF[n]=null; }); }
