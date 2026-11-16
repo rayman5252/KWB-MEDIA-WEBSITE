@@ -68,7 +68,7 @@
   </url>
   <url>
     <loc>https://www.kwbmedia.com/blog/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -103,12 +103,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.kwbmedia.com/blog/games-for-marketing/</loc>
-    <lastmod>2026-11-10</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://www.kwbmedia.com/blog/social-media-consistency/</loc>
     <lastmod>2026-10-01</lastmod>
     <changefreq>yearly</changefreq>
@@ -123,6 +117,12 @@
   <url>
     <loc>https://www.kwbmedia.com/blog/facebook-still-matters/</loc>
     <lastmod>2026-10-28</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.kwbmedia.com/blog/plymouth-colony-business-lesson/</loc>
+    <lastmod>2026-11-16</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.7</priority>
   </url>
