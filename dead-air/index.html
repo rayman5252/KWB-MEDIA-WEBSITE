@@ -60,7 +60,7 @@ const IS_TOUCH=matchMedia('(pointer:coarse)').matches;
 
 // ---------- assets ----------
 const IMG={}, SND={};
-const imgList={wall1:'t_brick',wall2:'t_wood',wall3:'t_tvs',wall4:'t_onair',suit:'z_suit',runner:'z_runner',tank:'z_tank',medkit:'p_medkit',shells:'p_shells',pistol:'w_pistol',shotgun:'w_shotgun',title:'title_bg'};
+const imgList={wall1:'t_brick',wall2:'t_wood',wall3:'t_tvs',wall4:'t_onair',suit:'z_suit',runner:'z_runner',tank:'z_tank',medkit:'p_medkit',shells:'p_shells',tape:'p_tape',door:'t_door',pistol:'w_pistol',shotgun:'w_shotgun',title:'title_bg'};
 const sndList={pistol:'sfx_pistol',shotgun:'sfx_shotgun',reload:'sfx_reload',empty:'sfx_empty',pickup:'sfx_pickup',hurt:'sfx_hurt',groan:'sfx_groan',snarl:'sfx_snarl',growl:'sfx_growl',stinger:'sfx_stinger',mTitle:'music_title',mGame:'music_game'};
 let loaded=0; const total=Object.keys(imgList).length;
 for(const k in imgList){const i=new Image();i.onload=()=>{loaded++;if(k in SPRITE_KEYS)prepSprite(k,i)};i.onerror=()=>loaded++;i.src='assets/'+imgList[k]+'.webp';IMG[k]=i;}
@@ -68,7 +68,7 @@ for(const k in sndList){const a=new Audio('assets/'+sndList[k]+'.mp3');a.preload
 SND.mTitle.loop=true;SND.mGame.loop=true;
 
 // shaded sprite variants (distance darkening + red hit flash)
-const SPRITE_KEYS={suit:1,runner:1,tank:1,medkit:1,shells:1};
+const SPRITE_KEYS={suit:1,runner:1,tank:1,medkit:1,shells:1,tape:1};
 const SHADES=6, SPR={};
 function prepSprite(k,img){
   const out=[];
@@ -99,38 +99,84 @@ function setMusic(k){
 }
 function toggleMute(){muted=!muted;try{localStorage.setItem('deadair-muted',muted?'1':'0')}catch(e){} if(music){muted?music.pause():music.play().catch(()=>{})}}
 
-// ---------- map: WKWB Channel 13 ----------
-// 1 brick, 2 wood, 3 tv wall, 4 on-air concrete. S spawn, P player, h medkit spot, s shells spot
-const MAPSRC=[
-"444444444433333332222222",
-"4..S.....4.......2....S2",
-"4........4...h...2.....2",
-"4....s...........2..s..2",
-"4........4.......2.....2",
-"4........4.......3.....2",
-"4444.44444..333..333.222",
-"1......................1",
-"1..11...........11..h..1",
-"1..11.....P.....11.....1",
-"1.........1.1..........1",
-"1......................1",
-"111.1111222.22.2222.1111",
-"1......2....2.....2....1",
-"1..s...2.h..2..s..2....1",
-"1S.....2....2.....2...S1",
-"1..........2.......2...1",
-"111111111111111111111111"];
-const MW=MAPSRC[0].length, MH=MAPSRC.length;
-const MAP=new Uint8Array(MW*MH), SPAWNS=[], HSPOTS=[], SSPOTS=[]; let START={x:2,y:2};
-MAPSRC.forEach((row,y)=>{for(let x=0;x<MW;x++){const ch=row[x]||'1';
-  if(ch>='1'&&ch<='4')MAP[y*MW+x]=+ch;
-  else{ if(ch==='S')SPAWNS.push({x:x+.5,y:y+.5}); if(ch==='P')START={x:x+.5,y:y+.5}; if(ch==='h')HSPOTS.push({x:x+.5,y:y+.5}); if(ch==='s')SSPOTS.push({x:x+.5,y:y+.5}); }
-}});
+// ---------- procedural station floors ----------
+// 1 brick, 2 wood, 3 tv wall, 4 on-air concrete, 5 exit door
+let MW=24,MH=18,MAP=new Uint8Array(MW*MH),SEEN=new Uint8Array(MW*MH),SPAWNS=[],START={x:2,y:2,a:0},EXIT={x:0,y:0};
 const solid=(x,y)=>{x|=0;y|=0;return x<0||y<0||x>=MW||y>=MH||MAP[y*MW+x]>0};
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const FLOORS=[
+ {name:'THE LOBBY',pal:[1,4],floor:['#030202','#1a0d0e','#3a1a1a']},
+ {name:'THE NEWSROOM',pal:[2,3,4],floor:['#030303','#141418','#2a2a33']},
+ {name:'STUDIO B',pal:[4,3],floor:['#020304','#0d1418','#1b2c33']},
+ {name:'MASTER CONTROL',pal:[3,1,2],floor:['#030202','#16110c','#30261a']},
+ {name:'THE BASEMENT',pal:[1,2],floor:['#020202','#120c08','#2a1a10']},
+ {name:'THE TRANSMITTER ROOF',pal:[4,1,3],floor:['#020203','#0e0e16','#24243a']}
+];
+function genFloor(lv){
+  const R=mulberry((Date.now()^(lv*99991))>>>0), ri=(a,b)=>a+Math.floor(R()*(b-a+1));
+  for(let attempt=0;attempt<40;attempt++){
+    MW=22+Math.min(16,lv*3);MH=18+Math.min(10,lv*2);
+    MAP=new Uint8Array(MW*MH).fill(255);const RID=new Int16Array(MW*MH).fill(-1);
+    const fl=FLOORS[(lv-1)%FLOORS.length],rooms=[],want=Math.min(13,5+lv);
+    for(let i=0;i<300&&rooms.length<want;i++){
+      const w=ri(4,8),h=ri(4,7),x=ri(1,MW-w-1),y=ri(1,MH-h-1);
+      if(rooms.some(r=>x<r.x+r.w+2&&x+w+2>r.x&&y<r.y+r.h+2&&y+h+2>r.y))continue;
+      rooms.push({x,y,w,h,cx:x+(w>>1),cy:y+(h>>1),tex:fl.pal[ri(0,fl.pal.length-1)]});
+    }
+    if(rooms.length<4)continue;
+    rooms.sort((a,b)=>a.cx-b.cx||a.cy-b.cy);
+    rooms.forEach((r,id)=>{for(let y=r.y;y<r.y+r.h;y++)for(let x=r.x;x<r.x+r.w;x++){MAP[y*MW+x]=0;RID[y*MW+x]=id}});
+    const carve=(x,y)=>{if(x>0&&y>0&&x<MW-1&&y<MH-1&&MAP[y*MW+x])MAP[y*MW+x]=0};
+    const corridor=(a,b,wide)=>{let x=a.cx,y=a.cy;const hf=R()<.5;
+      const stepX=()=>{while(x!==b.cx){x+=Math.sign(b.cx-x);carve(x,y);if(wide)carve(x,y+1)}};
+      const stepY=()=>{while(y!==b.cy){y+=Math.sign(b.cy-y);carve(x,y);if(wide)carve(x+1,y)}};
+      if(hf){stepX();stepY()}else{stepY();stepX()}};
+    for(let i=1;i<rooms.length;i++){let best=0,bd=1e9;for(let j=0;j<i;j++){const d=Math.abs(rooms[i].cx-rooms[j].cx)+Math.abs(rooms[i].cy-rooms[j].cy);if(d<bd){bd=d;best=j}}corridor(rooms[i],rooms[best],R()<.35)}
+    for(let k=0;k<1+(lv>>1);k++){const a2=rooms[ri(0,rooms.length-1)],b2=rooms[ri(0,rooms.length-1)];if(a2!==b2)corridor(a2,b2,false)}
+    // texture walls from neighbouring room
+    for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const i=y*MW+x;if(MAP[i]!==255)continue;let t=0;
+      for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]]){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=MW||ny>=MH)continue;const r=RID[ny*MW+nx];if(r>=0){t=rooms[r].tex;break}}
+      MAP[i]=t||fl.pal[0]}
+    // BFS from start
+    const st=rooms[0],dist=new Int16Array(MW*MH).fill(-1),q=[st.cy*MW+st.cx];dist[q[0]]=0;
+    for(let i=0;i<q.length;i++){const c=q[i],cx=c%MW,cy=(c/MW)|0;for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const n=(cy+dy)*MW+cx+dx;if(!MAP[n]&&dist[n]<0){dist[n]=dist[c]+1;q.push(n)}}}
+    let floorCount=0;for(let i=0;i<MW*MH;i++)if(!MAP[i])floorCount++;
+    if(q.length!==floorCount)continue;
+    // pillars for cover in big rooms (keep connectivity)
+    rooms.slice(1).forEach(r=>{if(r.w>=6&&r.h>=6&&R()<.7){const px=r.x+ri(2,r.w-3),py=r.y+ri(2,r.h-3);MAP[py*MW+px]=r.tex}});
+    { const d2=new Int16Array(MW*MH).fill(-1),q2=[st.cy*MW+st.cx];d2[q2[0]]=0;
+      for(let i=0;i<q2.length;i++){const c=q2[i],cx=c%MW,cy=(c/MW)|0;for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const n=(cy+dy)*MW+cx+dx;if(!MAP[n]&&d2[n]<0){d2[n]=d2[c]+1;q2.push(n)}}}
+      let fc=0;for(let i=0;i<MW*MH;i++)if(!MAP[i])fc++; if(q2.length!==fc)continue; dist.set(d2); }
+    const rd=r=>dist[r.cy*MW+r.cx];
+    rooms.forEach(r=>{if(MAP[r.cy*MW+r.cx]){r.cx=r.x;r.cy=r.y}});
+    // exit: wall cell on the edge of the farthest room
+    const far=rooms.slice(1).sort((a,b)=>rd(b)-rd(a))[0];
+    const cand=[];for(let y=far.y;y<far.y+far.h;y++)for(let x=far.x;x<far.x+far.w;x++)for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy;if(nx>0&&ny>0&&nx<MW-1&&ny<MH-1&&MAP[ny*MW+nx]&&RID[ny*MW+nx]<0){
+      // keep it a flat wall face: both side-neighbours along the wall must be walls
+      const sx=dy?1:0,sy=dx?1:0;if(MAP[(ny+sy)*MW+nx+sx]&&MAP[(ny-sy)*MW+nx-sx])cand.push([nx,ny,x,y])}}
+    if(!cand.length)continue;
+    const ex=cand[ri(0,cand.length-1)];MAP[ex[1]*MW+ex[0]]=5;EXIT={x:ex[0]+.5,y:ex[1]+.5,fx:ex[2]+.5,fy:ex[3]+.5};
+    // tapes: spread over the rooms farthest from the start (never the start room)
+    const nT=Math.min(6,3+Math.floor((lv-1)/2)), pool=rooms.slice(1).sort((a,b)=>rd(b)-rd(a));
+    const order=[];for(let i=0;i<pool.length;i+=2)order.push(pool[i]);for(let i=1;i<pool.length;i+=2)order.push(pool[i]);
+    const freeCell=r=>{for(let k=0;k<30;k++){const x=r.x+ri(0,r.w-1),y=r.y+ri(0,r.h-1);if(!MAP[y*MW+x]&&!PICK.some(p=>(p.x|0)===x&&(p.y|0)===y))return {x:x+.5,y:y+.5}}return {x:r.cx+.5,y:r.cy+.5}};
+    PICK=[];
+    for(let i=0;i<nT;i++){const c=freeCell(order[i%order.length]);PICK.push({type:'tape',x:c.x,y:c.y,t:R()*6})}
+    const others=rooms.slice(1);
+    for(let i=0;i<2+(lv>2?1:0);i++){const c=freeCell(others[ri(0,others.length-1)]);PICK.push({type:'medkit',x:c.x,y:c.y,t:0})}
+    for(let i=0;i<3+(lv>>1);i++){const c=freeCell(others[ri(0,others.length-1)]);PICK.push({type:'shells',x:c.x,y:c.y,t:0})}
+    SPAWNS=others.map(r=>({x:r.cx+.5,y:r.cy+.5}));
+    const r1=rooms.slice(1).sort((a,b)=>rd(a)-rd(b))[0];
+    START={x:st.cx+.5,y:st.cy+.5,a:Math.atan2(r1.cy-st.cy,r1.cx-st.cx)};
+    SEEN=new Uint8Array(MW*MH);flow=new Int16Array(MW*MH);
+    return {name:fl.name,floor:fl.floor,tapes:nT};
+  }
+  throw new Error('map gen failed');
+}
 
 // ---------- state ----------
 let state='load'; // load,title,play,pause,dead
-let P, Z=[], PICK=[], FX=[], wave=0, score=0, kills=0, waveTimer=0, toSpawn=0, spawnTick=0, banner=null, shake=0, hurtFlash=0, muzzle=0, best=0, t=0;
+let P, Z=[], PICK=[], FX=[], wave=0, score=0, kills=0, spawnTick=0, banner=null, LV=null, tapesGot=0, signal=100, exitOpen=false, clearT=0, showMap=true, lockedMsg=0, shake=0, hurtFlash=0, muzzle=0, best=0, t=0;
 try{best=+localStorage.getItem('deadair-best')||0}catch(e){}
 const LINES=["We'll be right back after these zombies.","Please stand by.","Don't touch that dial.","Breaking news: everyone's dead.","Ratings are up. So are the dead.","Tonight's forecast: 100% chance of brains.","Live, local, and late for dinner.","This is not a test. Well, it's a little bit of a test.","Sweeps week has never been this literal.","Coming up next: more of the same, but angrier."];
 
@@ -145,22 +191,23 @@ const ZT={
 };
 
 function newGame(){
-  P={x:START.x,y:START.y,a:-Math.PI/2,hp:100,wpn:0,clip:12,shells:12,cool:0,reloading:0,bob:0,kick:0,swap:0};
-  Z=[];PICK=[];FX=[];wave=0;score=0;kills=0;shake=0;hurtFlash=0;
-  nextWave();state='play';setMusic('mGame');
+  P={x:0,y:0,a:0,hp:100,wpn:0,clip:12,shells:12,cool:0,reloading:0,bob:0,kick:0,swap:0};
+  wave=0;score=0;kills=0;shake=0;hurtFlash=0;
+  nextFloor();state='play';setMusic('mGame');
 }
-function nextWave(){
-  wave++;toSpawn=4+wave*2+Math.floor(wave*wave*.25);spawnTick=1.5;
-  banner={title:'WAVE '+wave,sub:LINES[(wave-1)%LINES.length],t:3.4};
+function nextFloor(){
+  wave++;Z=[];FX=[];LV=genFloor(wave);tapesGot=0;signal=100;exitOpen=false;clearT=0;
+  P.x=START.x;P.y=START.y;P.a=START.a;P.hp=Math.min(100,P.hp+(wave>1?25:0));
+  floorGrad=null;buildFlow();
+  const first=LINES[(wave-1)%LINES.length];
+  banner={title:'FLOOR '+wave+': '+LV.name,sub:'Recover '+LV.tapes+' emergency broadcast tapes, then find the EXIT. '+first,t:4.6};
   play('stinger',.7);
-  // restock pickups on the map each wave
-  const hs=HSPOTS[(wave)%HSPOTS.length], ss=SSPOTS[(wave)%SSPOTS.length];
-  if(!PICK.some(p=>p.x===hs.x&&p.y===hs.y))PICK.push({type:'medkit',x:hs.x,y:hs.y,t:0});
-  if(!PICK.some(p=>p.x===ss.x&&p.y===ss.y))PICK.push({type:'shells',x:ss.x,y:ss.y,t:0});
+  // a few already shambling around, far from you
+  spawnTick=3.5;for(let i=0;i<2+wave;i++)spawnZombie(true);
 }
-function spawnZombie(){
+function spawnZombie(quiet){
   // farthest-ish spawn point that's not right on top of the player
-  const opts=SPAWNS.filter(s=>Math.hypot(s.x-P.x,s.y-P.y)>6);
+  let opts=SPAWNS.filter(s=>Math.hypot(s.x-P.x,s.y-P.y)>7&&!los(s.x,s.y,P.x,P.y));if(!opts.length)opts=SPAWNS.filter(s=>Math.hypot(s.x-P.x,s.y-P.y)>5);
   const sp=(opts.length?opts:SPAWNS)[Math.random()*(opts.length||SPAWNS.length)|0];
   let type='suit'; const r=Math.random();
   if(wave>=2&&r<Math.min(.35,.12+wave*.04))type='runner';
@@ -168,11 +215,11 @@ function spawnZombie(){
   const d=ZT[type];
   const hp=d.hp*(1+(wave-1)*.07);
   Z.push({type,x:sp.x+rnd(-.2,.2),y:sp.y+rnd(-.2,.2),hp,max:hp,speed:d.speed*(1+Math.min(.35,(wave-1)*.03))*rnd(.9,1.1),cool:0,flash:0,stun:0,dead:0,ph:Math.random()*TAU});
-  if(type==='tank')play('growl',.55,1,600); else if(type==='runner')play('snarl',.45,1.1,600);
+  if(!quiet){if(type==='tank')play('growl',.55,1,600); else if(type==='runner')play('snarl',.45,1.1,600);}
 }
 
 // ---------- flow field toward player ----------
-let flow=new Int16Array(MW*MH), flowTimer=0;
+let flow=new Int16Array(MW*MH), flowTimer=0, floorGrad=null;
 function buildFlow(){
   flow.fill(-1);const px=P.x|0,py=P.y|0,q=[py*MW+px];flow[q[0]]=0;
   for(let i=0;i<q.length;i++){const c=q[i],cx=c%MW,cy=(c/MW)|0,d=flow[c];
@@ -197,6 +244,7 @@ addEventListener('keydown',e=>{
     if(e.code==='KeyR')reload();
   }
   if(e.code==='KeyM')toggleMute();
+  if(e.code==='Tab'){e.preventDefault();showMap=!showMap}
   if(e.code==='KeyP'&&state==='play')pause();else if(e.code==='KeyP'&&state==='pause')resume();
 });
 addEventListener('keyup',e=>{K[e.code]=false});
@@ -284,7 +332,7 @@ function hurtZ(z,d){
   FX.push({k:'blood',x:z.x,y:z.y,t:.35,n:Math.min(8,2+d/8|0),seed:Math.random()});
   if(z.hp<=0&&!z.dead){z.dead=.001;kills++;score+=ZT[z.type].score*(1+(wave-1)*.1)|0;
     play('groan',.35,z.type==='tank'?.75:1.35,150);
-    const r=Math.random(); if(r<.11)PICK.push({type:'medkit',x:z.x,y:z.y,t:0}); else if(r<.27)PICK.push({type:'shells',x:z.x,y:z.y,t:0});
+    const r=Math.random(); if(r<.07)PICK.push({type:'medkit',x:z.x,y:z.y,t:0}); else if(r<.19)PICK.push({type:'shells',x:z.x,y:z.y,t:0});
   }
 }
 
@@ -297,7 +345,7 @@ function project(x,y){
 }
 
 // ---------- update ----------
-let deadT=0;
+let deadT=0, offAir='dead';
 function update(dt){
   t+=dt;
   if(banner){banner.t-=dt;if(banner.t<=0)banner=null}
@@ -315,6 +363,7 @@ function update(dt){
   const sp=(K.ShiftLeft||K.ShiftRight?4.4:3.0)*dt;
   moveBody(P,(ca*fw-sa*st)*sp,(sa*fw+ca*st)*sp,.24);
   P.bob+=m*dt*(K.ShiftLeft?11:8);
+  for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const cx=(P.x|0)+dx,cy=(P.y|0)+dy;if(cx>=0&&cy>=0&&cx<MW&&cy<MH)SEEN[cy*MW+cx]=1}
   // timers
   P.cool-=dt;P.kick=Math.max(0,P.kick-dt*6);P.swap=Math.max(0,P.swap-dt);muzzle=Math.max(0,muzzle-dt);shake=Math.max(0,shake-dt*2.2);hurtFlash=Math.max(0,hurtFlash-dt*1.6);
   if(P.reloading>0){P.reloading-=dt;if(P.reloading<=0){P.reloading=0;P.clip=WEAPONS[0].mag}}
@@ -323,8 +372,18 @@ function update(dt){
   // flow field
   flowTimer-=dt;if(flowTimer<=0){buildFlow();flowTimer=.25}
   // spawn
-  if(toSpawn>0){spawnTick-=dt;if(spawnTick<=0&&Z.filter(z=>!z.dead).length<10+wave){spawnZombie();toSpawn--;spawnTick=Math.max(.45,1.6-wave*.09)}}
-  else if(!Z.some(z=>!z.dead)){waveTimer+=dt;if(waveTimer>3.2){waveTimer=0;nextWave()}}
+  if(clearT>0){clearT-=dt;if(clearT<=0)nextFloor();return}
+  // the dead never stop coming: steady spawns, faster on later floors
+  spawnTick-=dt;if(spawnTick<=0){spawnTick=Math.max(1.4,4.2-wave*.35)*rnd(.8,1.2);if(Z.filter(z=>!z.dead).length<6+wave*2)spawnZombie()}
+  // the signal fades unless you keep feeding the transmitter tapes
+  signal-=dt*(1.05+wave*.15);
+  if(signal<=0){signal=0;offAir='signal';die();return}
+  lockedMsg=Math.max(0,lockedMsg-dt);
+  if(Math.hypot(EXIT.fx-P.x,EXIT.fy-P.y)<1.05){
+    if(exitOpen){const bonus=500+Math.round(signal)*10+wave*250;score+=bonus;clearT=2.6;play('stinger',.8,1.2);
+      banner={title:'FLOOR CLEARED',sub:'+'+bonus.toLocaleString()+' ratings bonus. Heading down…',t:2.6};Z.forEach(z=>{if(!z.dead)z.stun=9});return}
+    else if(lockedMsg<=0){lockedMsg=2.5;FX.push({k:'note',txt:'EXIT LOCKED: '+(LV.tapes-tapesGot)+' MORE TAPE'+(LV.tapes-tapesGot>1?'S':''),t:1.6,c:'#ff6a5a'})}
+  }
   // zombies
   for(const z of Z){
     if(z.dead){z.dead+=dt;continue}
@@ -344,7 +403,7 @@ function update(dt){
     if(d>.62){const s=z.speed*dt*(z.type==='runner'?(.85+.3*Math.abs(Math.sin(t*6+z.ph))):1);moveBody(z,tx/tl*s,ty/tl*s,.24)}
     else if(z.cool<=0){
       z.cool=z.type==='runner'?.7:1.05;P.hp-=ZT[z.type].dmg;hurtFlash=1;shake=Math.max(shake,.45);play('hurt',.85,rnd(.95,1.08),120);
-      if(P.hp<=0){P.hp=0;die()}
+      if(P.hp<=0){P.hp=0;offAir='dead';die()}
     }
     // ambient moans
     if(d<8&&Math.random()<dt*.18)play('groan',clamp(.5-d*.05,.05,.5),z.type==='tank'?.7:rnd(.85,1.15),900);
@@ -354,11 +413,14 @@ function update(dt){
   for(const p of PICK){p.t+=dt;if(Math.hypot(p.x-P.x,p.y-P.y)<.55){
     if(p.type==='medkit'&&P.hp<100){P.hp=Math.min(100,P.hp+35);p.got=1;play('pickup',.8);FX.push({k:'note',txt:'+35 HEALTH',t:1.2,c:'#7dff9a'})}
     if(p.type==='shells'){P.shells=Math.min(60,P.shells+8);p.got=1;play('pickup',.8);FX.push({k:'note',txt:'+8 SHELLS',t:1.2,c:'#ffcf5a'})}
+    if(p.type==='tape'){p.got=1;tapesGot++;signal=Math.min(100,signal+40);score+=500;play('pickup',.9,.8);
+      if(tapesGot>=LV.tapes){exitOpen=true;play('stinger',.75,1.3);FX.push({k:'note',txt:'ALL TAPES RECOVERED: GET TO THE EXIT',t:2.6,c:'#7dff9a'})}
+      else FX.push({k:'note',txt:'TAPE '+tapesGot+' OF '+LV.tapes+'  ·  SIGNAL BOOSTED',t:1.8,c:'#7dff9a'})}
   }}
   PICK=PICK.filter(p=>!p.got);
   for(const f of FX)f.t-=dt; FX=FX.filter(f=>f.t>0);
 }
-function die(){state='dead';deadT=0;mouseDown=false;if(document.exitPointerLock)document.exitPointerLock();
+function die(){state='dead';banner=null;FX=FX.filter(f=>f.k!=='note');deadT=0;mouseDown=false;if(document.exitPointerLock)document.exitPointerLock();
   if(score>best){best=score;try{localStorage.setItem('deadair-best',String(best))}catch(e){}}
   setMusic('mTitle');play('stinger',.8,.8)}
 
@@ -373,7 +435,8 @@ function render(){
   ctx.save();ctx.translate(ox,oy);
   dirX=Math.cos(P.a);dirY=Math.sin(P.a);plX=-dirY*.7;plY=dirX*.7;
   const flick=.92+.08*Math.sin(t*23)*Math.sin(t*7.3)+(Math.random()<.004?-.35:0);
-  ctx.fillStyle=ceilG;ctx.fillRect(-10,-10,W+20,HALF+10);ctx.fillStyle=floorG;ctx.fillRect(-10,HALF,W+20,HALF+10);
+  if(!floorGrad){floorGrad=ctx.createLinearGradient(0,HALF,0,H);floorGrad.addColorStop(0,LV.floor[0]);floorGrad.addColorStop(.45,LV.floor[1]);floorGrad.addColorStop(1,LV.floor[2])}
+  ctx.fillStyle=ceilG;ctx.fillRect(-10,-10,W+20,HALF+10);ctx.fillStyle=floorGrad;ctx.fillRect(-10,HALF,W+20,HALF+10);
   // walls
   for(let x=0;x<W;x++){
     const cam=2*x/W-1,rx=dirX+plX*cam,ry=dirY+plY*cam;
@@ -381,16 +444,17 @@ function render(){
     let sx,sy,sdx,sdy,side=0,hit=0;
     if(rx<0){sx=-1;sdx=(P.x-mx)*ddx}else{sx=1;sdx=(mx+1-P.x)*ddx}
     if(ry<0){sy=-1;sdy=(P.y-my)*ddy}else{sy=1;sdy=(my+1-P.y)*ddy}
-    for(let i=0;i<64&&!hit;i++){if(sdx<sdy){sdx+=ddx;mx+=sx;side=0}else{sdy+=ddy;my+=sy;side=1}if(mx<0||my<0||mx>=MW||my>=MH){hit=1;break}hit=MAP[my*MW+mx]}
+    for(let i=0;i<64&&!hit;i++){if(sdx<sdy){sdx+=ddx;mx+=sx;side=0}else{sdy+=ddy;my+=sy;side=1}if(mx<0||my<0||mx>=MW||my>=MH){hit=1;break}SEEN[my*MW+mx]=1;hit=MAP[my*MW+mx]}
     const pd=side===0?(mx-P.x+(1-sx)/2)/rx:(my-P.y+(1-sy)/2)/ry;
     const dist=Math.max(.05,pd);zbuf[x]=dist;
     const lh=H/dist, top=HALF-lh/2;
     let wx=side===0?P.y+dist*ry:P.x+dist*rx;wx-=Math.floor(wx);
     if((side===0&&rx<0)||(side===1&&ry>0))wx=1-wx;
-    const tex=IMG['wall'+(hit||1)]; const tw=tex.width||256;
+    const tex=hit===5?IMG.door:IMG['wall'+(hit||1)]; const tw=tex.width||256;
     ctx.drawImage(tex,Math.min(tw-1,(wx*tw)|0),0,1,tex.height||256,x,top,1.02,lh);
     const dark=clamp(dist/10.5,0,.9)+(side?.12:0)+(1-flick)*.6;
     ctx.fillStyle='rgba(0,0,0,'+clamp(dark,0,.95)+')';ctx.fillRect(x,top,1.02,lh);
+    if(hit===5){ctx.fillStyle=exitOpen?'rgba(60,255,120,'+(.10+.10*Math.sin(t*5))+')':'rgba(255,30,20,.12)';ctx.fillRect(x,top,1.02,lh)}
   }
   // sprites (zombies + pickups), far to near
   const list=[];
@@ -402,7 +466,7 @@ function render(){
     if(s.kind==='z'){const d=ZT[o.type];key=o.type;hgt=.98*d.scale;
       const wob=o.type==='runner'?13:o.type==='tank'?4:6; bob=Math.abs(Math.sin(t*wob*.5+o.ph))*.03*(o.dead?0:1);
       if(o.dead)sink=Math.min(1,o.dead*1.6);
-    }else{key=o.type;hgt=o.type==='medkit'?.32:.3;bob=.05+Math.sin(o.t*3)*.03}
+    }else{key=o.type;hgt=o.type==='medkit'?.32:o.type==='tape'?.24:.3;bob=(o.type==='tape'?.16:.05)+Math.sin(o.t*3)*.03}
     const sprs=SPR[key];if(!sprs)continue;
     const img=sprs[0],unit=H/pr.ty,sh2=hgt*unit*(1-sink*.75);
     const floorY=HALF+unit/2-bob*unit;
@@ -411,6 +475,7 @@ function render(){
     const x0=pr.sx-sw/2;
     let shade=clamp(Math.floor(pr.ty/10.5*SHADES+(1-flick)*2),0,SHADES-1);
     if(s.kind==='z'&&o.dead)shade=clamp(shade+Math.floor(sink*3),0,SHADES-1);
+    if(s.kind==='p'&&o.type==='tape'){shade=Math.min(shade,1);const gr=Math.max(4,unit*.22)*(1+.15*Math.sin(t*4));const gx=pr.sx,gy=floorY-sh2*.5;if(pr.ty<zbuf[clamp(gx|0,0,W-1)]){const g=ctx.createRadialGradient(gx,gy,0,gx,gy,gr);g.addColorStop(0,'rgba(90,255,140,.45)');g.addColorStop(1,'rgba(90,255,140,0)');ctx.fillStyle=g;ctx.fillRect(gx-gr,gy-gr,gr*2,gr*2)}}
     const src=(s.kind==='z'&&o.flash>0)?sprs[SHADES]:sprs[shade];
     // draw visible runs
     const xs=Math.max(0,Math.floor(x0)),xe=Math.min(W-1,Math.ceil(x0+sw));
@@ -470,8 +535,12 @@ function drawHUD(){
   if(state==='play'){ctx.strokeStyle='rgba(255,255,255,.75)';ctx.lineWidth=1.5;const g=P.wpn?9:5;ctx.beginPath();ctx.moveTo(W/2-g-6,HALF);ctx.lineTo(W/2-g,HALF);ctx.moveTo(W/2+g,HALF);ctx.lineTo(W/2+g+6,HALF);ctx.moveTo(W/2,HALF-g-6);ctx.lineTo(W/2,HALF-g);ctx.moveTo(W/2,HALF+g);ctx.lineTo(W/2,HALF+g+6);ctx.stroke()}
   // ON AIR tally + score
   const live=Math.sin(t*3)>-.2;ctx.fillStyle=live?'#d0161d':'#4a0b0d';ctx.fillRect(W-92,12,80,22);txt('ON AIR',W-52,29,16,'#fff','center');
-  txt('SCORE '+score.toLocaleString(),W-104,30,16,'#efe6d8','right');
-  txt('WAVE '+wave,W/2,28,18,'#efe6d8','center');
+  txt('SCORE '+score.toLocaleString(),W-12,54,15,'#efe6d8','right');
+  txt('FLOOR '+wave+'  ·  '+LV.name,W/2,26,16,'#efe6d8','center');
+  // signal meter
+  const sw2=170,sx2=W/2-sw2/2,sy2=34;ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(sx2,sy2,sw2,9);
+  ctx.fillStyle=signal>40?'#3fd06a':signal>20?'#e0b02a':(Math.sin(t*10)>0?'#ff2a1a':'#801010');ctx.fillRect(sx2+1,sy2+1,(sw2-2)*signal/100,7);
+  txt('SIGNAL',sx2-6,sy2+9,11,'#bdb3a4','right');
   // health
   const hx=16,hy=H-34;ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(hx,hy,150,18);
   ctx.fillStyle=P.hp>50?'#8f1d1d':P.hp>25?'#c4401b':'#ff2a1a';ctx.fillRect(hx+2,hy+2,146*P.hp/100,14);
@@ -480,10 +549,22 @@ function drawHUD(){
   const w=WEAPONS[P.wpn];
   const am=P.wpn===0?(P.reloading>0?'RELOADING…':P.clip+' / ∞'):P.shells+' SHELLS';
   txt(w.name,W-16,H-40,15,'#bdb3a4','right');txt(am,W-16,H-16,24,P.wpn===1&&P.shells===0?'#ff5040':'#efe6d8','right');
-  const left=Z.filter(z=>!z.dead).length+toSpawn;txt(left+' LEFT',16,30,15,'#bdb3a4');
+  txt('TAPES '+tapesGot+' / '+LV.tapes,16,30,16,exitOpen?'#7dff9a':'#efe6d8');
+  if(exitOpen)txt('EXIT OPEN',16,48,13,Math.sin(t*6)>0?'#7dff9a':'#3d8a50');
+  if(showMap)drawMinimap();
   // banner
-  if(banner){const a=clamp(Math.min(banner.t,3.4-banner.t)*2,0,1);ctx.globalAlpha=a;txt(banner.title,W/2,H*.36,56,'#d0161d','center','Creepster','400');txt(banner.sub,W/2,H*.36+30,17,'#efe6d8','center');ctx.globalAlpha=1}
+  if(banner){if(banner.T===undefined)banner.T=banner.t;const a=clamp(Math.min(banner.t,banner.T-banner.t)*2,0,1);ctx.globalAlpha=a;const big=banner.title.length>16?40:56;txt(banner.title,W/2,H*.36,big,'#d0161d','center','Creepster','400');wrapTxt(banner.sub,W/2,H*.36+28,16,'#efe6d8',460);ctx.globalAlpha=1}
+  if(signal<25&&state==='play'){for(let i=0;i<(25-signal)*14;i++){ctx.fillStyle='rgba(255,255,255,'+Math.random()*.16+')';ctx.fillRect(Math.random()*W,Math.random()*H,rnd(1,4),1)}if(Math.sin(t*5)>0)txt('SIGNAL FADING: FIND A TAPE',W/2,H*.24,18,'#ff5a4a','center')}
   for(const f of FX)if(f.k==='note'){ctx.globalAlpha=clamp(f.t,0,1);txt(f.txt,W/2,H*.62-(1.2-f.t)*20,18,f.c,'center');ctx.globalAlpha=1}
+}
+function wrapTxt(s,x,y,size,col,maxW){ctx.font=`600 ${size}px Oswald,Impact,sans-serif`;const words=s.split(' ');let line='',yy=y;for(const w of words){const tl=line?line+' '+w:w;if(ctx.measureText(tl).width>maxW&&line){txt(line,x,yy,size,col,'center');line=w;yy+=size+4}else line=tl}if(line)txt(line,x,yy,size,col,'center')}
+function drawMinimap(){
+  const cs=Math.max(2,Math.min(4,Math.floor(150/Math.max(MW,MH)))),mw=MW*cs,mh=MH*cs,ox=12,oy=58;
+  ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(ox-3,oy-3,mw+6,mh+6);
+  for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const i=y*MW+x;if(!SEEN[i])continue;const m=MAP[i];
+    ctx.fillStyle=m===5?(exitOpen?'#3fd06a':'#d0161d'):m?'rgba(200,190,175,.75)':'rgba(70,60,60,.55)';ctx.fillRect(ox+x*cs,oy+y*cs,cs,cs)}
+  for(const p of PICK)if(p.type==='tape'&&SEEN[(p.y|0)*MW+(p.x|0)]){ctx.fillStyle=Math.sin(t*6)>0?'#7dff9a':'#2c7a44';ctx.fillRect(ox+p.x*cs-cs*.6,oy+p.y*cs-cs*.6,cs*1.2,cs*1.2)}
+  const px=ox+P.x*cs,py=oy+P.y*cs;ctx.fillStyle='#ffcf5a';ctx.beginPath();ctx.moveTo(px+Math.cos(P.a)*5,py+Math.sin(P.a)*5);ctx.lineTo(px+Math.cos(P.a+2.5)*3.5,py+Math.sin(P.a+2.5)*3.5);ctx.lineTo(px+Math.cos(P.a-2.5)*3.5,py+Math.sin(P.a-2.5)*3.5);ctx.fill();
 }
 function drawCard(a,b){ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(0,0,W,H);
   // SMPTE-ish color bars strip
@@ -495,8 +576,9 @@ function drawDead(){
   for(let i=0;i<260*a;i++){ctx.fillStyle='rgba(255,255,255,'+Math.random()*.12+')';ctx.fillRect(Math.random()*W,Math.random()*H,rnd(1,3),1)}
   ctx.globalAlpha=a;
   txt("YOU'RE OFF THE AIR",W/2,H*.3,52,'#d0161d','center','Creepster','400');
-  txt('Score '+score.toLocaleString()+'   ·   Waves survived '+(wave-1)+'   ·   Kills '+kills,W/2,H*.3+40,18,'#efe6d8','center');
-  txt(score>=best&&score>0?'NEW STATION RECORD':'Station record '+best.toLocaleString(),W/2,H*.3+66,16,score>=best&&score>0?'#ffcf5a':'#bdb3a4','center');
+  txt(offAir==='signal'?'The signal died. Nobody was feeding the transmitter.':'Eaten live, on camera. Great for ratings, bad for you.',W/2,H*.3+30,15,'#bdb3a4','center');
+  txt('Score '+score.toLocaleString()+'   ·   Floors cleared '+(wave-1)+'   ·   Kills '+kills,W/2,H*.3+56,18,'#efe6d8','center');
+  txt(score>=best&&score>0?'NEW STATION RECORD':'Station record '+best.toLocaleString(),W/2,H*.3+82,16,score>=best&&score>0?'#ffcf5a':'#bdb3a4','center');
   if(deadT>1.2)txt(IS_TOUCH?'Tap to go live again':'Click or press Enter to go live again',W/2,H*.68,20,'#fff','center');
   txt("Don't let your marketing go dead air.  KWB Media  ·  kwbmedia.com",W/2,H-18,13,'#9c9184','center');
   ctx.globalAlpha=1;
@@ -510,9 +592,10 @@ function drawTitle(){
   const gl=Math.random()<.04?rnd(-6,6):0;
   ctx.save();ctx.shadowColor='rgba(255,20,20,.7)';ctx.shadowBlur=24;txt('DEAD AIR',W/2+gl,H*.38,104,'#d0161d','center','Creepster','400');ctx.restore();
   txt('Channel 13 has been overrun. Stay on the air.',W/2,H*.38+34,19,'#efe6d8','center');
+  txt('Grab the emergency broadcast tapes before the signal dies. Then find the exit.',W/2,H*.38+58,14,'#bdb3a4','center');
   if(state==='load'||loaded<total){txt('Warming up the transmitter… '+Math.round(loaded/total*100)+'%',W/2,H*.66,18,'#bdb3a4','center')}
   else{ctx.globalAlpha=.6+.4*Math.sin(t*4);txt(IS_TOUCH?'TAP TO GO LIVE':'CLICK TO GO LIVE',W/2,H*.64,26,'#fff','center');ctx.globalAlpha=1;
-    txt(IS_TOUCH?'Left stick: move   ·   Drag right side: look   ·   FIRE / SWAP / R':'WASD move  ·  Mouse aim  ·  Click shoot  ·  Shift sprint  ·  1/2 or Q swap  ·  R reload  ·  M mute',W/2,H*.64+28,13,'#bdb3a4','center');
+    txt(IS_TOUCH?'Left stick: move   ·   Drag right side: look   ·   FIRE / SWAP / R':'WASD move  ·  Mouse aim  ·  Click shoot  ·  Shift sprint  ·  Q swap  ·  R reload  ·  Tab map  ·  M mute',W/2,H*.64+28,13,'#bdb3a4','center');
     if(best)txt('Station record: '+best.toLocaleString(),W/2,H-20,14,'#9c9184','center');}
 }
 
@@ -529,7 +612,7 @@ requestAnimationFrame(frame);
 const firstGesture=()=>{if(state==='title'||state==='load')setMusic('mTitle');removeEventListener('pointerdown',firstGesture,true);removeEventListener('keydown',firstGesture,true)};
 addEventListener('pointerdown',firstGesture,true);addEventListener('keydown',firstGesture,true);
 // test hook
-window.__DA={get wave(){return wave},get score(){return score},get state(){return state},get P(){return P},get Z(){return Z},newGame,fire,spawnZombie,K,setMuted(v){muted=v}};
+window.__DA={get LV(){return LV},get PICK(){return PICK},get EXIT(){return EXIT},get signal(){return signal},set signal(v){signal=v},get tapesGot(){return tapesGot},get map(){return {MW,MH,MAP}},nextFloor,get wave(){return wave},get score(){return score},get state(){return state},get P(){return P},get Z(){return Z},newGame,fire,spawnZombie,K,setMuted(v){muted=v}};
 </script>
 </body>
 </html>
