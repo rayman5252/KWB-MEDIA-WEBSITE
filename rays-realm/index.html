@@ -63,7 +63,7 @@
   #tip .stats b{display:block;font-size:15px}
   #tip .warn{margin-top:5px;color:#8a2a22;font-size:12px}
   #hint{font-size:12.5px;line-height:1.4;opacity:.9;min-height:34px}
-  .btns{display:flex;gap:8px}
+  .btns{display:flex;gap:6px}
   button{font-family:Cinzel,Georgia,serif;font-weight:700;font-size:14px;letter-spacing:.04em;border:0;border-radius:6px;padding:9px 12px;cursor:pointer;color:#2b1d10;background:linear-gradient(#f0cd6a,#c9962b);box-shadow:0 2px 0 #7a5614}
   button:hover:not(:disabled){filter:brightness(1.08)}
   button:active:not(:disabled){transform:translateY(1px);box-shadow:0 1px 0 #7a5614}
@@ -71,7 +71,7 @@
   button.sec{background:linear-gradient(#d9ccaa,#b4a279);box-shadow:0 2px 0 #6d5f3f}
   button.pulse:not(:disabled){animation:pl 1s infinite}
   @keyframes pl{50%{filter:brightness(1.3)}}
-  .btns button{flex:1;white-space:nowrap;padding:9px 6px;font-size:13px}
+  .btns button{flex:1;white-space:nowrap;padding:9px 6px;font-size:13px;min-width:0}
   #log{list-style:none;margin:0;padding:8px;background:#00000040;border-radius:6px;flex:1;min-height:90px;overflow:auto;font-size:12px;line-height:1.45}
   #log li{padding:1px 0}#log .t0{color:#8fc0ff}#log .t1{color:#cba8f5}#log .t2{color:#f2c27a}#log .sys{color:var(--gold)}
   #banner{position:absolute;left:0;right:0;top:36%;text-align:center;font-family:Cinzel,Georgia,serif;font-size:clamp(26px,4.5vw,54px);color:var(--gold);text-shadow:0 3px 12px #000,0 0 30px #000;pointer-events:none;opacity:0;letter-spacing:.1em}
@@ -139,7 +139,7 @@
     <div id="shop"></div>
     <div id="cargo"></div>
     <div id="hint"></div>
-    <div class="btns"><button id="wait" class="sec">Wait</button><button id="undo" class="sec" title="Undo your last move (U)">Undo</button><button id="end">End Turn</button><button id="mute" class="sec" title="Sound on/off" style="flex:none">♪</button></div>
+    <div class="btns"><button id="wait" class="sec">Wait</button><button id="undo" class="sec" title="Undo your last move (U)">Undo</button><button id="end">End Turn</button><button id="save" class="sec" title="Save your game (S)" style="flex:none">Save</button><button id="mute" class="sec" title="Sound on/off" style="flex:none">♪</button></div>
     <ul id="log"></ul>
   </aside>
 </div>
@@ -151,7 +151,8 @@
 <div id="defeat" class="scene hidden"><video id="defvid" src="assets/defeat.mp4" preload="auto" playsinline></video><div class="shade"></div><div id="deftext">DEFEAT</div></div>
 <div id="title" class="scene"><video id="titlevid" muted loop playsinline autoplay></video><img class="bgm" id="titleimg" alt="" style="display:none"><div class="shade"></div>
   <div class="box"><h2>Ray's Realm</h2><div class="tag">Four armies. One crown. Hold the gold, rule the realm.</div>
-  <button id="go">Begin Battle</button>
+  <button id="continue" style="display:none;margin:0 6px 10px">Continue</button>
+  <button id="go" style="margin:0 6px 10px">Begin Battle</button>
   <a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a>
   <div id="musicnote" style="display:none;margin-top:10px;font-size:13px;opacity:.85;text-shadow:0 2px 6px #000">♪ Click anywhere to start the music</div>
   <details><summary>How to play</summary><ul>
@@ -168,6 +169,7 @@
     <li><b>Fog of war:</b> every army, yours and theirs, sees only 3 hexes around its units, keeps and forts (scouts and archer towers see 4). Explored ground stays revealed, but enemies in the dark are hidden.</li>
     <li><b>Healing:</b> wounded units that stay out of battle recover 5% of their health each turn, or 10% if they end within 2 hexes of a keep or fort you hold.</li>
     <li>Defenders counter-attack if the attacker is within their range.</li>
+    <li><b>Saving:</b> the game saves itself at the start of each of your turns and when you close the page, and you can press <b>Save</b> (or S) any time on your turn. Use <b>Continue</b> on this screen to pick up where you left off. There is one save slot per browser; it is cleared when a battle is won or lost.</li>
     <li><b>Victory:</b> capture all three enemy keeps by ending a move on them. Taking a keep also loots 5–25 gold. Lose your own keep — or your whole army and gold — and the realm is lost.</li>
   </ul></details></div></div>
 
@@ -322,6 +324,54 @@ function undoLast(){
   explored=z.explored; seenMine=z.seenMine; seenKeep=z.seenKeep; seenTower=z.seenTower;
   clearSel(); recruitType=null; spawnSet=[];
   log(`Undid your last ${z.label}.`,'sys'); sfx('step'); refreshUI();
+}
+
+// ---- save game: one slot, kept in this browser (localStorage). Saves automatically at the start of each of your turns
+// and when you leave the page, or any time you press Save (or S). The slot is cleared when the battle is won or lost.
+// The map is rebuilt from its seed, so only the moving parts are stored.
+const SAVE_KEY='raysRealm.save.v1';
+let gameStarted=false;   // false while the title screen is up: the fresh map behind it must never overwrite a real save
+const UNIT_SKIP=new Set(['type','anim','off','alpha','cargo','aboard']);
+function packUnit(u){
+  const o={}; for(const [k,v] of Object.entries(u)) if(!UNIT_SKIP.has(k)&&(v==null||typeof v!=='object')) o[k]=v;
+  o.cargo=u.cargo.map(packUnit); return o;
+}
+const canSave = () => gameStarted && !over && side===0 && !busy && MAP.length>0;
+function saveGame(quiet){
+  if(!canSave()){ if(!quiet&&busy) log('Wait for the other armies to finish their turns, then save.','sys'); return false; }
+  const data={v:1, savedAt:Date.now(), mapSeed, turn, uid, gold, recruitsUsed, elim, keepOwner, seenKeep,
+    mineOwner:[...mineOwner], towers:[...towers], towerUsed:[...towerUsed], explored:[...explored], seenMine:[...seenMine], seenTower:[...seenTower],
+    barbSeen:[...barbSeen], omenNow, omenNext, omenLast,
+    aiFog:aiFog.map(F=>F&&{explored:[...F.explored], seenMine:[...F.seenMine], seenKeep:F.seenKeep}),
+    units:units.map(packUnit)};
+  try{ localStorage.setItem(SAVE_KEY,JSON.stringify(data)); }
+  catch(e){ if(!quiet) log('Could not save: this browser is blocking storage (private window?).','sys'); return false; }
+  if(!quiet){ log(`Game saved (turn ${turn}).`,'sys'); banner('Game Saved'); sfx('step'); }
+  return true;
+}
+function readSave(){ try{ const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); return d&&d.v===1&&Array.isArray(d.units)?d:null; }catch(e){ return null; } }
+function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
+function loadGame(d){
+  undoSnap=null; mapSeed=d.mapSeed; generateMap(mapSeed); resize();
+  const unpack=(o,ship)=>{ const T=TYPES[o.key]; if(!T) return null;
+    const u={...o, type:T, anim:null, off:{x:0,y:0}, alpha:1, aboard:ship||null, cargo:[]};
+    u.cargo=(o.cargo||[]).map(c=>unpack(c,u)).filter(Boolean); return u; };
+  units=d.units.map(o=>unpack(o)).filter(Boolean);
+  uid=Math.max(d.uid||0,...units.flatMap(u=>[u.id,...u.cargo.map(c=>c.id)]));
+  turn=d.turn; side=0; sel=null; hover=null; moveInfo=null; targets=[]; recruitType=null; spawnSet=[]; boardShips=[]; busy=false; over=false; effects=[]; proj=null;
+  gold=d.gold; recruitsUsed=d.recruitsUsed; elim=d.elim; keepOwner=d.keepOwner; seenKeep=d.seenKeep;
+  mineOwner=new Map(d.mineOwner); towers=new Map(d.towers); towerUsed=new Set(d.towerUsed);
+  explored=new Set(d.explored); visible=new Set(); seenMine=new Map(d.seenMine); seenTower=new Map(d.seenTower); barbSeen=new Set(d.barbSeen);
+  resetAIFog();
+  (d.aiFog||[]).forEach((F,t)=>{ if(F&&aiFog[t]){ aiFog[t].explored=new Set(F.explored); aiFog[t].seenMine=new Map(F.seenMine); aiFog[t].seenKeep=F.seenKeep; } });
+  [1,2,3,4].forEach(updateAIVision);
+  stopAmbience(); omenNow=d.omenNow; omenNext=d.omenNext; omenLast=d.omenLast; loadOmenSfx(); refreshOmenPanel();
+  updateVision(); logEl.innerHTML='';
+  log(`Saved game loaded: turn ${turn} (map seed ${mapSeed}).`,'sys');
+  if(omenNow) log(`Omen in effect: ${OMENS[omenNow.type].name}. ${OMENS[omenNow.type].rule}`,'sys');
+  refreshUI();
+  { const sc=document.getElementById('scroller'), q=center(KEEPS[0][0],KEEPS[0][1]); sc.scrollLeft=Math.max(0,q.x-sc.clientWidth*0.3); sc.scrollTop=Math.max(0,q.y-sc.clientHeight*0.4); }
+  if(omenNow) startAmbience(omenNow.type);
 }
 // ---------------------------------------------------------------- random map
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
@@ -1179,6 +1229,7 @@ async function endTurn(){
   if(over){ busy=false; refreshUI(); return; }
   turn++; side=0; advanceOmen(); startTeamTurn(0); busy=false; refreshUI(); banner('Your Turn'); sfx('turn');
   log(`— Turn ${turn} —`,'sys');
+  saveGame(true);   // autosave at the start of every one of your turns
 }
 
 // ---------------------------------------------------------------- barbarians
@@ -1330,6 +1381,7 @@ function refreshUI(){
   document.getElementById('undo').disabled=!(undoSnap&&side===0&&!busy&&!over);
   document.getElementById('wait').disabled=!(sel&&side===0&&!busy);
   const end=document.getElementById('end'); end.disabled=side!==0||busy||over;
+  document.getElementById('save').disabled=!canSave();
   end.classList.toggle('pulse',side===0&&!busy&&!over&&alive(0).length>0&&alive(0).every(u=>!actionable(u)));
 }
 function mineInfo(h){
@@ -1337,6 +1389,7 @@ function mineInfo(h){
   const o=seenMine.get(key(h.c,h.r)); return ` — ${o==null?'unclaimed':'held by '+FACTIONS[o].short}`;
 }
 function showEnd(win,why){
+  clearSave();   // a finished battle can't be continued
   if(win){
     const v=document.getElementById('victory'), vid=document.getElementById('vicvid');
     v.classList.remove('hidden'); try{ vid.currentTime=0; vid.play().catch(()=>{}); }catch(e){}
@@ -1367,6 +1420,7 @@ function startDefeat(){
   v.play().catch(()=>{ v.muted=true; return v.play(); }).catch(()=>{ clearTimeout(defeatTimer); defeatTimer=setTimeout(finish,5000); });
 }
 function goHome(){
+  gameStarted=false;
   newGame();                                          // fresh random map waiting behind the title
   document.getElementById('title').classList.remove('hidden');
   showIntro();                                        // restarts the title video and music
@@ -1381,7 +1435,18 @@ function showIntro(){
   v.onerror=()=>{ v.style.display='none'; };
   v.src='assets/title.mp4'; tryImg();
   playMusic(true);
-  document.getElementById('go').onclick=()=>{ t.classList.add('hidden'); v.pause(); stopMusic(); playAmbient(); sfx('turn'); banner('Your Turn'); };
+  const go=document.getElementById('go'), cont=document.getElementById('continue'), save=readSave();
+  const enter=()=>{ t.classList.add('hidden'); v.pause(); stopMusic(); gameStarted=true; playAmbient(); sfx('turn'); banner('Your Turn'); };
+  cont.style.display=save?'':'none';
+  if(save) cont.textContent=`Continue — Turn ${save.turn}`;
+  go.textContent=save?'New Battle':'Begin Battle';
+  go.title=save?'Start a fresh map. Your saved game is replaced once you play.':'';
+  go.onclick=enter;
+  cont.onclick=()=>{
+    const d=readSave();
+    if(d){ try{ loadGame(d); }catch(e){ console.error(e); newGame(); log('That saved game could not be loaded, so a new battle has begun.','sys'); } }
+    enter();
+  };
 }
 
 // ---------------------------------------------------------------- rendering
@@ -1636,7 +1701,12 @@ window.addEventListener('DOMContentLoaded',async()=>{
     if((e.key===' '||e.key==='w')&&sel&&!busy){ e.preventDefault(); finishUnit(sel); }
     if((e.key==='u'||e.key==='U'||((e.ctrlKey||e.metaKey)&&e.key==='z'))&&!busy){ e.preventDefault(); undoLast(); }
     if(e.key==='Enter'&&!busy) endTurn();
+    if((e.key==='s'||e.key==='S')&&!e.altKey&&gameStarted){ e.preventDefault(); saveGame(false); }   // S or Ctrl/Cmd+S
   });
+  document.getElementById('save').onclick=()=>saveGame(false);
+  // leaving mid-turn keeps your progress (only on your own turn, never while the title screen is up)
+  window.addEventListener('pagehide',()=>saveGame(true));
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden') saveGame(true); });
   document.getElementById('undo').onclick=undoLast;
   document.getElementById('wait').onclick=()=>{ if(sel&&!busy) finishUnit(sel); };
   document.getElementById('end').onclick=endTurn;
