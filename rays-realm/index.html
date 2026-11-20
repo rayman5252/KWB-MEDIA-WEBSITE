@@ -318,7 +318,7 @@ let enemyCount=3, activeArmies=[true,true,true,true];
 try{ const n=+localStorage.getItem('raysRealm.enemies'); if(ENEMY_SETS[n]) enemyCount=n; }catch(e){}
 const setArmies = n => { enemyCount=ENEMY_SETS[n]?n:3; activeArmies=[0,1,2,3].map(t=>t===0||ENEMY_SETS[enemyCount].includes(t)); };
 const enemyWord = () => ['','the enemy keep','both enemy keeps','all three enemy keeps'][enemyCount];
-let ME=0, MP=null;   // ME: the army this computer plays; MP: online head-to-head session (null in a normal game)
+let ME=0, MP=null, lastPay=[0,0,0,0];   // lastPay: gold each army collected at the start of its latest turn   // ME: the army this computer plays; MP: online head-to-head session (null in a normal game)
 let units=[], turn=1, side=0, sel=null, hover=null, busy=false, over=false;
 let moveInfo=null, targets=[], recruitType=null, spawnSet=[], boardShips=[], undoSnap=null;
 let gold=[0,0,0,0], elim=[false,false,false,false], mineOwner=new Map(), keepOwner=[0,1,2,3];
@@ -343,13 +343,13 @@ const income = t => FACTIONS[t].base + MINE_INCOME*minesOf(t)*(omenIs('harvest')
 // ---- undo: one level, the last move/board/unload/recruit/tower (attacks and end of turn clear it)
 function takeSnap(label){
   const all=[...units,...units.flatMap(u=>u.cargo)];
-  return { label, recruitsUsed:[...recruitsUsed], units:[...units], gold:[...gold], mineOwner:new Map(mineOwner), keepOwner:[...keepOwner], towers:new Map(towers),
+  return { label, evLen:mpEvents.length, recruitsUsed:[...recruitsUsed], units:[...units], gold:[...gold], mineOwner:new Map(mineOwner), keepOwner:[...keepOwner], towers:new Map(towers),
     towerUsed:new Set(towerUsed), explored:new Set(explored), seenMine:new Map(seenMine), seenKeep:[...seenKeep], seenTower:new Map(seenTower),
     recs:all.map(u=>({u,c:u.c,r:u.r,hp:u.hp,mp:u.mp,moved:u.moved,done:u.done,steps:u.steps,aboard:u.aboard,cargo:[...u.cargo]})) };
 }
 function undoLast(){
   if(!undoSnap||busy||over||side!==ME) return;
-  const z=undoSnap; undoSnap=null;
+  const z=undoSnap; undoSnap=null; if(z.evLen!=null&&mpEvents.length>z.evLen) mpEvents.length=z.evLen;
   for(const q of z.recs){ Object.assign(q.u,{c:q.c,r:q.r,hp:q.hp,mp:q.mp,moved:q.moved,done:q.done,steps:q.steps,aboard:q.aboard,cargo:q.cargo,anim:null,alpha:1,off:{x:0,y:0}}); }
   units=z.units; gold=z.gold; recruitsUsed=z.recruitsUsed; mineOwner=z.mineOwner; keepOwner=z.keepOwner; towers=z.towers; towerUsed=z.towerUsed;
   explored=z.explored; seenMine=z.seenMine; seenKeep=z.seenKeep; seenTower=z.seenTower;
@@ -372,7 +372,7 @@ const myFog = () => ({explored:[...explored], seenMine:[...seenMine], seenKeep:[
 function packState(){
   return {v:1, savedAt:Date.now(), enemyCount, mapSeed, turn, side, uid, gold, recruitsUsed, elim, keepOwner, seenKeep,
     mineOwner:[...mineOwner], towers:[...towers], towerUsed:[...towerUsed], explored:[...explored], seenMine:[...seenMine], seenTower:[...seenTower],
-    barbSeen:[...barbSeen], omenNow, omenNext, omenLast, armies:activeArmies,
+    barbSeen:[...barbSeen], omenNow, omenNext, omenLast, armies:activeArmies, lastPay,
     aiFog:aiFog.map(F=>F&&{explored:[...F.explored], seenMine:[...F.seenMine], seenKeep:F.seenKeep}),
     units:units.map(packUnit)};
 }
@@ -396,7 +396,7 @@ function restoreState(d){
   units=d.units.map(o=>unpack(o)).filter(Boolean);
   uid=Math.max(d.uid||0,...units.flatMap(u=>[u.id,...u.cargo.map(c=>c.id)]));
   turn=d.turn; side=d.side??ME; sel=null; hover=null; moveInfo=null; targets=[]; recruitType=null; spawnSet=[]; boardShips=[]; busy=false; over=false; effects=[]; proj=null;
-  gold=d.gold; recruitsUsed=d.recruitsUsed; elim=d.elim; keepOwner=d.keepOwner; seenKeep=d.seenKeep;
+  gold=d.gold; lastPay=d.lastPay||[0,0,0,0]; recruitsUsed=d.recruitsUsed; elim=d.elim; keepOwner=d.keepOwner; seenKeep=d.seenKeep;
   mineOwner=new Map(d.mineOwner); towers=new Map(d.towers); towerUsed=new Set(d.towerUsed);
   explored=new Set(d.explored); visible=new Set(); seenMine=new Map(d.seenMine); seenTower=new Map(d.seenTower); barbSeen=new Set(d.barbSeen);
   resetAIFog();
@@ -424,6 +424,8 @@ const MP_PEER_OPTS=(q=>q.get('peerhost')?{host:q.get('peerhost'),port:+q.get('pe
 const MP_CHARS='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const mpNewCode=()=>Array.from({length:5},()=>MP_CHARS[Math.floor(Math.random()*MP_CHARS.length)]).join('');
 let mpPeer=null, mpConn=null, mpLobby=null, mpRetry=null;
+let mpEvents=[], mpReplaying=false, mpFast=false, mpQueue=Promise.resolve();   // what happened on your turn, so the other side can watch it
+function mpRec(e){ if(MP&&!mpReplaying) mpEvents.push(e); }
 
 function loadPeerLib(){
   if(window.Peer) return Promise.resolve();
@@ -476,18 +478,42 @@ function mpClose(){ clearTimeout(mpRetry); mpRetry=null; mpShutdown(); MP=null; 
 function mpStore(d){ try{ localStorage.setItem(MP_SAVE,JSON.stringify({code:MP.code,role:MP.role,me:ME,foe:MP.foe,state:d})); }catch(e){} }
 function mpReadSave(){ try{ const d=JSON.parse(localStorage.getItem(MP_SAVE)||'null'); return d&&d.state&&Array.isArray(d.state.units)?d:null; }catch(e){ return null; } }
 function mpClearSave(){ try{ localStorage.removeItem(MP_SAVE); }catch(e){} }
-function mpPack(){ const d=packState(); d.fogs={...(MP.fogs||{}),[ME]:myFog()}; d.match=MP.match; d.seq=MP.seq; d.host=MP.role==='host'?ME:MP.foe; return d; }
+function mpPack(){ const d=packState(); d.fogs={...(MP.fogs||{}),[ME]:myFog()}; d.match=MP.match; d.seq=MP.seq; d.host=MP.role==='host'?ME:MP.foe; d.events=mpEvents.slice(); return d; }
 function mpSendState(){
   if(!MP) return; MP.seq++; const d=mpPack(); MP.fogs=d.fogs; if(!over) mpStore(d);
+  mpEvents=[];
   if(mpConn) mpConn.send({t:'state',state:d});
   else log(`${FACTIONS[MP.foe].name} is offline. Your turn is saved and goes to them when they reconnect.`,'sys');
 }
 // load a state that came from the other player (or from this computer's match record)
-function mpApply(d,fresh){
+const mpAll=()=>[...units,...units.flatMap(u=>u.cargo)];
+const mpSnapMine=()=>({hp:new Map(mpAll().filter(u=>u.team===ME).map(u=>[u.id,u.hp])), mines:minesOf(ME), keeps:keepsOf(ME)});
+// a turn arrives: play back what the other side did (only what your fog lets you see), then load the exact result
+async function mpReceive(d){
+  if(!MP||d.match!==MP.match||(d.seq||0)<=MP.seq) return;      // stale or duplicate
+  const before=mpSnapMine();
+  if(Array.isArray(d.events)&&d.events.length&&gameStarted&&!over){
+    mpReplaying=true; mpFast=false; busy=true; clearSel(); recruitType=null; spawnSet=[]; refreshUI();
+    banner(`${FACTIONS[MP.foe].short}'s Turn`); log(`Watching the ${FACTIONS[MP.foe].name} move… (click the map or press Space to skip)`,'sys');
+    const byId=id=>units.find(u=>u.id===id);
+    try{
+      for(const e of d.events){
+        if(!MP) break;
+        if(e.k==='move'){ const u=byId(e.id); if(!u||!e.path||e.path.length<2) continue; u.c=e.path[0].c; u.r=e.path[0].r; await moveUnit(u,e.path); }
+        else if(e.k==='strike'){ const a=byId(e.a), t=byId(e.d); if(!a||!t) continue; await strike(a,t,e.amt,e.ctr); }
+        else if(e.k==='spawn'){ if(e.u&&TYPES[e.u.key]&&!mpAll().some(u=>u.id===e.u.id)) units.push({...e.u,type:TYPES[e.u.key],anim:null,off:{x:0,y:0},alpha:1,aboard:null,cargo:[]}); }
+        if(!mpFast) refreshUI();
+      }
+    }catch(err){ console.error(err); }
+    mpReplaying=false; mpFast=false; if(MP) await sleep(200);
+  }
+  if(MP) mpApply(d,false,before);
+}
+function mpApply(d,fresh,given){
   const prevOmen=omenNow?JSON.stringify(omenNow):null;
-  const all=()=>[...units,...units.flatMap(u=>u.cargo)];
-  const before=fresh?null:{hp:new Map(all().filter(u=>u.team===ME).map(u=>[u.id,u.hp])), mines:minesOf(ME), keeps:keepsOf(ME)};
-  restoreState(d);
+  const all=mpAll;
+  const before=fresh?null:(given||mpSnapMine());
+  restoreState(d); mpEvents=[];
   MP.fogs=d.fogs||{}; MP.seq=d.seq||0; MP.match=d.match;
   const F=MP.fogs[ME];
   explored=new Set(F?F.explored:[]); seenMine=new Map(F?F.seenMine:[]); seenKeep=F?F.seenKeep.slice():[null,null,null,null]; seenTower=new Map(F?F.seenTower:[]); barbSeen=new Set(F?F.barbSeen:[]);
@@ -504,8 +530,9 @@ function mpApply(d,fresh){
     const o=OMENS[omenNow.type]; log(`Omen: ${o.name}. ${o.rule}`,'sys'); showOmenSplash(omenNow); omenSting(omenNow.type); startAmbience(omenNow.type);
   } else if(!omenNow&&prevOmen) stopAmbience();
   refreshOmenPanel(); refreshUI(); checkEnd();
-  if(!over&&side===ME&&!fresh){ banner('Your Turn'); sfx('turn'); log(`— Turn ${turn}: your move —`,'sys'); }
+  if(!over&&side===ME&&!fresh){ banner('Your Turn'); sfx('turn'); log(`— Turn ${turn}: your move —`,'sys'); mpPayLog(); }
 }
+function mpPayLog(){ if(lastPay[ME]) { log(`${FACTIONS[ME].name}: +${lastPay[ME]} gold (${gold[ME]} total).`,'t'+ME); sfx('coin'); } }
 async function mpEndTurn(){
   const first=Math.min(ME,MP.foe), second=Math.max(ME,MP.foe);
   if(ME===first){ side=second; startTeamTurn(second); }
@@ -551,15 +578,13 @@ function mpOnMsg(m){
     const local=mpReadSave(), mine=local&&local.state.match===m.state.match&&(local.state.seq||0)>(m.state.seq||0)?local.state:null;
     logEl.innerHTML=''; stopAmbience(); loadOmenSfx(); mpApply(mine||m.state,true);
     log(`Head to head: you are the ${FACTIONS[ME].name} vs the ${FACTIONS[MP.foe].name}. ${side===ME?'You move first.':'They move first.'}`,'sys');
+    if(side===ME) mpPayLog();
     if(mine) mpConn.send({t:'state',state:mine});            // our turn happened while we were apart: hand it over
     if(!gameStarted) enterGame(); else { refreshUI(); banner(side===ME?'Your Turn':'Reconnected'); }
     if(omenNow) startAmbience(omenNow.type);
     return;
   }
-  if(m.t==='state'&&m.state&&gameStarted){
-    if(m.state.match!==MP.match||(m.state.seq||0)<=MP.seq) return;   // stale or duplicate
-    mpApply(m.state,false);
-  }
+  if(m.t==='state'&&m.state&&gameStarted){ const st=m.state; mpQueue=mpQueue.then(()=>mpReceive(st)).catch(e=>console.error(e)); }
 }
 
 // ---- lobby screens (shown over the title)
@@ -736,7 +761,7 @@ function newGame(seed){
   else log(`Welcome to Ray's Realm. Capture ${enemyWord()} to rule the realm — and guard your own!`,'sys');
   if(!MP&&enemyCount<3) log(`You face ${enemyCount} enem${enemyCount>1?'ies':'y'}. The empty corner keep${enemyCount<2?'s are':' is'} abandoned: claim ${enemyCount<2?'them':'it'} for gold and income.`,'sys');
   log(`Map seed ${mapSeed}.`,'sys');
-  startTeamTurn(side); refreshUI(); scrollToKeep();
+  startTeamTurn(side); mpEvents=[]; refreshUI(); scrollToKeep();
 }
 
 // ---------------------------------------------------------------- audio
@@ -886,7 +911,7 @@ function buildTower(team,c,r){
 }
 function recruit(team,type,c,r,tw){
   const T=TYPES[type]; gold[team]-=T.cost; if(tw) towerUsed.add(tw); else if(!T.merc) recruitsUsed[team]++;
-  const u=makeUnit(type,team,c,r); u.done=true; u.moved=true; u.mp=0; units.push(u);
+  const u=makeUnit(type,team,c,r); u.done=true; u.moved=true; u.mp=0; units.push(u); mpRec({k:'spawn',u:packUnit(u)});
   if(team===ME||isVis(c,r)){ const p=center(c,r); effects.push({ring:true,x:p.x,y:p.y-S*0.3,t0:performance.now(),life:500,color:'#9be28a'});
     log(T.merc?`${FACTIONS[team].short} hires a Mercenary (-${T.cost}g).`:`${FACTIONS[team].short} recruits ${u.name} at ${tw?'a fort':'the keep'} (-${T.cost}g).`,'t'+team); sfx('recruit'); }
 }
@@ -933,7 +958,7 @@ function startTeamTurn(t){
   healTeam(t); recruitsUsed[t]=0;
   for(const [k,tm] of towers) if(tm===t) towerUsed.delete(k);
   units.filter(u=>u.team===t).forEach(u=>{u.done=false;u.moved=false;u.steps=0;u.mp=u.type.mv;u.cargo.forEach(c=>{c.done=false;c.moved=false;c.steps=0;c.mp=c.type.mv;});});
-  const inc=income(t); gold[t]+=inc;
+  const inc=income(t); gold[t]+=inc; lastPay[t]=inc;
   if(t===ME) log(`${FACTIONS[t].name}: +${inc} gold (${gold[t]} total).`,'t'+t);
 }
 
@@ -1085,6 +1110,7 @@ setInterval(()=>{ if(muted&&wxA) stopAmbience(); else if(!muted&&!wxA&&omenNow&&
 // ---------------------------------------------------------------- async helpers
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 function tween(ms,fn){
+  if(mpFast){ fn(1); return Promise.resolve(); }   // replay skipped: jump straight to the end
   return new Promise(res=>{
     const t0=performance.now();
     (function f(now){ const t=Math.min(1,(now-t0)/ms); fn(t); t<1?requestAnimationFrame(f):res(); })(t0);
@@ -1118,6 +1144,7 @@ function ensureInView(pt){
 }
 
 async function moveUnit(u,path){
+  mpRec({k:'move',id:u.id,path:path.map(p=>({c:p.c,r:p.r}))});
   for(let i=1;i<path.length;i++){
     if(u.team===ME) revealAround(path[i].c,path[i].r,u.type.vision||VISION);
     // animate and make footstep noise only for steps you can actually see (either end of the step in view)
@@ -1137,6 +1164,7 @@ function pathTo(info,c,r){
 function addText(x,y,text,color){ effects.push({x,y,text,color,t0:performance.now(),life:1200}); }
 
 async function strike(a,d,amount,counter){
+  mpRec({k:'strike',a:a.id,d:d.id,amt:amount,ctr:!!counter});
   a.fought=true; d.fought=true;
   if(!(unitVisible(a)||unitVisible(d))){
     d.hp=Math.max(0,d.hp-amount);
@@ -1187,7 +1215,7 @@ async function performAttack(a,d){
   checkEnd();
 }
 function checkEnd(){
-  if(over) return;
+  if(over||mpReplaying) return;
   for(let t=0;t<4;t++) if(!elim[t] && alive(t).length===0 && gold[t]<MIN_COST){
     elim[t]=true; log(`${FACTIONS[t].name} has been eliminated!`,'sys');
   }
@@ -1503,12 +1531,12 @@ function spawnBarbUnit(tw,force){
   const spots=neighbors(tw.c,tw.r).filter(([c,r])=>tileCost('ground',c,r)!=null&&!unitAt(c,r)); if(!spots.length) return null;
   const [c,r]=spots[Math.floor(Math.random()*spots.length)];
   const u=makeUnit(Math.random()<0.5?'barbrider':'barbarcher',BARB_TEAM,c,r);
-  u.home=tw.id; u.hc=tw.c; u.hr=tw.r; u.done=true; u.moved=true; u.mp=0; units.push(u); return u;
+  u.home=tw.id; u.hc=tw.c; u.hr=tw.r; u.done=true; u.moved=true; u.mp=0; units.push(u); mpRec({k:'spawn',u:packUnit(u)}); return u;
 }
 function spawnBarbTower(){
   const cand=barbCandidates(); if(!cand.length) return null;
   const p=cand[Math.floor(Math.random()*cand.length)];
-  const tw=makeUnit('barbtower',BARB_TEAM,p.c,p.r); units.push(tw); spawnBarbUnit(tw); return tw;
+  const tw=makeUnit('barbtower',BARB_TEAM,p.c,p.r); units.push(tw); mpRec({k:'spawn',u:packUnit(tw)}); spawnBarbUnit(tw); return tw;
 }
 async function barbTurn(){
   const mine=()=>units.filter(u=>u.team===BARB_TEAM);
@@ -1949,9 +1977,10 @@ window.addEventListener('DOMContentLoaded',async()=>{
       if(d0.moved){ sc.scrollLeft=d0.sl-dx; sc.scrollTop=d0.st-dy; } });
     window.addEventListener('pointerup',()=>{ if(d0&&d0.moved){ window.__dragged=true; setTimeout(()=>window.__dragged=false,0); } d0=null; });
   }
-  canvasEl.addEventListener('click',e=>{ if(window.__dragged) return; const {x,y}=evPos(e); const p=pick(x,y); if(p.cell) onTile(p.cell.c,p.cell.r,p.unit); else if(!busy){ if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); } });
+  canvasEl.addEventListener('click',e=>{ if(mpReplaying){ mpFast=true; return; } if(window.__dragged) return; const {x,y}=evPos(e); const p=pick(x,y); if(p.cell) onTile(p.cell.c,p.cell.r,p.unit); else if(!busy){ if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); } });
   canvasEl.addEventListener('contextmenu',e=>{ e.preventDefault(); if(busy) return; if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); });
   window.addEventListener('keydown',e=>{
+    if(mpReplaying){ if(e.key===' '||e.key==='Escape'||e.key==='Enter'){ e.preventDefault(); mpFast=true; } return; }
     if(e.key==='Escape'&&!busy){ if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); }
     if((e.key===' '||e.key==='w')&&sel&&!busy){ e.preventDefault(); finishUnit(sel); }
     if((e.key==='u'||e.key==='U'||((e.ctrlKey||e.metaKey)&&e.key==='z'))&&!busy){ e.preventDefault(); undoLast(); }
