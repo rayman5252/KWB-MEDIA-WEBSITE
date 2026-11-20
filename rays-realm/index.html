@@ -1226,6 +1226,23 @@ function checkEnd(){
   refreshUI();
 }
 
+// ---- the king's privilege: type 5252 then Enter on your turn for a free dragon at your keep
+let cheatBuf='';
+function secretDragon(){
+  if(!gameStarted||busy||over||side!==ME) return;
+  const T=TYPES.dragon, homes=KEEPS.filter((k,i)=>keepOwner[i]===ME); if(!T||!homes.length) return;
+  const spots=[]; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(unitAt(c,r)||tileCost(T.cls,c,r)==null) continue;
+    const d=Math.min(...homes.map(([kc,kr])=>hexDist({c,r},{c:kc,r:kr}))); if(d>=1&&d<=3) spots.push({c,r,d}); }
+  if(!spots.length){ log('The dragon circles, but there is no room near your keep to land.','sys'); return; }
+  spots.sort((a,b)=>a.d-b.d); const {c,r}=spots[0];
+  undoSnap=takeSnap('dragon');
+  const u=makeUnit('dragon',ME,c,r); u.done=true; u.moved=true; u.mp=0; units.push(u); mpRec({k:'spawn',u:packUnit(u)});
+  const p=center(c,r); effects.push({ring:true,x:p.x,y:p.y-S*0.3,t0:performance.now(),life:700,color:'#ff6a1a'}); addText(p.x,p.y-S*1.4,'A dragon answers!','#ff9a3a');
+  log('A dragon answers your call. It rests at your keep until next turn.','t'+ME); sfx('recruit'); sfx('fire');
+  clearSel(); recruitType=null; spawnSet=[]; updateVision(); refreshUI();
+}
+
 // ---------------------------------------------------------------- player input
 function clearSel(){ sel=null; moveInfo=null; targets=[]; boardShips=[]; }
 const canStrike = u => !u.type.noattack && !(u.type.stat&&u.moved) && targetsFrom(u,u.c,u.r).length>0;
@@ -1981,6 +1998,9 @@ window.addEventListener('DOMContentLoaded',async()=>{
   canvasEl.addEventListener('contextmenu',e=>{ e.preventDefault(); if(busy) return; if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); });
   window.addEventListener('keydown',e=>{
     if(mpReplaying){ if(e.key===' '||e.key==='Escape'||e.key==='Enter'){ e.preventDefault(); mpFast=true; } return; }
+    if(/^[0-9]$/.test(e.key)) cheatBuf=(cheatBuf+e.key).slice(-4);
+    else if(e.key==='Enter'&&cheatBuf==='5252'){ e.preventDefault(); cheatBuf=''; secretDragon(); return; }   // ssh. don't tell the barbarians
+    else if(e.key!=='Shift') cheatBuf='';
     if(e.key==='Escape'&&!busy){ if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); }
     if((e.key===' '||e.key==='w')&&sel&&!busy){ e.preventDefault(); finishUnit(sel); }
     if((e.key==='u'||e.key==='U'||((e.ctrlKey||e.metaKey)&&e.key==='z'))&&!busy){ e.preventDefault(); undoLast(); }
