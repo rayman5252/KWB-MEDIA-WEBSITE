@@ -112,6 +112,10 @@
   .scene h2{font-family:Cinzel,Georgia,serif;font-size:clamp(44px,9vw,104px);margin:0;color:var(--gold);letter-spacing:.06em;text-shadow:0 4px 18px #000,0 0 40px #000}
   .scene .tag{font-size:clamp(15px,2.4vw,22px);margin:6px 0 26px;text-shadow:0 2px 8px #000;color:#f3e6c4}
   .scene button{font-size:20px;padding:14px 40px}
+  #armypick{display:flex;align-items:center;gap:6px;margin:0 6px 12px;padding:6px 6px 6px 12px;background:#000a;border:1px solid #ffffff30;border-radius:8px;font-family:Cinzel,Georgia,serif;font-size:15px;color:var(--gold);text-shadow:0 2px 6px #000}
+  #armypick span{margin-right:6px}
+  #armypick button{font-size:16px;padding:6px 14px;background:linear-gradient(#d9ccaa,#b4a279);box-shadow:0 2px 0 #6d5f3f}
+  #armypick button.on{background:linear-gradient(#f0cd6a,#c9962b);box-shadow:0 2px 0 #7a5614,0 0 0 2px #fff8 inset}
   .scene details{margin-top:22px;text-align:left;background:#000a;border-radius:8px;padding:8px 14px;font-size:14px;line-height:1.5}
   .scene summary{cursor:pointer;text-align:right;font-family:Cinzel,Georgia,serif;color:var(--gold)}
   .scene ul{margin:8px 0 4px;padding-left:20px}
@@ -151,6 +155,7 @@
 <div id="defeat" class="scene hidden"><video id="defvid" src="assets/defeat.mp4" preload="auto" playsinline></video><div class="shade"></div><div id="deftext">DEFEAT</div></div>
 <div id="title" class="scene"><video id="titlevid" muted loop playsinline autoplay></video><img class="bgm" id="titleimg" alt="" style="display:none"><div class="shade"></div>
   <div class="box"><h2>Ray's Realm</h2><div class="tag">Four armies. One crown. Hold the gold, rule the realm.</div>
+  <div id="armypick"><span>Enemy armies</span><button data-n="1">1</button><button data-n="2">2</button><button data-n="3">3</button></div>
   <button id="continue" style="display:none;margin:0 6px 10px">Continue</button>
   <button id="go" style="margin:0 6px 10px">Begin Battle</button>
   <a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a>
@@ -170,7 +175,8 @@
     <li><b>Healing:</b> wounded units that stay out of battle recover 5% of their health each turn, or 10% if they end within 2 hexes of a keep or fort you hold.</li>
     <li>Defenders counter-attack if the attacker is within their range.</li>
     <li><b>Saving:</b> the game saves itself at the start of each of your turns and when you close the page, and you can press <b>Save</b> (or S) any time on your turn. Use <b>Continue</b> on this screen to pick up where you left off. There is one save slot per browser; it is cleared when a battle is won or lost.</li>
-    <li><b>Victory:</b> capture all three enemy keeps by ending a move on them. Taking a keep also loots 5–25 gold. Lose your own keep — or your whole army and gold — and the realm is lost.</li>
+    <li><b>Enemy armies:</b> choose to face 1, 2 or 3 computer armies before a New Battle. Any empty corner keeps are abandoned: march in to claim them for loot and income (the enemy may grab them too).</li>
+    <li><b>Victory:</b> capture every enemy keep by ending a move on it. Taking a keep also loots 5–25 gold. Lose your own keep — or your whole army and gold — and the realm is lost.</li>
   </ul></details></div></div>
 
 <script>
@@ -288,6 +294,12 @@ function tileCost(cls,c,r){
 }
 
 // ---------------------------------------------------------------- state
+// how many enemy armies you face (chosen on the title screen). Unused corners are left as abandoned keeps anyone can claim.
+const ENEMY_SETS={1:[2],2:[1,3],3:[1,2,3]};   // one enemy sits in the far corner; two take the neighbouring corners
+let enemyCount=3, activeArmies=[true,true,true,true];
+try{ const n=+localStorage.getItem('raysRealm.enemies'); if(ENEMY_SETS[n]) enemyCount=n; }catch(e){}
+const setArmies = n => { enemyCount=ENEMY_SETS[n]?n:3; activeArmies=[0,1,2,3].map(t=>t===0||ENEMY_SETS[enemyCount].includes(t)); };
+const enemyWord = () => ['','the enemy keep','both enemy keeps','all three enemy keeps'][enemyCount];
 let units=[], turn=1, side=0, sel=null, hover=null, busy=false, over=false;
 let moveInfo=null, targets=[], recruitType=null, spawnSet=[], boardShips=[], undoSnap=null;
 let gold=[0,0,0,0], elim=[false,false,false,false], mineOwner=new Map(), keepOwner=[0,1,2,3];
@@ -339,7 +351,7 @@ function packUnit(u){
 const canSave = () => gameStarted && !over && side===0 && !busy && MAP.length>0;
 function saveGame(quiet){
   if(!canSave()){ if(!quiet&&busy) log('Wait for the other armies to finish their turns, then save.','sys'); return false; }
-  const data={v:1, savedAt:Date.now(), mapSeed, turn, uid, gold, recruitsUsed, elim, keepOwner, seenKeep,
+  const data={v:1, savedAt:Date.now(), enemyCount, mapSeed, turn, uid, gold, recruitsUsed, elim, keepOwner, seenKeep,
     mineOwner:[...mineOwner], towers:[...towers], towerUsed:[...towerUsed], explored:[...explored], seenMine:[...seenMine], seenTower:[...seenTower],
     barbSeen:[...barbSeen], omenNow, omenNext, omenLast,
     aiFog:aiFog.map(F=>F&&{explored:[...F.explored], seenMine:[...F.seenMine], seenKeep:F.seenKeep}),
@@ -352,7 +364,7 @@ function saveGame(quiet){
 function readSave(){ try{ const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); return d&&d.v===1&&Array.isArray(d.units)?d:null; }catch(e){ return null; } }
 function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
 function loadGame(d){
-  undoSnap=null; mapSeed=d.mapSeed; generateMap(mapSeed); resize();
+  undoSnap=null; setArmies(d.enemyCount??3); mapSeed=d.mapSeed; generateMap(mapSeed); resize();
   const unpack=(o,ship)=>{ const T=TYPES[o.key]; if(!T) return null;
     const u={...o, type:T, anim:null, off:{x:0,y:0}, alpha:1, aboard:ship||null, cargo:[]};
     u.cargo=(o.cargo||[]).map(c=>unpack(c,u)).filter(Boolean); return u; };
@@ -367,7 +379,7 @@ function loadGame(d){
   [1,2,3,4].forEach(updateAIVision);
   stopAmbience(); omenNow=d.omenNow; omenNext=d.omenNext; omenLast=d.omenLast; loadOmenSfx(); refreshOmenPanel();
   updateVision(); logEl.innerHTML='';
-  log(`Saved game loaded: turn ${turn} (map seed ${mapSeed}).`,'sys');
+  log(`Saved game loaded: turn ${turn}, ${enemyCount} enem${enemyCount>1?'ies':'y'} (map seed ${mapSeed}).`,'sys');
   if(omenNow) log(`Omen in effect: ${OMENS[omenNow.type].name}. ${OMENS[omenNow.type].rule}`,'sys');
   refreshUI();
   { const sc=document.getElementById('scroller'), q=center(KEEPS[0][0],KEEPS[0][1]); sc.scrollLeft=Math.max(0,q.x-sc.clientWidth*0.3); sc.scrollTop=Math.max(0,q.y-sc.clientHeight*0.4); }
@@ -485,14 +497,16 @@ function generateMap(seed){
 function newGame(seed){
   undoSnap=null; mapSeed=seed??((Math.random()*1e9)|0);
   const info=generateMap(mapSeed); resize();
-  units = START.map(([t,team,c,r]) => makeUnit(t,team,c,r));
+  setArmies(enemyCount);
+  units = START.filter(([t,team])=>activeArmies[team]).map(([t,team,c,r]) => makeUnit(t,team,c,r));
   turn=1; side=0; sel=null; moveInfo=null; targets=[]; recruitType=null; spawnSet=[]; busy=false; over=false; effects=[]; proj=null;
-  gold=[2,2,2,2]; recruitsUsed=[0,0,0,0]; elim=[false,false,false,false]; mineOwner=new Map(); keepOwner=[0,1,2,3]; towers=new Map(); towerUsed=new Set();
+  gold=activeArmies.map(a=>a?2:0); recruitsUsed=[0,0,0,0]; elim=activeArmies.map(a=>!a); mineOwner=new Map(); keepOwner=[0,1,2,3].map(t=>activeArmies[t]?t:4); towers=new Map(); towerUsed=new Set();
   omenNow=null; omenLast=null; stopAmbience(); omenNext=rollOmen(2); refreshOmenPanel(); loadOmenSfx();
   explored=new Set(); visible=new Set(); seenMine=new Map(); seenKeep=[null,null,null,null]; seenTower=new Map();
-  MINES.forEach(m=>mineOwner.set(key(m.c,m.r),info.owners[key(m.c,m.r)]??null));
+  MINES.forEach(m=>{ const o=info.owners[key(m.c,m.r)]; mineOwner.set(key(m.c,m.r),o!=null&&activeArmies[o]?o:null); });
   resetAIFog(); updateVision(); barbSeen=new Set(); for(let i=0;i<3;i++) spawnBarbTower(); updateVision(); logEl.innerHTML='';
-  log("Welcome to Ray's Realm. Capture all three enemy keeps to rule the realm — and guard your own!",'sys');
+  log(`Welcome to Ray's Realm. Capture ${enemyWord()} to rule the realm — and guard your own!`,'sys');
+  if(enemyCount<3) log(`You face ${enemyCount} enem${enemyCount>1?'ies':'y'}. The empty corner keep${enemyCount<2?'s are':' is'} abandoned: claim ${enemyCount<2?'them':'it'} for gold and income.`,'sys');
   log(`Map seed ${mapSeed}.`,'sys');
   startTeamTurn(0); refreshUI();
   { const sc=document.getElementById('scroller'), q=center(KEEPS[0][0],KEEPS[0][1]); sc.scrollLeft=Math.max(0,q.x-sc.clientWidth*0.3); sc.scrollTop=Math.max(0,q.y-sc.clientHeight*0.4); }
@@ -657,10 +671,10 @@ function captureAt(u){
   if(tileCh(u.c,u.r)==='K'){
     const i=KEEPS.findIndex(k=>k[0]===u.c&&k[1]===u.r);
     if(i>=0&&keepOwner[i]!==u.team){
-      keepOwner[i]=u.team; const p=center(u.c,u.r);
+      const abandoned=keepOwner[i]===4; keepOwner[i]=u.team; const p=center(u.c,u.r);
       const loot=5+Math.floor(Math.random()*21); gold[u.team]+=loot;
       if(seen){ addText(p.x,p.y-S*1.4,`Keep looted! +${loot}🪙`,FACTIONS[u.team].color);
-        log(`${FACTIONS[u.team].name} captures the ${FACTIONS[i].short} keep and loots ${loot} gold!`,'sys'); sfx('coin'); }
+        log(`${FACTIONS[u.team].name} ${abandoned?'claims the abandoned':'captures the'} ${FACTIONS[i].short} keep and loots ${loot} gold!`,'sys'); sfx('coin'); }
       checkEnd();
     }
     return;
@@ -952,7 +966,7 @@ function checkEnd(){
   }
   if(!keepOwner.includes(0)){ over=true; showEnd(false,'Your keep has fallen. The realm is lost…'); }
   else if(elim[0]){ over=true; showEnd(false,'Your army is destroyed and your coffers are empty…'); }
-  else if(keepOwner.every(o=>o===0)){ over=true; showEnd(true); }
+  else if(!keepOwner.some(o=>o>=1&&o<=3)){ over=true; showEnd(true); }   // no enemy army holds a keep (abandoned ones don't count)
   refreshUI();
 }
 
@@ -1348,7 +1362,7 @@ function refreshUI(){
   updateVision();
   const p=document.getElementById('turn');
   setHTML('turn',`<b>Turn ${turn}</b><span class="pill" style="background:${FACTIONS[side].color}">${side===0?'Your move':FACTIONS[side].short+' moves'}</span><span>🪙 ${gold[0]}</span>`);
-  setHTML('factions',FACTIONS.slice(0,4).map((f,i)=>`<div class="frow ${side===i&&!over?'active':''} ${elim[i]?'out':''}"><span class="dot" style="background:${f.color}"></span><span>${f.name}</span>
+  setHTML('factions',FACTIONS.slice(0,4).map((f,i)=>!activeArmies[i]?'':`<div class="frow ${side===i&&!over?'active':''} ${elim[i]?'out':''}"><span class="dot" style="background:${f.color}"></span><span>${f.name}</span>
     <span class="n">⚔ ${i===0?alive(0).length:'?'}</span><span class="n">⛏ ${i===0?minesOf(0):MINES.filter(m=>seenMine.get(key(m.c,m.r))===i).length}</span><span class="n">🏰 ${i===0?keepOwner.filter(o=>o===0).length:seenKeep.filter(o=>o===i).length}</span><span class="n">🪙 ${i===0?`${gold[0]} <small>(+${income(0)})</small>`:'?'}</span></div>`).join(''));
   const hu=hover&&unitAt(hover.c,hover.r), shown=(hu&&unitVisible(hu)?hu:null)||sel;
   setHTML('card', shown ? cardHTML(shown,previewFor(shown))
@@ -1436,12 +1450,17 @@ function showIntro(){
   v.src='assets/title.mp4'; tryImg();
   playMusic(true);
   const go=document.getElementById('go'), cont=document.getElementById('continue'), save=readSave();
-  const enter=()=>{ t.classList.add('hidden'); v.pause(); stopMusic(); gameStarted=true; playAmbient(); sfx('turn'); banner('Your Turn'); };
+  const enter=()=>{ t.classList.add('hidden'); v.pause(); stopMusic(); gameStarted=true; refreshUI(); playAmbient(); sfx('turn'); banner('Your Turn'); };
   cont.style.display=save?'':'none';
   if(save) cont.textContent=`Continue — Turn ${save.turn}`;
   go.textContent=save?'New Battle':'Begin Battle';
   go.title=save?'Start a fresh map. Your saved game is replaced once you play.':'';
-  go.onclick=enter;
+  const pick=document.getElementById('armypick');
+  const mark=()=>pick.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.n===enemyCount));
+  pick.querySelectorAll('button').forEach(b=>b.onclick=()=>{ enemyCount=+b.dataset.n; try{ localStorage.setItem('raysRealm.enemies',enemyCount); }catch(e){} mark(); sfx('step'); });
+  mark();
+  pick.title='How many computer armies you fight in a New Battle';
+  go.onclick=()=>{ newGame(); enter(); };   // fresh map with the chosen number of enemies
   cont.onclick=()=>{
     const d=readSave();
     if(d){ try{ loadGame(d); }catch(e){ console.error(e); newGame(); log('That saved game could not be loaded, so a new battle has begun.','sys'); } }
