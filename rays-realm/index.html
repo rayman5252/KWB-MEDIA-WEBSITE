@@ -97,8 +97,24 @@
   @keyframes splash{0%{opacity:0}10%{opacity:1}78%{opacity:1}100%{opacity:0}}
   @keyframes splashIcon{0%{transform:scale(.4) rotate(-12deg)}14%{transform:scale(1.12) rotate(2deg)}24%{transform:scale(1) rotate(0)}100%{transform:scale(1.06)}}
   @keyframes ban{0%{opacity:0;transform:scale(.8)}15%{opacity:1;transform:scale(1)}75%{opacity:1}100%{opacity:0;transform:scale(1.05)}}
-  #overlay{position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:5;padding:16px}
+  #overlay{position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:12;padding:16px}
   #overlay.hidden{display:none}
+  .panel.mp{max-width:760px;width:100%}
+  .panel.mp h3{font-family:Cinzel,Georgia,serif;margin:4px 0 8px;font-size:18px}
+  .panel .lab{font-size:13px;opacity:.75;margin-bottom:6px}
+  .mpgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:14px 0;text-align:left}
+  .mpgrid>div{background:#0000000f;border:1px solid #00000025;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px}
+  .mparmies{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .mparmies.big{margin:14px 0}
+  .mparmy{display:flex;align-items:center;gap:7px;font-size:13px;padding:9px 8px;background:linear-gradient(#efe4c6,#d6c69c);box-shadow:0 2px 0 #8a7a52;text-align:left}
+  .mparmy i{width:12px;height:12px;border-radius:50%;background:var(--fc);flex:none;box-shadow:0 0 0 2px #0004}
+  .mparmy.on{outline:3px solid var(--fc);background:linear-gradient(#f0cd6a,#c9962b)}
+  .mparmy:disabled{opacity:.35;cursor:not-allowed}
+  #mpCode{font-family:Cinzel,Georgia,serif;font-size:26px;letter-spacing:.3em;text-align:center;padding:8px;border-radius:6px;border:2px solid #00000040;background:#fffaf0;text-transform:uppercase}
+  #mpStatus{min-height:22px;font-size:15px;line-height:1.5;margin:6px 0 10px}
+  #mpStatus.bad{color:#a12a1a;font-weight:bold}
+  .mpcode{font-family:Cinzel,Georgia,serif;font-size:44px;letter-spacing:.25em;font-weight:700;margin:6px 0;color:#2b1d10}
+  @media (max-width:640px){ .mpgrid{grid-template-columns:1fr} }
   .panel{max-width:540px;background:var(--parch);color:var(--ink);border-radius:12px;padding:24px 28px;border:3px solid var(--gold);text-align:center;box-shadow:0 10px 50px #000}
   .panel h2{font-family:Cinzel,Georgia,serif;font-size:32px;margin:0 0 6px;letter-spacing:.05em}
   .panel p{line-height:1.5;margin:8px 0;font-size:15px}
@@ -158,6 +174,7 @@
   <div id="armypick"><span>Enemy armies</span><button data-n="1">1</button><button data-n="2">2</button><button data-n="3">3</button></div>
   <button id="continue" style="display:none;margin:0 6px 10px">Continue</button>
   <button id="go" style="margin:0 6px 10px">Begin Battle</button>
+  <button id="mpopen" class="sec" style="margin:0 6px 10px;font-size:16px;padding:10px 26px">⚔ Head to Head Online</button>
   <a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a>
   <div id="musicnote" style="display:none;margin-top:10px;font-size:13px;opacity:.85;text-shadow:0 2px 6px #000">♪ Click anywhere to start the music</div>
   <details><summary>How to play</summary><ul>
@@ -176,6 +193,7 @@
     <li>Defenders counter-attack if the attacker is within their range.</li>
     <li><b>Saving:</b> the game saves itself at the start of each of your turns and when you close the page, and you can press <b>Save</b> (or S) any time on your turn. Use <b>Continue</b> on this screen to pick up where you left off. There is one save slot per browser; it is cleared when a battle is won or lost.</li>
     <li><b>Enemy armies:</b> choose to face 1, 2 or 3 computer armies before a New Battle. Any empty corner keeps are abandoned: march in to claim them for loot and income (the enemy may grab them too).</li>
+    <li><b>Head to Head Online:</b> play a friend on another computer. One of you picks an army and creates a match, then texts the 5-letter code; the other joins and picks a different army. Only your two armies are on the map, with twice the barbarians. Each turn is sent automatically when you press End Turn. If the connection drops, the guest reconnects on their own; the host can use Resume match.</li>
     <li><b>Victory:</b> capture every enemy keep by ending a move on it. Taking a keep also loots 5–25 gold. Lose your own keep — or your whole army and gold — and the realm is lost.</li>
   </ul></details></div></div>
 
@@ -300,6 +318,7 @@ let enemyCount=3, activeArmies=[true,true,true,true];
 try{ const n=+localStorage.getItem('raysRealm.enemies'); if(ENEMY_SETS[n]) enemyCount=n; }catch(e){}
 const setArmies = n => { enemyCount=ENEMY_SETS[n]?n:3; activeArmies=[0,1,2,3].map(t=>t===0||ENEMY_SETS[enemyCount].includes(t)); };
 const enemyWord = () => ['','the enemy keep','both enemy keeps','all three enemy keeps'][enemyCount];
+let ME=0, MP=null;   // ME: the army this computer plays; MP: online head-to-head session (null in a normal game)
 let units=[], turn=1, side=0, sel=null, hover=null, busy=false, over=false;
 let moveInfo=null, targets=[], recruitType=null, spawnSet=[], boardShips=[], undoSnap=null;
 let gold=[0,0,0,0], elim=[false,false,false,false], mineOwner=new Map(), keepOwner=[0,1,2,3];
@@ -309,7 +328,7 @@ let effects=[], proj=null, logEl, S=40, ox=0, oy=0, dpr=1, bg=null, uid=0;
 function makeUnit(type,team,c,r){
   const T=TYPES[type];
   return {id:++uid,type:T,key:type,team,c,r,hp:T.hp,mp:T.mv,moved:false,done:false,steps:0,anim:null,cargo:[],aboard:null,off:{x:0,y:0},alpha:1,
-          name: (team===0||T.barb) ? T.name : FACTIONS[team].short+' '+T.short, sprite:spriteKey(team,type), rounds:T.merc?MERC_ROUNDS+1:null};
+          name: ((team===ME&&!MP)||T.barb) ? T.name : FACTIONS[team].short+' '+T.short, sprite:spriteKey(team,type), rounds:T.merc?MERC_ROUNDS+1:null};
 }
 const unitAt = (c,r) => units.find(u => u.c===c && u.r===r);
 const alive = team => units.filter(u => u.team===team);
@@ -329,7 +348,7 @@ function takeSnap(label){
     recs:all.map(u=>({u,c:u.c,r:u.r,hp:u.hp,mp:u.mp,moved:u.moved,done:u.done,steps:u.steps,aboard:u.aboard,cargo:[...u.cargo]})) };
 }
 function undoLast(){
-  if(!undoSnap||busy||over||side!==0) return;
+  if(!undoSnap||busy||over||side!==ME) return;
   const z=undoSnap; undoSnap=null;
   for(const q of z.recs){ Object.assign(q.u,{c:q.c,r:q.r,hp:q.hp,mp:q.mp,moved:q.moved,done:q.done,steps:q.steps,aboard:q.aboard,cargo:q.cargo,anim:null,alpha:1,off:{x:0,y:0}}); }
   units=z.units; gold=z.gold; recruitsUsed=z.recruitsUsed; mineOwner=z.mineOwner; keepOwner=z.keepOwner; towers=z.towers; towerUsed=z.towerUsed;
@@ -348,14 +367,18 @@ function packUnit(u){
   const o={}; for(const [k,v] of Object.entries(u)) if(!UNIT_SKIP.has(k)&&(v==null||typeof v!=='object')) o[k]=v;
   o.cargo=u.cargo.map(packUnit); return o;
 }
-const canSave = () => gameStarted && !over && side===0 && !busy && MAP.length>0;
-function saveGame(quiet){
-  if(!canSave()){ if(!quiet&&busy) log('Wait for the other armies to finish their turns, then save.','sys'); return false; }
-  const data={v:1, savedAt:Date.now(), enemyCount, mapSeed, turn, uid, gold, recruitsUsed, elim, keepOwner, seenKeep,
+const canSave = () => gameStarted && !MP && !over && side===ME && !busy && MAP.length>0;
+const myFog = () => ({explored:[...explored], seenMine:[...seenMine], seenKeep:[...seenKeep], seenTower:[...seenTower], barbSeen:[...barbSeen]});
+function packState(){
+  return {v:1, savedAt:Date.now(), enemyCount, mapSeed, turn, side, uid, gold, recruitsUsed, elim, keepOwner, seenKeep,
     mineOwner:[...mineOwner], towers:[...towers], towerUsed:[...towerUsed], explored:[...explored], seenMine:[...seenMine], seenTower:[...seenTower],
-    barbSeen:[...barbSeen], omenNow, omenNext, omenLast,
+    barbSeen:[...barbSeen], omenNow, omenNext, omenLast, armies:activeArmies,
     aiFog:aiFog.map(F=>F&&{explored:[...F.explored], seenMine:[...F.seenMine], seenKeep:F.seenKeep}),
     units:units.map(packUnit)};
+}
+function saveGame(quiet){
+  if(!canSave()){ if(!quiet&&busy) log('Wait for the other armies to finish their turns, then save.','sys'); return false; }
+  const data=packState();
   try{ localStorage.setItem(SAVE_KEY,JSON.stringify(data)); }
   catch(e){ if(!quiet) log('Could not save: this browser is blocking storage (private window?).','sys'); return false; }
   if(!quiet){ log(`Game saved (turn ${turn}).`,'sys'); banner('Game Saved'); sfx('step'); }
@@ -363,27 +386,231 @@ function saveGame(quiet){
 }
 function readSave(){ try{ const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); return d&&d.v===1&&Array.isArray(d.units)?d:null; }catch(e){ return null; } }
 function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
-function loadGame(d){
-  undoSnap=null; setArmies(d.enemyCount??3); mapSeed=d.mapSeed; generateMap(mapSeed); resize();
+// rebuild the whole game from a packed state (a save, or a turn sent by the other player online)
+function restoreState(d){
+  undoSnap=null; setArmies(d.enemyCount??3); if(Array.isArray(d.armies)) activeArmies=d.armies.slice(0,4);
+  if(d.mapSeed!==mapSeed||!MAP.length){ mapSeed=d.mapSeed; generateMap(mapSeed); resize(); }
   const unpack=(o,ship)=>{ const T=TYPES[o.key]; if(!T) return null;
     const u={...o, type:T, anim:null, off:{x:0,y:0}, alpha:1, aboard:ship||null, cargo:[]};
     u.cargo=(o.cargo||[]).map(c=>unpack(c,u)).filter(Boolean); return u; };
   units=d.units.map(o=>unpack(o)).filter(Boolean);
   uid=Math.max(d.uid||0,...units.flatMap(u=>[u.id,...u.cargo.map(c=>c.id)]));
-  turn=d.turn; side=0; sel=null; hover=null; moveInfo=null; targets=[]; recruitType=null; spawnSet=[]; boardShips=[]; busy=false; over=false; effects=[]; proj=null;
+  turn=d.turn; side=d.side??ME; sel=null; hover=null; moveInfo=null; targets=[]; recruitType=null; spawnSet=[]; boardShips=[]; busy=false; over=false; effects=[]; proj=null;
   gold=d.gold; recruitsUsed=d.recruitsUsed; elim=d.elim; keepOwner=d.keepOwner; seenKeep=d.seenKeep;
   mineOwner=new Map(d.mineOwner); towers=new Map(d.towers); towerUsed=new Set(d.towerUsed);
   explored=new Set(d.explored); visible=new Set(); seenMine=new Map(d.seenMine); seenTower=new Map(d.seenTower); barbSeen=new Set(d.barbSeen);
   resetAIFog();
   (d.aiFog||[]).forEach((F,t)=>{ if(F&&aiFog[t]){ aiFog[t].explored=new Set(F.explored); aiFog[t].seenMine=new Map(F.seenMine); aiFog[t].seenKeep=F.seenKeep; } });
-  [1,2,3,4].forEach(updateAIVision);
-  stopAmbience(); omenNow=d.omenNow; omenNext=d.omenNext; omenLast=d.omenLast; loadOmenSfx(); refreshOmenPanel();
-  updateVision(); logEl.innerHTML='';
+  [0,1,2,3,4].forEach(updateAIVision);
+  omenNow=d.omenNow; omenNext=d.omenNext; omenLast=d.omenLast; refreshOmenPanel();
+  updateVision();
+}
+function loadGame(d){
+  ME=0; MP=null; stopAmbience(); restoreState(d); loadOmenSfx(); logEl.innerHTML='';
   log(`Saved game loaded: turn ${turn}, ${enemyCount} enem${enemyCount>1?'ies':'y'} (map seed ${mapSeed}).`,'sys');
   if(omenNow) log(`Omen in effect: ${OMENS[omenNow.type].name}. ${OMENS[omenNow.type].rule}`,'sys');
-  refreshUI();
-  { const sc=document.getElementById('scroller'), q=center(KEEPS[0][0],KEEPS[0][1]); sc.scrollLeft=Math.max(0,q.x-sc.clientWidth*0.3); sc.scrollTop=Math.max(0,q.y-sc.clientHeight*0.4); }
+  refreshUI(); scrollToKeep();
   if(omenNow) startAmbience(omenNow.type);
+}
+function scrollToKeep(){ const sc=document.getElementById('scroller'), q=center(KEEPS[ME][0],KEEPS[ME][1]); sc.scrollLeft=Math.max(0,q.x-sc.clientWidth*0.3); sc.scrollTop=Math.max(0,q.y-sc.clientHeight*0.4); }
+// ================================================================ online head-to-head
+// Two browsers connect directly (WebRTC via PeerJS; its free public server only introduces them, the game data
+// goes straight between the two computers). The game is turn-based, so the whole state travels once per turn:
+// whoever ends a turn sends it and the other loads it. The army that moves second each round also runs that
+// round's barbarians and omens. Each side keeps its own fog of war; both fogs ride along so either can resume.
+const MP_PREFIX='kwb-raysrealm-', MP_SAVE='raysRealm.mp.v1';
+const MP_LOCAL=new URLSearchParams(location.search).get('mp')==='local';   // test mode: two tabs in one browser, no internet needed
+const MP_PEER_OPTS=(q=>q.get('peerhost')?{host:q.get('peerhost'),port:+q.get('peerport')||9000,path:'/',secure:false}:{})(new URLSearchParams(location.search));   // testing against a local PeerServer
+const MP_CHARS='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const mpNewCode=()=>Array.from({length:5},()=>MP_CHARS[Math.floor(Math.random()*MP_CHARS.length)]).join('');
+let mpPeer=null, mpConn=null, mpLobby=null, mpRetry=null;
+
+function loadPeerLib(){
+  if(window.Peer) return Promise.resolve();
+  const urls=['assets/peerjs.min.js','https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js','https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js'];   // bundled copy first (PeerJS, MIT licence)
+  return urls.reduce((p,url)=>p.catch(()=>new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=url; s.onload=()=>window.Peer?res():rej(); s.onerror=rej; document.head.appendChild(s); })),Promise.reject())
+    .catch(()=>{ throw new Error('Could not load the connection library. Check your internet connection.'); });
+}
+function wrapPeerConn(c){
+  const w={send:o=>{ try{ c.send(JSON.stringify(o)); }catch(e){} }, close:()=>{ try{ c.close(); }catch(e){} }, onmsg:null, onclose:null};
+  let dead=false; const drop=()=>{ if(dead) return; dead=true; w.onclose&&w.onclose(); };
+  c.on('data',d=>{ let m=d; if(typeof d==='string'){ try{ m=JSON.parse(d); }catch(e){ return; } } w.onmsg&&w.onmsg(m); });
+  c.on('close',drop); c.on('error',drop);
+  return w;
+}
+// same-browser stand-in for PeerJS (?mp=local): lets two tabs play each other, used for testing
+function localTransport(code,role,onConn,onErr){
+  const bc=new BroadcastChannel('rr-mp-'+code), id=Math.random().toString(36).slice(2), conns=new Map(); let joined=false;
+  const mk=pid=>{ const c={send:o=>bc.postMessage({from:id,to:pid,o}), close:()=>{ conns.delete(pid); try{ bc.postMessage({from:id,to:pid,bye:1}); }catch(e){} }, onmsg:null, onclose:null}; conns.set(pid,c); return c; };
+  bc.onmessage=e=>{ const m=e.data; if(m.from===id) return;
+    if(m.knock&&role==='host'){ bc.postMessage({from:id,to:m.from,welcome:1}); onConn(mk(m.from)); return; }
+    if(m.welcome&&role==='guest'&&m.to===id&&!joined){ joined=true; onConn(mk(m.from)); return; }
+    const c=m.to===id&&conns.get(m.from); if(!c) return;
+    if(m.bye){ conns.delete(m.from); c.onclose&&c.onclose(); return; }
+    c.onmsg&&c.onmsg(m.o); };
+  if(role==='guest'){ bc.postMessage({from:id,knock:1}); setTimeout(()=>{ if(!joined) onErr('No match found with that code. Check it and try again.'); },2500); }
+  return {destroy(){ try{ bc.close(); }catch(e){} }};
+}
+async function mpOpen(role,code,onConn,onErr){
+  mpShutdown();
+  if(MP_LOCAL){ mpPeer=localTransport(code,role,onConn,onErr); return; }
+  await loadPeerLib();
+  if(role==='host'){
+    const peer=new Peer(MP_PREFIX+code,MP_PEER_OPTS); mpPeer={destroy:()=>peer.destroy()};
+    peer.on('connection',c=>c.on('open',()=>onConn(wrapPeerConn(c))));
+    peer.on('error',e=>onErr(e.type==='unavailable-id'?'That match code is already in use. Create a new match.':(e.type==='network'||e.type==='server-error'||e.type==='socket-error')?'Could not reach the matchmaking server. Check your internet connection.':'Connection problem ('+e.type+').'));
+    peer.on('disconnected',()=>{ try{ peer.reconnect(); }catch(e){} });   // keep the room open if the server link blips
+    return new Promise(res=>peer.on('open',res));
+  }
+  const peer=new Peer(MP_PEER_OPTS); mpPeer={destroy:()=>peer.destroy()};
+  peer.on('error',e=>onErr(e.type==='peer-unavailable'?'No match found with that code. Check it, and make sure your opponent has created the match.':'Connection problem ('+e.type+').'));
+  await new Promise(res=>peer.on('open',res));
+  const c=peer.connect(MP_PREFIX+code,{reliable:true}); let ok=false;
+  c.on('open',()=>{ ok=true; onConn(wrapPeerConn(c)); });
+  setTimeout(()=>{ if(!ok&&mpPeer) onErr('Could not connect. One of your networks may be blocking direct connections (common on work or school Wi-Fi).'); },15000);
+}
+function mpShutdown(){ if(mpConn){ mpConn.onclose=null; mpConn.close(); mpConn=null; } if(mpPeer){ try{ mpPeer.destroy(); }catch(e){} mpPeer=null; } }
+function mpClose(){ clearTimeout(mpRetry); mpRetry=null; mpShutdown(); MP=null; mpLobby=null; }
+
+// ---- the match record each computer keeps, so a dropped or reloaded game can pick up again
+function mpStore(d){ try{ localStorage.setItem(MP_SAVE,JSON.stringify({code:MP.code,role:MP.role,me:ME,foe:MP.foe,state:d})); }catch(e){} }
+function mpReadSave(){ try{ const d=JSON.parse(localStorage.getItem(MP_SAVE)||'null'); return d&&d.state&&Array.isArray(d.state.units)?d:null; }catch(e){ return null; } }
+function mpClearSave(){ try{ localStorage.removeItem(MP_SAVE); }catch(e){} }
+function mpPack(){ const d=packState(); d.fogs={...(MP.fogs||{}),[ME]:myFog()}; d.match=MP.match; d.seq=MP.seq; d.host=MP.role==='host'?ME:MP.foe; return d; }
+function mpSendState(){
+  if(!MP) return; MP.seq++; const d=mpPack(); MP.fogs=d.fogs; if(!over) mpStore(d);
+  if(mpConn) mpConn.send({t:'state',state:d});
+  else log(`${FACTIONS[MP.foe].name} is offline. Your turn is saved and goes to them when they reconnect.`,'sys');
+}
+// load a state that came from the other player (or from this computer's match record)
+function mpApply(d,fresh){
+  const prevOmen=omenNow?JSON.stringify(omenNow):null;
+  const all=()=>[...units,...units.flatMap(u=>u.cargo)];
+  const before=fresh?null:{hp:new Map(all().filter(u=>u.team===ME).map(u=>[u.id,u.hp])), mines:minesOf(ME), keeps:keepsOf(ME)};
+  restoreState(d);
+  MP.fogs=d.fogs||{}; MP.seq=d.seq||0; MP.match=d.match;
+  const F=MP.fogs[ME];
+  explored=new Set(F?F.explored:[]); seenMine=new Map(F?F.seenMine:[]); seenKeep=F?F.seenKeep.slice():[null,null,null,null]; seenTower=new Map(F?F.seenTower:[]); barbSeen=new Set(F?F.barbSeen:[]);
+  const G=MP.fogs[MP.foe]; if(G&&aiFog[MP.foe]){ aiFog[MP.foe].explored=new Set(G.explored); updateAIVision(MP.foe); }
+  updateVision(); mpStore(d);
+  if(before&&!fresh){
+    const now=all(), lost=[...before.hp.keys()].filter(id=>!now.some(u=>u.id===id)).length,
+      hurt=now.filter(u=>u.team===ME&&before.hp.has(u.id)&&u.hp<before.hp.get(u.id)).length,
+      bits=[lost&&`you lost ${lost} unit${lost>1?'s':''}`, hurt&&`${hurt} of your units took damage`,
+        minesOf(ME)<before.mines&&`you lost ${before.mines-minesOf(ME)} mine${before.mines-minesOf(ME)>1?'s':''}`, keepsOf(ME)<before.keeps&&'you lost a keep'].filter(Boolean);
+    log(`${FACTIONS[MP.foe].name} ended their turn${bits.length?': '+bits.join(', ')+'.':'.'}`,'t'+MP.foe);
+  }
+  if(omenNow&&omenNow.start===turn&&JSON.stringify(omenNow)!==prevOmen){
+    const o=OMENS[omenNow.type]; log(`Omen: ${o.name}. ${o.rule}`,'sys'); showOmenSplash(omenNow); omenSting(omenNow.type); startAmbience(omenNow.type);
+  } else if(!omenNow&&prevOmen) stopAmbience();
+  refreshOmenPanel(); refreshUI(); checkEnd();
+  if(!over&&side===ME&&!fresh){ banner('Your Turn'); sfx('turn'); log(`— Turn ${turn}: your move —`,'sys'); }
+}
+async function mpEndTurn(){
+  const first=Math.min(ME,MP.foe), second=Math.max(ME,MP.foe);
+  if(ME===first){ side=second; startTeamTurn(second); }
+  else{ await barbTurn(); if(!over){ turn++; side=first; advanceOmen(); startTeamTurn(first); log(`— Turn ${turn} —`,'sys'); } }
+  busy=false;
+  if(over){ refreshUI(); return; }   // checkEnd already sent the final state
+  mpSendState(); refreshUI(); banner(`${FACTIONS[side].short}'s Turn`);
+}
+function mpOnConn(w){
+  if(mpConn){ mpConn.onclose=null; mpConn.close(); }   // a reconnect replaces the old link
+  mpConn=w; w.onmsg=mpOnMsg; w.onclose=mpOnDrop; clearTimeout(mpRetry); mpRetry=null;
+  if(MP.role==='guest'){ w.send({t:'hello'}); mpStatus('Connected. Waiting for the host…'); }
+}
+function mpOnDrop(){
+  mpConn=null; if(!MP) return;
+  if(!gameStarted){ mpStatus('Your opponent left the lobby.',true); return; }
+  banner('Opponent Disconnected');
+  log(`Lost the connection to ${FACTIONS[MP.foe].name}. ${MP.role==='host'?`Your match stays open: they can rejoin with code ${MP.code}.`:'Trying to reconnect…'}`,'sys');
+  if(MP.role==='guest') mpReconnect();
+}
+function mpReconnect(tries=0){
+  if(!MP||mpConn||over) return;
+  mpRetry=setTimeout(async()=>{ if(!MP||mpConn) return;
+    try{ await mpOpen('guest',MP.code,mpOnConn,()=>{ if(tries<40) mpReconnect(tries+1); else log('Could not reconnect. Use Head to Head Online on the title screen to rejoin with the same code.','sys'); }); }
+    catch(e){ if(tries<40) mpReconnect(tries+1); }
+  },tries?6000:1500);
+}
+function mpOnMsg(m){
+  if(!m||!MP) return;
+  if(m.t==='hello'&&MP.role==='host'){
+    if(gameStarted&&MP.match){ mpConn.send({t:'start',host:ME,guest:MP.foe,state:mpPack()}); log(`${FACTIONS[MP.foe].name} is connected.`,'sys'); banner('Opponent Connected'); return; }
+    mpConn.send({t:'lobby',host:ME}); mpStatus('Your opponent is here and choosing an army…'); return;
+  }
+  if(m.t==='lobby'&&MP.role==='guest'){ mpGuestPick(m.host); return; }
+  if(m.t==='pick'&&MP.role==='host'&&!gameStarted){
+    if(!(m.army>=0&&m.army<4)||m.army===ME){ mpConn.send({t:'lobby',host:ME}); return; }
+    MP.foe=m.army; MP.match=Math.random().toString(36).slice(2); MP.seq=1; MP.fogs={};
+    logEl.innerHTML=''; newGame(); const d=mpPack(); MP.fogs=d.fogs; mpStore(d);
+    mpConn.send({t:'start',host:ME,guest:MP.foe,state:d}); enterGame(); return;
+  }
+  if(m.t==='start'&&MP.role==='guest'){
+    ME=m.guest; MP.foe=m.host;
+    const local=mpReadSave(), mine=local&&local.state.match===m.state.match&&(local.state.seq||0)>(m.state.seq||0)?local.state:null;
+    logEl.innerHTML=''; stopAmbience(); loadOmenSfx(); mpApply(mine||m.state,true);
+    log(`Head to head: you are the ${FACTIONS[ME].name} vs the ${FACTIONS[MP.foe].name}. ${side===ME?'You move first.':'They move first.'}`,'sys');
+    if(mine) mpConn.send({t:'state',state:mine});            // our turn happened while we were apart: hand it over
+    if(!gameStarted) enterGame(); else { refreshUI(); banner(side===ME?'Your Turn':'Reconnected'); }
+    if(omenNow) startAmbience(omenNow.type);
+    return;
+  }
+  if(m.t==='state'&&m.state&&gameStarted){
+    if(m.state.match!==MP.match||(m.state.seq||0)<=MP.seq) return;   // stale or duplicate
+    mpApply(m.state,false);
+  }
+}
+
+// ---- lobby screens (shown over the title)
+const mpArmyButtons=(on,taken)=>[0,1,2,3].map(t=>`<button class="mparmy${t===on?' on':''}" data-t="${t}" ${t===taken?'disabled title="Taken by the host"':''} style="--fc:${FACTIONS[t].color}"><i></i>${FACTIONS[t].name}</button>`).join('');
+function mpStatus(html,bad){ const el=document.getElementById('mpStatus'); if(el){ el.innerHTML=html; el.classList.toggle('bad',!!bad); } }
+function mpFail(msg){ mpShutdown(); if(gameStarted){ log(msg,'sys'); return; } mpStatus(msg,true); const b=document.getElementById('mpHost'), j=document.getElementById('mpJoin'); if(b) b.disabled=false; if(j) j.disabled=false; }
+function mpMenu(){
+  mpClose(); ME=0;
+  const ov=document.getElementById('overlay'), pn=document.getElementById('panel'), sv=mpReadSave();
+  let army=0; try{ const a=+localStorage.getItem('raysRealm.mpArmy'); if(a>=0&&a<4) army=a; }catch(e){}
+  ov.classList.remove('hidden'); pn.classList.add('mp');
+  pn.innerHTML=`<h2>Head to Head</h2><p>Two players on two computers. One of you creates a match and texts the code to the other, who joins with it. Just your two armies, and twice the barbarians.</p>
+    <div class="mpgrid">
+      <div><h3>Host a match</h3><div class="lab">Choose your army</div><div class="mparmies" id="mpArmies">${mpArmyButtons(army,-1)}</div>
+        <button id="mpHost">Create Match</button>${sv&&sv.role==='host'?`<button class="sec" id="mpResume">Resume match · turn ${sv.state.turn}</button>`:''}</div>
+      <div><h3>Join a match</h3><div class="lab">Enter the code you were sent</div><input id="mpCode" maxlength="5" autocomplete="off" spellcheck="false" placeholder="CODE" value="${sv&&sv.role==='guest'?sv.code:''}">
+        <button id="mpJoin">Join Match</button></div>
+    </div>
+    <div id="mpStatus"></div><button class="sec" id="mpCancel">Close</button>`;
+  pn.querySelectorAll('#mpArmies .mparmy').forEach(b=>b.onclick=()=>{ army=+b.dataset.t; try{ localStorage.setItem('raysRealm.mpArmy',army); }catch(e){} pn.querySelectorAll('#mpArmies .mparmy').forEach(x=>x.classList.toggle('on',x===b)); sfx('step'); });
+  document.getElementById('mpCancel').onclick=()=>{ mpClose(); ov.classList.add('hidden'); pn.classList.remove('mp'); };
+  document.getElementById('mpHost').onclick=async e=>{
+    e.target.disabled=true; document.getElementById('mpJoin').disabled=true;
+    const code=mpNewCode(); MP={role:'host',code,foe:null,fogs:{},seq:0,match:null}; ME=army;
+    mpStatus('Opening a match…');
+    try{ await mpOpen('host',code,mpOnConn,mpFail); if(MP) mpStatus(`Your match code<div class="mpcode">${code}</div>Send it to your opponent, then leave this screen open. You play the <b style="color:${FACTIONS[ME].color}">${FACTIONS[ME].name}</b>.`); }
+    catch(err){ mpFail(err.message); }
+  };
+  const res=document.getElementById('mpResume');
+  if(res) res.onclick=async()=>{
+    MP={role:'host',code:sv.code,foe:sv.foe,fogs:{},seq:0,match:sv.state.match}; ME=sv.me;
+    logEl.innerHTML=''; stopAmbience(); loadOmenSfx(); mpApply(sv.state,true);
+    log(`Match resumed (code ${sv.code}). ${FACTIONS[MP.foe].name} can rejoin with that code.`,'sys');
+    enterGame(); if(omenNow) startAmbience(omenNow.type);
+    try{ await mpOpen('host',sv.code,mpOnConn,mpFail); }catch(err){ log(err.message,'sys'); }
+  };
+  const inp=document.getElementById('mpCode'); inp.oninput=()=>{ inp.value=inp.value.toUpperCase().replace(/[^A-Z0-9]/g,''); };
+  inp.onkeydown=e=>{ if(e.key==='Enter') document.getElementById('mpJoin').click(); e.stopPropagation(); };
+  document.getElementById('mpJoin').onclick=async e=>{
+    const code=inp.value.trim().toUpperCase(); if(code.length!==5){ mpStatus('Codes are 5 letters and numbers.',true); return; }
+    e.target.disabled=true; document.getElementById('mpHost').disabled=true;
+    MP={role:'guest',code,foe:null,fogs:{},seq:0,match:null}; mpStatus('Connecting…');
+    try{ await mpOpen('guest',code,mpOnConn,mpFail); }catch(err){ mpFail(err.message); }
+  };
+}
+function mpGuestPick(hostArmy){
+  const pn=document.getElementById('panel'); MP.foe=hostArmy;
+  pn.innerHTML=`<h2>Choose Your Army</h2><p>You're facing the <b style="color:${FACTIONS[hostArmy].color}">${FACTIONS[hostArmy].name}</b>. Pick your side:</p>
+    <div class="mparmies big">${mpArmyButtons(-1,hostArmy)}</div><div id="mpStatus"></div><button class="sec" id="mpCancel">Leave</button>`;
+  pn.querySelectorAll('.mparmy').forEach(b=>b.onclick=()=>{ if(b.disabled) return; pn.querySelectorAll('.mparmy').forEach(x=>x.disabled=true); b.classList.add('on'); mpStatus('Starting the battle…'); mpConn&&mpConn.send({t:'pick',army:+b.dataset.t}); });
+  document.getElementById('mpCancel').onclick=()=>{ mpClose(); document.getElementById('overlay').classList.add('hidden'); pn.classList.remove('mp'); };
 }
 // ---------------------------------------------------------------- random map
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
@@ -497,19 +724,19 @@ function generateMap(seed){
 function newGame(seed){
   undoSnap=null; mapSeed=seed??((Math.random()*1e9)|0);
   const info=generateMap(mapSeed); resize();
-  setArmies(enemyCount);
+  setArmies(enemyCount); if(MP) activeArmies=[0,1,2,3].map(t=>t===ME||t===MP.foe);
   units = START.filter(([t,team])=>activeArmies[team]).map(([t,team,c,r]) => makeUnit(t,team,c,r));
-  turn=1; side=0; sel=null; moveInfo=null; targets=[]; recruitType=null; spawnSet=[]; busy=false; over=false; effects=[]; proj=null;
+  turn=1; side=MP?Math.min(ME,MP.foe):ME; sel=null; moveInfo=null; targets=[]; recruitType=null; spawnSet=[]; busy=false; over=false; effects=[]; proj=null;
   gold=activeArmies.map(a=>a?2:0); recruitsUsed=[0,0,0,0]; elim=activeArmies.map(a=>!a); mineOwner=new Map(); keepOwner=[0,1,2,3].map(t=>activeArmies[t]?t:4); towers=new Map(); towerUsed=new Set();
   omenNow=null; omenLast=null; stopAmbience(); omenNext=rollOmen(2); refreshOmenPanel(); loadOmenSfx();
   explored=new Set(); visible=new Set(); seenMine=new Map(); seenKeep=[null,null,null,null]; seenTower=new Map();
   MINES.forEach(m=>{ const o=info.owners[key(m.c,m.r)]; mineOwner.set(key(m.c,m.r),o!=null&&activeArmies[o]?o:null); });
-  resetAIFog(); updateVision(); barbSeen=new Set(); for(let i=0;i<3;i++) spawnBarbTower(); updateVision(); logEl.innerHTML='';
-  log(`Welcome to Ray's Realm. Capture ${enemyWord()} to rule the realm — and guard your own!`,'sys');
-  if(enemyCount<3) log(`You face ${enemyCount} enem${enemyCount>1?'ies':'y'}. The empty corner keep${enemyCount<2?'s are':' is'} abandoned: claim ${enemyCount<2?'them':'it'} for gold and income.`,'sys');
+  resetAIFog(); updateVision(); barbSeen=new Set(); for(let i=0;i<(MP?BARB_START_MP:3);i++) spawnBarbTower(); updateVision(); logEl.innerHTML='';
+  if(MP) log(`Head to head: ${FACTIONS[ME].name} vs ${FACTIONS[MP.foe].name}. Take their keep and guard your own. The barbarians are out in force.`,'sys');
+  else log(`Welcome to Ray's Realm. Capture ${enemyWord()} to rule the realm — and guard your own!`,'sys');
+  if(!MP&&enemyCount<3) log(`You face ${enemyCount} enem${enemyCount>1?'ies':'y'}. The empty corner keep${enemyCount<2?'s are':' is'} abandoned: claim ${enemyCount<2?'them':'it'} for gold and income.`,'sys');
   log(`Map seed ${mapSeed}.`,'sys');
-  startTeamTurn(0); refreshUI();
-  { const sc=document.getElementById('scroller'), q=center(KEEPS[0][0],KEEPS[0][1]); sc.scrollLeft=Math.max(0,q.x-sc.clientWidth*0.3); sc.scrollTop=Math.max(0,q.y-sc.clientHeight*0.4); }
+  startTeamTurn(side); refreshUI(); scrollToKeep();
 }
 
 // ---------------------------------------------------------------- audio
@@ -599,8 +826,8 @@ const canStop = (u,e) => !unitAt(e.c,e.r) || (e.c===u.c && e.r===u.r);
 
 function targetsFrom(u,c,r){
   if(u.type.noattack) return [];
-  if(u.team===0) updateVision();
-  return units.filter(t => t.team!==u.team && (u.team===0?visible.has(key(t.c,t.r)):aiCanSee(u.team,t.c,t.r)) && (d=>d>=u.type.rng[0]&&d<=rmax(u))(hexDist({c,r},t)));
+  if(u.team===ME) updateVision();
+  return units.filter(t => t.team!==u.team && (u.team===ME?visible.has(key(t.c,t.r)):aiCanSee(u.team,t.c,t.r)) && (d=>d>=u.type.rng[0]&&d<=rmax(u))(hexDist({c,r},t)));
 }
 function calcDmg(a,d,charge){
   const atk=a.type.atk+(charge&&a.type.charge?2:0);
@@ -620,7 +847,7 @@ const mercCount = team => [...units,...units.flatMap(u=>u.cargo)].filter(u=>u.te
 function spawnTiles(team,type){
   if(type==='merc'){   // hired locally: any free, visible hex you could walk onto (not a keep or mine)
     if(mercCount(team)>=MERC_MAX) return [];
-    const out=[]; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ if(unitAt(c,r)||tileCost('ground',c,r)==null) continue; const ch=tileCh(c,r); if(ch==='K'||ch==='G') continue; if(team===0&&!isVis(c,r)) continue; out.push({c,r,tower:null}); }
+    const out=[]; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ if(unitAt(c,r)||tileCost('ground',c,r)==null) continue; const ch=tileCh(c,r); if(ch==='K'||ch==='G') continue; if(team===ME&&!isVis(c,r)) continue; out.push({c,r,tower:null}); }
     return out;
   }
   const T=TYPES[type], maxD = T.cls==='water'?4:2, out=[];
@@ -654,19 +881,19 @@ const costOf = type => type==='tower' ? TOWER_COST : TYPES[type].cost;
 const tilesFor = (team,type) => type==='tower' ? towerTiles(team) : spawnTiles(team,type);
 function buildTower(team,c,r){
   gold[team]-=TOWER_COST; towers.set(key(c,r),team);
-  if(team===0||isVis(c,r)){ const p=center(c,r); effects.push({ring:true,x:p.x,y:p.y-S*0.3,t0:performance.now(),life:500,color:'#c9c2b0'});
+  if(team===ME||isVis(c,r)){ const p=center(c,r); effects.push({ring:true,x:p.x,y:p.y-S*0.3,t0:performance.now(),life:500,color:'#c9c2b0'});
     log(`${FACTIONS[team].short} builds a fort (-${TOWER_COST}g).`,'t'+team); sfx('recruit'); }
 }
 function recruit(team,type,c,r,tw){
   const T=TYPES[type]; gold[team]-=T.cost; if(tw) towerUsed.add(tw); else if(!T.merc) recruitsUsed[team]++;
   const u=makeUnit(type,team,c,r); u.done=true; u.moved=true; u.mp=0; units.push(u);
-  if(team===0||isVis(c,r)){ const p=center(c,r); effects.push({ring:true,x:p.x,y:p.y-S*0.3,t0:performance.now(),life:500,color:'#9be28a'});
+  if(team===ME||isVis(c,r)){ const p=center(c,r); effects.push({ring:true,x:p.x,y:p.y-S*0.3,t0:performance.now(),life:500,color:'#9be28a'});
     log(T.merc?`${FACTIONS[team].short} hires a Mercenary (-${T.cost}g).`:`${FACTIONS[team].short} recruits ${u.name} at ${tw?'a fort':'the keep'} (-${T.cost}g).`,'t'+team); sfx('recruit'); }
 }
 function captureAt(u){
   if(u.team>=4) return;   // barbarians do not hold ground
   const tk=key(u.c,u.r);
-  const seen=u.team===0||isVis(u.c,u.r);
+  const seen=u.team===ME||isVis(u.c,u.r);
   if(towers.has(tk)&&towers.get(tk)!==u.team){ towers.delete(tk); if(seen) log(`${FACTIONS[u.team].short} razes an enemy fort!`,'sys'); }
   if(tileCh(u.c,u.r)==='K'){
     const i=KEEPS.findIndex(k=>k[0]===u.c&&k[1]===u.r);
@@ -694,7 +921,7 @@ function healTeam(t){
       const near=homes.some(h=>hexDist(u,h)<=2);
       u.heal=(u.heal||0)+(near?0.10:0.05)*u.type.hp; let gain=0;
       while(u.heal>=1&&u.hp<u.type.hp){ u.hp++; u.heal--; gain++; }
-      if(gain&&(t===0||isVis(u.c,u.r))&&!u.aboard){ const p=center(u.c,u.r); addText(p.x,p.y-S*1.1,'+'+gain,'#6bd35f'); }
+      if(gain&&(t===ME||isVis(u.c,u.r))&&!u.aboard){ const p=center(u.c,u.r); addText(p.x,p.y-S*1.1,'+'+gain,'#6bd35f'); }
     }
     if(u.hp>=u.type.hp) u.heal=0;
     u.fought=false;
@@ -702,12 +929,12 @@ function healTeam(t){
 }
 function startTeamTurn(t){
   for(const u of [...units]){ if(u.team===t&&u.key==='merc'&&--u.rounds<=0){ units=units.filter(x=>x!==u); units.forEach(h=>{ h.cargo=h.cargo.filter(x=>x!==u); }); if(sel===u) clearSel();
-    if(t===0){ const p=center(u.c,u.r); addText(p.x,p.y-S*1.2,'Contract ended',FACTIONS[0].color); log('A Mercenary\'s contract has ended. He walks away.','sys'); } } }
+    if(t===ME){ const p=center(u.c,u.r); addText(p.x,p.y-S*1.2,'Contract ended',FACTIONS[ME].color); log('A Mercenary\'s contract has ended. He walks away.','sys'); } } }
   healTeam(t); recruitsUsed[t]=0;
   for(const [k,tm] of towers) if(tm===t) towerUsed.delete(k);
   units.filter(u=>u.team===t).forEach(u=>{u.done=false;u.moved=false;u.steps=0;u.mp=u.type.mv;u.cargo.forEach(c=>{c.done=false;c.moved=false;c.steps=0;c.mp=c.type.mv;});});
   const inc=income(t); gold[t]+=inc;
-  if(t===0) log(`${FACTIONS[t].name}: +${inc} gold (${gold[t]} total).`,'t'+t);
+  if(t===ME) log(`${FACTIONS[t].name}: +${inc} gold (${gold[t]} total).`,'t'+t);
 }
 
 // ---------------------------------------------------------------- omens: telegraphed weather and events
@@ -868,11 +1095,11 @@ const upos = u => u.anim ? u.anim : center(u.c,u.r);
 
 // ---- fog of war: your units, keeps and towers see 3 hexes; explored hexes stay revealed
 const isVis = (c,r) => visible.has(key(c,r));
-const unitVisible = u => u.team===0 || isVis(u.c,u.r);
+const unitVisible = u => u.team===ME || isVis(u.c,u.r);
 function visionSources(){
-  return [...units.filter(u=>u.team===0),
-    ...KEEPS.filter((k,i)=>keepOwner[i]===0).map(([c,r])=>({c,r})),
-    ...[...towers].filter(([k,t])=>t===0).map(([k])=>{ const [c,r]=k.split(',').map(Number); return {c,r}; })];
+  return [...units.filter(u=>u.team===ME),
+    ...KEEPS.filter((k,i)=>keepOwner[i]===ME).map(([c,r])=>({c,r})),
+    ...[...towers].filter(([k,t])=>t===ME).map(([k])=>{ const [c,r]=k.split(',').map(Number); return {c,r}; })];
 }
 function updateVision(){
   visible=new Set(); visTiles(visionSources(),visible);
@@ -892,9 +1119,9 @@ function ensureInView(pt){
 
 async function moveUnit(u,path){
   for(let i=1;i<path.length;i++){
-    if(u.team===0) revealAround(path[i].c,path[i].r,u.type.vision||VISION);
+    if(u.team===ME) revealAround(path[i].c,path[i].r,u.type.vision||VISION);
     // animate and make footstep noise only for steps you can actually see (either end of the step in view)
-    if(u.team!==0 && !isVis(path[i-1].c,path[i-1].r) && !isVis(path[i].c,path[i].r)) continue;
+    if(u.team!==ME && !isVis(path[i-1].c,path[i-1].r) && !isVis(path[i].c,path[i].r)) continue;
     const a=center(path[i-1].c,path[i-1].r), b=center(path[i].c,path[i].r);
     sfx('step'); if(i===1||i===path.length-1) ensureInView(b);
     await tween(110,t=>{ u.anim={x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t}; });
@@ -964,9 +1191,10 @@ function checkEnd(){
   for(let t=0;t<4;t++) if(!elim[t] && alive(t).length===0 && gold[t]<MIN_COST){
     elim[t]=true; log(`${FACTIONS[t].name} has been eliminated!`,'sys');
   }
-  if(!keepOwner.includes(0)){ over=true; showEnd(false,'Your keep has fallen. The realm is lost…'); }
-  else if(elim[0]){ over=true; showEnd(false,'Your army is destroyed and your coffers are empty…'); }
-  else if(!keepOwner.some(o=>o>=1&&o<=3)){ over=true; showEnd(true); }   // no enemy army holds a keep (abandoned ones don't count)
+  if(!keepOwner.includes(ME)){ over=true; showEnd(false,'Your keep has fallen. The realm is lost…'); }
+  else if(elim[ME]){ over=true; showEnd(false,'Your army is destroyed and your coffers are empty…'); }
+  else if(!keepOwner.some(o=>o!==ME&&o>=0&&o<=3)||(MP&&elim[MP.foe])){ over=true; showEnd(true); }   // no enemy army holds a keep (abandoned ones don't count)
+  if(over&&MP&&side===ME) mpSendState();
   refreshUI();
 }
 
@@ -974,7 +1202,7 @@ function checkEnd(){
 function clearSel(){ sel=null; moveInfo=null; targets=[]; boardShips=[]; }
 const canStrike = u => !u.type.noattack && !(u.type.stat&&u.moved) && targetsFrom(u,u.c,u.r).length>0;
 const actionable = u => (!u.done && (u.mp>0 || canStrike(u))) || u.cargo.some(c=>!c.done);
-const selectable = u => u.team===0 && actionable(u);
+const selectable = u => u.team===ME && actionable(u);
 const landTiles = sh => neighbors(sh.c,sh.r).filter(([c,r])=>tileCost('ground',c,r)!=null && !unitAt(c,r));
 function boardSpot(u,s){
   let best=null;
@@ -997,21 +1225,21 @@ function select(u){
 }
 function finishUnit(u){ u.done=true; if(sel===u) clearSel(); refreshUI(); maybeAutoEnd(); }
 function chooseRecruit(type){
-  if(busy||side!==0||over) return;
+  if(busy||side!==ME||over) return;
   if(recruitType===type){ recruitType=null; spawnSet=[]; }
-  else if(gold[0]>=costOf(type)){ clearSel(); recruitType=type; spawnSet=tilesFor(0,type); }
+  else if(gold[ME]>=costOf(type)){ clearSel(); recruitType=type; spawnSet=tilesFor(ME,type); }
   refreshUI();
 }
 
 async function onTile(c,r,pickedUnit){
-  if(busy||over||side!==0) return;
+  if(busy||over||side!==ME) return;
   const u=pickedUnit||unitAt(c,r);
   if(recruitType){
     const ent=spawnSet.find(t=>t.c===c&&t.r===r);
     if(ent){
       undoSnap=takeSnap(recruitType==='tower'?'fort':'recruit');
-      if(recruitType==='tower') buildTower(0,c,r); else recruit(0,recruitType,c,r,ent.tower);
-      if(gold[0]<costOf(recruitType)){ recruitType=null; spawnSet=[]; } else spawnSet=tilesFor(0,recruitType);
+      if(recruitType==='tower') buildTower(ME,c,r); else recruit(ME,recruitType,c,r,ent.tower);
+      if(gold[ME]<costOf(recruitType)){ recruitType=null; spawnSet=[]; } else spawnSet=tilesFor(ME,recruitType);
       refreshUI(); maybeAutoEnd(); return;
     }
     recruitType=null; spawnSet=[]; refreshUI();
@@ -1029,7 +1257,7 @@ async function onTile(c,r,pickedUnit){
       busy=false; refreshUI(); maybeAutoEnd(); return;
     }
     if(sel.aboard && u===sel.aboard){ clearSel(); refreshUI(); return; }
-    if(u && u.team!==0 && targets.includes(u)){
+    if(u && u.team!==ME && targets.includes(u)){
       busy=true; const a=sel; clearSel(); refreshUI();
       await performAttack(a,u); busy=false; refreshUI(); maybeAutoEnd(); return;
     }
@@ -1055,10 +1283,10 @@ async function onTile(c,r,pickedUnit){
   if(u && selectable(u)) select(u);
 }
 
-function canRecruitAny(){ return gold[0]>=MIN_COST && [...SHOP_ORDER,'tower'].some(t=>gold[0]>=costOf(t) && tilesFor(0,t).length); }
+function canRecruitAny(){ return gold[ME]>=MIN_COST && [...SHOP_ORDER,'tower'].some(t=>gold[ME]>=costOf(t) && tilesFor(ME,t).length); }
 function maybeAutoEnd(){
-  if(over||side!==0||busy) return;
-  const mine=alive(0);
+  if(over||side!==ME||busy) return;
+  const mine=alive(ME);
   refreshUI();
 }
 
@@ -1066,8 +1294,8 @@ function maybeAutoEnd(){
 // ---- per-army fog of war for the AI: same rules as yours (3 hexes, explored stays revealed)
 const aiFog=[null,null,null,null,null];
 function resetAIFog(){
-  for(const t of [1,2,3,4]) aiFog[t]={explored:new Set(),visible:new Set(),seenMine:new Map(),seenKeep:[null,null,null,null]};
-  [1,2,3,4].forEach(updateAIVision);
+  for(const t of [0,1,2,3,4]) aiFog[t]={explored:new Set(),visible:new Set(),seenMine:new Map(),seenKeep:[null,null,null,null]};
+  [0,1,2,3,4].forEach(updateAIVision);
 }
 function updateAIVision(t){
   const F=aiFog[t]; if(!F) return;
@@ -1231,17 +1459,18 @@ async function aiTeamTurn(t){
   checkEnd();
 }
 async function endTurn(){
-  if(busy||side!==0||over) return;
+  if(busy||side!==ME||over) return;
   undoSnap=null;
-  alive(0).forEach(u=>u.done=true); clearSel(); recruitType=null; spawnSet=[];
+  alive(ME).forEach(u=>u.done=true); clearSel(); recruitType=null; spawnSet=[];
   busy=true; refreshUI();
+  if(MP){ await mpEndTurn(); return; }
   for(const t of [1,2,3]){
     if(over) break; if(elim[t]) continue;
     await aiTeamTurn(t);
   }
   if(!over) await barbTurn();
   if(over){ busy=false; refreshUI(); return; }
-  turn++; side=0; advanceOmen(); startTeamTurn(0); busy=false; refreshUI(); banner('Your Turn'); sfx('turn');
+  turn++; side=ME; advanceOmen(); startTeamTurn(ME); busy=false; refreshUI(); banner('Your Turn'); sfx('turn');
   log(`— Turn ${turn} —`,'sys');
   saveGame(true);   // autosave at the start of every one of your turns
 }
@@ -1249,6 +1478,7 @@ async function endTurn(){
 // ---------------------------------------------------------------- barbarians
 // A neutral, defensive horde. Towers rise in undiscovered land, at least 5 hexes from any other tower, spawn one unit
 // (up to 4), and each round a tower has a 50% chance of adding another. Barbarians never stray far from home.
+const BARB_START_MP = 6;   // head-to-head: twice the barbarian towers at the start, and they keep rising
 const BARB_TEAM = 4, BARB_MAX_UNITS = 4, BARB_LEASH = 3, BARB_BOUNTY = 10;
 let barbSeen = new Set();
 function barbCandidates(){
@@ -1259,7 +1489,7 @@ function barbCandidates(){
     const k=key(c,r); if(!groundReach.has(k)) continue;
     const ch=tileCh(c,r); if(ch!=='.'&&ch!=='f') continue;
     if(unitAt(c,r)||explored.has(k)||visible.has(k)) continue;
-    if([1,2,3].some(t=>aiFog[t]&&aiFog[t].visible.has(k))) continue;
+    if([0,1,2,3].some(t=>t!==ME&&aiFog[t]&&aiFog[t].visible.has(k))) continue;
     if(KEEPS.some(([kc,kr])=>hexDist({c,r},{c:kc,r:kr})<6)) continue;
     if(st.some(p=>hexDist(p,{c,r})<5)) continue;
     if(!neighbors(c,r).some(([nc,nr])=>tileCost('ground',nc,nr)!=null&&!unitAt(nc,nr))) continue;
@@ -1285,7 +1515,7 @@ async function barbTurn(){
   if(!mine().length&&Math.random()>0.12) return;
   mine().forEach(u=>{ u.done=false; u.moved=false; u.steps=0; u.mp=u.type.mv; });
   const towersB=mine().filter(u=>u.key==='barbtower');
-  if(towersB.length<6&&Math.random()<0.12) spawnBarbTower();               // a new tower rises somewhere undiscovered
+  if(towersB.length<(MP?9:6)&&Math.random()<(MP?0.25:0.12)) spawnBarbTower();               // a new tower rises somewhere undiscovered
   for(const tw of towersB) if(units.includes(tw)&&Math.random()<0.5) spawnBarbUnit(tw);   // 50%: one more recruit
   updateAIVision(BARB_TEAM);
   for(const u of [...mine()]){ if(over) break; if(!units.includes(u)) continue; if(u.hold){ u.hold=false; u.done=true; continue; } u.steps=0; await barbAct(u); }   // surge raiders muster for a round first
@@ -1329,7 +1559,7 @@ function cardHTML(u,preview){
   return `<div class="top"><img src="assets/${u.sprite}.png" alt=""><div><h2>${u.name}</h2>
     <div class="sub" style="color:${FACTION_INK[u.team]}">${FACTIONS[u.team].name}</div>
     <div class="sub">${TERR[tileCh(u.c,u.r)].name}${towers.get(key(u.c,u.r))===u.team?' + Fort':''}${tdef?` (+${tdef} def)`:''}</div></div></div>
-    <div class="stats"><div><b>${u.hp}/${T.hp}</b>HP</div><div><b>${T.atk}</b>ATK</div><div><b>${T.def}</b>DEF</div><div><b>${u.team===0?u.mp+'/'+T.mv:T.mv}</b>MOVE</div><div><b>${rng}</b>RANGE</div></div>
+    <div class="stats"><div><b>${u.hp}/${T.hp}</b>HP</div><div><b>${T.atk}</b>ATK</div><div><b>${T.def}</b>DEF</div><div><b>${u.team===ME?u.mp+'/'+T.mv:T.mv}</b>MOVE</div><div><b>${rng}</b>RANGE</div></div>
     <p>${T.desc}</p>${u.rounds!=null?`<p><b>Contract:</b> ${u.rounds} round${u.rounds===1?'':'s'} left</p>`:''}${u.cargo.length?`<p><b>Aboard:</b> ${u.cargo.map(c=>c.name).join(', ')}</p>`:''}${preview?`<div class="preview">${preview}</div>`:''}`;
 }
 function previewFor(t){
@@ -1343,8 +1573,8 @@ function tipHTML(k){
   if(k==='tower') return `<div class="top"><img src="assets/tf_fort.png" alt="" style="width:60px;height:auto"><div><h4>Fort</h4><div class="cost">${TOWER_COST} gold</div></div></div>
     <p style="margin:6px 0 0">Build it on a grass hex near your units. <b>+2 defence</b> to your unit standing there, and it recruits <b>1 unit per turn</b> on adjacent hexes (ships too, if water is adjacent). Collapses if that unit is slain; enemies can raze it.</p>`;
   const T=TYPES[k], rng=T.rng[0]===T.rng[1]?T.rng[0]:T.rng[0]+'–'+T.rng[1];
-  const why = gold[0]<T.cost ? `Need ${T.cost-gold[0]} more gold.` : !spawnTiles(0,k).length ? (k==='archertower'?'No open space next to your units.':T.cls==='water'?'No open water near your keeps or forts.':'No open space near your keeps or forts.') : '';
-  return `<div class="top"><img src="assets/${spriteKey(0,k)}.png" alt=""><div><h4>${T.name}</h4><div class="cost">${T.cost} gold${T.cap?' · carries '+T.cap:''}</div></div></div>
+  const why = gold[ME]<T.cost ? `Need ${T.cost-gold[ME]} more gold.` : !spawnTiles(ME,k).length ? (k==='archertower'?'No open space next to your units.':T.cls==='water'?'No open water near your keeps or forts.':'No open space near your keeps or forts.') : '';
+  return `<div class="top"><img src="assets/${spriteKey(ME,k)}.png" alt=""><div><h4>${T.name}</h4><div class="cost">${T.cost} gold${T.cap?' · carries '+T.cap:''}</div></div></div>
     <div class="stats"><div><b>${T.hp}</b>HP</div><div><b>${T.noattack?'—':T.atk}</b>ATK</div><div><b>${T.def}</b>DEF</div><div><b>${T.mv}</b>MOVE</div><div><b>${T.noattack?'—':rng}</b>RANGE</div></div>
     <div>${T.desc}</div>${why?`<div class="warn">${why}</div>`:''}`;
 }
@@ -1361,26 +1591,26 @@ function hideTip(){ document.getElementById('tip').style.display='none'; }
 function refreshUI(){
   updateVision();
   const p=document.getElementById('turn');
-  setHTML('turn',`<b>Turn ${turn}</b><span class="pill" style="background:${FACTIONS[side].color}">${side===0?'Your move':FACTIONS[side].short+' moves'}</span><span>🪙 ${gold[0]}</span>`);
+  setHTML('turn',`<b>Turn ${turn}</b><span class="pill" style="background:${FACTIONS[side].color}">${side===ME?'Your move':FACTIONS[side].short+' moves'}</span><span>🪙 ${gold[ME]}</span>`);
   setHTML('factions',FACTIONS.slice(0,4).map((f,i)=>!activeArmies[i]?'':`<div class="frow ${side===i&&!over?'active':''} ${elim[i]?'out':''}"><span class="dot" style="background:${f.color}"></span><span>${f.name}</span>
-    <span class="n">⚔ ${i===0?alive(0).length:'?'}</span><span class="n">⛏ ${i===0?minesOf(0):MINES.filter(m=>seenMine.get(key(m.c,m.r))===i).length}</span><span class="n">🏰 ${i===0?keepOwner.filter(o=>o===0).length:seenKeep.filter(o=>o===i).length}</span><span class="n">🪙 ${i===0?`${gold[0]} <small>(+${income(0)})</small>`:'?'}</span></div>`).join(''));
+    <span class="n">⚔ ${i===ME?alive(ME).length:'?'}</span><span class="n">⛏ ${i===ME?minesOf(ME):MINES.filter(m=>seenMine.get(key(m.c,m.r))===i).length}</span><span class="n">🏰 ${i===ME?keepOwner.filter(o=>o===ME).length:seenKeep.filter(o=>o===i).length}</span><span class="n">🪙 ${i===ME?`${gold[ME]} <small>(+${income(ME)})</small>`:'?'}</span></div>`).join(''));
   const hu=hover&&unitAt(hover.c,hover.r), shown=(hu&&unitVisible(hu)?hu:null)||sel;
   setHTML('card', shown ? cardHTML(shown,previewFor(shown))
     : hover&&!explored.has(key(hover.c,hover.r)) ? '<div class="empty"><b>Unexplored</b><br>Send units this way to reveal the map.</div>'
     : hover ? `<div class="empty"><b>${TERR[tileCh(hover.c,hover.r)].name}</b>${mineInfo(hover)}<br>${TERR[tileCh(hover.c,hover.r)].note||'Open ground.'}${seenTower.has(key(hover.c,hover.r))?`<br>🏯 ${FACTIONS[seenTower.get(key(hover.c,hover.r))].short} fort: +2 defence for its owner; recruits 1 unit per turn nearby${towerUsed.has(key(hover.c,hover.r))?' (used this turn)':''}.`:''}</div>`
     : '<div class="empty">Select one of your units, or hover anything for details.</div>');
   // shop
-  const shop=setHTML('shop',`<h3><span>Recruit at your keeps · ${recruitsLeft(0)} left this turn</span><span>🪙 ${gold[0]}</span></h3><div class="grid">${SHOP_ORDER.map(k=>{
-    const T=TYPES[k], ok=gold[0]>=T.cost&&side===0&&!busy&&!over&&spawnTiles(0,k).length>0;
-    return `<div class="sw" data-k="${k}"><button class="sec ${recruitType===k?'on':''}" data-k="${k}" ${ok||recruitType===k?'':'disabled'}><span>${T.short}</span><span>${T.cost}🪙</span></button></div>`;}).join('')}<div class="sw" data-k="tower" style="grid-column:1/3"><button class="sec ${recruitType==='tower'?'on':''}" data-k="tower" ${(gold[0]>=TOWER_COST&&side===0&&!busy&&!over&&towerTiles(0).length)||recruitType==='tower'?'':'disabled'}><span>Fort (+2 def, 1 recruit/turn)</span><span>${TOWER_COST}🪙</span></button></div></div>`);
+  const shop=setHTML('shop',`<h3><span>Recruit at your keeps · ${recruitsLeft(ME)} left this turn</span><span>🪙 ${gold[ME]}</span></h3><div class="grid">${SHOP_ORDER.map(k=>{
+    const T=TYPES[k], ok=gold[ME]>=T.cost&&side===ME&&!busy&&!over&&spawnTiles(ME,k).length>0;
+    return `<div class="sw" data-k="${k}"><button class="sec ${recruitType===k?'on':''}" data-k="${k}" ${ok||recruitType===k?'':'disabled'}><span>${T.short}</span><span>${T.cost}🪙</span></button></div>`;}).join('')}<div class="sw" data-k="tower" style="grid-column:1/3"><button class="sec ${recruitType==='tower'?'on':''}" data-k="tower" ${(gold[ME]>=TOWER_COST&&side===ME&&!busy&&!over&&towerTiles(ME).length)||recruitType==='tower'?'':'disabled'}><span>Fort (+2 def, 1 recruit/turn)</span><span>${TOWER_COST}🪙</span></button></div></div>`);
   shop.querySelectorAll('button').forEach(b=>b.onclick=()=>chooseRecruit(b.dataset.k));
   shop.querySelectorAll('.sw').forEach(w=>{ w.onmouseenter=()=>showTip(w); w.onmouseleave=hideTip; });
-  const cp=sel&&sel.cargo.length&&side===0&&!busy?sel:null;
+  const cp=sel&&sel.cargo.length&&side===ME&&!busy?sel:null;
   const cel=setHTML('cargo',cp?`<h3><span>Aboard the ${cp.type.short}</span></h3><div class="grid">${cp.cargo.map((c,i)=>`<button class="sec" data-i="${i}" ${!c.done&&landTiles(cp).length?'':'disabled'}>Unload ${c.type.short}</button>`).join('')}</div>`:'');
   cel.querySelectorAll('button').forEach(b=>b.onclick=()=>selectCargo(cp.cargo[+b.dataset.i]));
   let h='Click one of your units to begin.';
   if(over) h='The battle is over.';
-  else if(side!==0) h=`${FACTIONS[side].name} is moving…`;
+  else if(side!==ME) h=`${FACTIONS[side].name} is moving…`;
   else if(recruitType==='tower') h='Click a green grass hex to build a fort: +2 defence for your unit there, and one recruit per turn on adjacent hexes. It collapses if that unit dies; enemies can raze it.';
   else if(recruitType==='archertower') h='Click a green grass hex next to any of your units (or near a keep or fort) to build an Archer Tower. Grass only. It rests until next turn.';
   else if(recruitType==='merc') h='Click any green hex you can see to hire a Mercenary there. He rests until next turn and serves for 5 rounds (3 at most).';
@@ -1390,24 +1620,24 @@ function refreshUI(){
   else if(sel&&boardShips.length) h=`Blue hex = move (${sel.mp} left). Click a green-ringed ship to board it (ends this unit's turn).`;
   else if(sel&&sel.mp>0) h=(sel.type.stat?'Moving means it cannot fire this turn. ':'')+`Blue hex = move (${sel.mp} movement left). ${targets.length?'Red-ringed enemy = attack.':''}`;
   else if(sel) h='No movement left. Choose a red-ringed enemy to attack, or press Wait.';
-  else if(alive(0).length&&alive(0).every(u=>!actionable(u))) h='All units have acted. Recruit more, or end your turn.';
+  else if(alive(ME).length&&alive(ME).every(u=>!actionable(u))) h='All units have acted. Recruit more, or end your turn.';
   document.getElementById('hint').textContent=h;
-  document.getElementById('undo').disabled=!(undoSnap&&side===0&&!busy&&!over);
-  document.getElementById('wait').disabled=!(sel&&side===0&&!busy);
-  const end=document.getElementById('end'); end.disabled=side!==0||busy||over;
+  document.getElementById('undo').disabled=!(undoSnap&&side===ME&&!busy&&!over);
+  document.getElementById('wait').disabled=!(sel&&side===ME&&!busy);
+  const end=document.getElementById('end'); end.disabled=side!==ME||busy||over;
   document.getElementById('save').disabled=!canSave();
-  end.classList.toggle('pulse',side===0&&!busy&&!over&&alive(0).length>0&&alive(0).every(u=>!actionable(u)));
+  end.classList.toggle('pulse',side===ME&&!busy&&!over&&alive(ME).length>0&&alive(ME).every(u=>!actionable(u)));
 }
 function mineInfo(h){
   if(tileCh(h.c,h.r)!=='G') return '';
   const o=seenMine.get(key(h.c,h.r)); return ` — ${o==null?'unclaimed':'held by '+FACTIONS[o].short}`;
 }
 function showEnd(win,why){
-  clearSave();   // a finished battle can't be continued
+  if(MP) mpClearSave(); else clearSave();   // a finished battle can't be continued
   if(win){
     const v=document.getElementById('victory'), vid=document.getElementById('vicvid');
     v.classList.remove('hidden'); try{ vid.currentTime=0; vid.play().catch(()=>{}); }catch(e){}
-    document.getElementById('again2').onclick=()=>{ v.classList.add('hidden'); vid.pause(); stopMusic(); newGame(); playAmbient(); };
+    document.getElementById('again2').onclick=()=>{ v.classList.add('hidden'); vid.pause(); stopMusic(); if(MP){ mpClose(); goHome(); return; } newGame(); playAmbient(); };
     stopAmbient(); playMusic(true); return;
   }
   startDefeat();
@@ -1434,10 +1664,15 @@ function startDefeat(){
   v.play().catch(()=>{ v.muted=true; return v.play(); }).catch(()=>{ clearTimeout(defeatTimer); defeatTimer=setTimeout(finish,5000); });
 }
 function goHome(){
-  gameStarted=false;
+  gameStarted=false; mpClose(); ME=0;
   newGame();                                          // fresh random map waiting behind the title
   document.getElementById('title').classList.remove('hidden');
   showIntro();                                        // restarts the title video and music
+}
+function enterGame(){
+  const t=document.getElementById('title'), v=document.getElementById('titlevid');
+  t.classList.add('hidden'); document.getElementById('overlay').classList.add('hidden'); document.getElementById('panel').classList.remove('mp'); v.pause(); stopMusic(); gameStarted=true; refreshUI(); playAmbient(); sfx('turn');
+  banner(side===ME?'Your Turn':`${FACTIONS[side].short}'s Turn`);
 }
 function showIntro(){
   const t=document.getElementById('title'), v=document.getElementById('titlevid'), im=document.getElementById('titleimg');
@@ -1450,7 +1685,7 @@ function showIntro(){
   v.src='assets/title.mp4'; tryImg();
   playMusic(true);
   const go=document.getElementById('go'), cont=document.getElementById('continue'), save=readSave();
-  const enter=()=>{ t.classList.add('hidden'); v.pause(); stopMusic(); gameStarted=true; refreshUI(); playAmbient(); sfx('turn'); banner('Your Turn'); };
+  const enter=enterGame;
   cont.style.display=save?'':'none';
   if(save) cont.textContent=`Continue — Turn ${save.turn}`;
   go.textContent=save?'New Battle':'Begin Battle';
@@ -1460,7 +1695,8 @@ function showIntro(){
   pick.querySelectorAll('button').forEach(b=>b.onclick=()=>{ enemyCount=+b.dataset.n; try{ localStorage.setItem('raysRealm.enemies',enemyCount); }catch(e){} mark(); sfx('step'); });
   mark();
   pick.title='How many computer armies you fight in a New Battle';
-  go.onclick=()=>{ newGame(); enter(); };   // fresh map with the chosen number of enemies
+  go.onclick=()=>{ mpClose(); ME=0; newGame(); enter(); };
+  document.getElementById('mpopen').onclick=()=>mpMenu();   // fresh map with the chosen number of enemies
   cont.onclick=()=>{
     const d=readSave();
     if(d){ try{ loadGame(d); }catch(e){ console.error(e); newGame(); log('That saved game could not be loaded, so a new battle has begun.','sys'); } }
@@ -1544,7 +1780,7 @@ function resize(){
 function drawUnit(u){
   const m=SPR[u.key], img=IMG[u.sprite], p=upos(u), k=(BASE_W*S)/m.bw;
   const dx=p.x+u.off.x-m.cx*k, dy=p.y+u.off.y-(m.bottom-BASE_CY*m.bw/300)*k;
-  const tired=u.done&&u.team===0&&side===0;
+  const tired=u.done&&u.team===ME&&side===ME;
   if(u.alpha>0.5){ hexPath(p.x+u.off.x,p.y+u.off.y,S*(BASE_W/2+0.03)); ctx.strokeStyle=FACTIONS[u.team].color; ctx.lineWidth=Math.max(2,S*0.07); ctx.globalAlpha=tired?0.4:0.95; ctx.stroke(); ctx.globalAlpha=1; }
   ctx.save();
   ctx.globalAlpha=u.alpha*(tired?0.55:1);
