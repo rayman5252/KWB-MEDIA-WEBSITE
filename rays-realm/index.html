@@ -152,6 +152,9 @@
   #armyscreen h2{font-size:clamp(34px,6vw,68px);color:var(--ac,var(--gold));margin:6px 0 0}
   #armyscreen .tag{margin:6px 0 14px}
   #armyscreen p{margin:0 0 18px;font-size:clamp(14px,1.7vw,17px);line-height:1.55;color:#f6eed6;text-shadow:0 2px 8px #000,0 0 14px #000;background:#0007;padding:12px 14px;border-radius:8px;border-left:4px solid var(--ac,var(--gold))}
+  #armyspecial{margin:0 0 16px;font-size:clamp(13px,1.6vw,15px);line-height:1.45;color:#f6eed6;text-shadow:0 2px 8px #000;background:#000a;padding:8px 14px;border-radius:8px}
+  #armyspecial div+div{margin-top:6px}
+  #armyspecial b{display:block;font-family:Cinzel,Georgia,serif;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ac,var(--gold))}
   #armytabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
   #armytabs button{display:flex;align-items:center;gap:6px;font-size:14px;padding:7px 12px;background:linear-gradient(#d9ccaa,#b4a279);box-shadow:0 2px 0 #6d5f3f}
   #armytabs button i{width:11px;height:11px;border-radius:50%;background:var(--fc);box-shadow:0 0 0 2px #0004}
@@ -209,7 +212,7 @@
     <div class="arow"><button id="storygo">Choose Your Army</button><button class="sec" id="storyback">Back</button></div></div></div>
 <div id="armyscreen" class="scene hidden"><img class="bgm" id="armyimg" alt=""><div class="shade"></div>
   <div class="box" id="armybox"><div class="alabel">Choose Your Army</div><h2 id="armyname"></h2><div class="tag" id="armycmd"></div>
-    <p id="armytext"></p><div id="armytabs"></div>
+    <p id="armytext"></p><div id="armyspecial"><div><b>Special unit</b><span id="armyunit"></span></div><div><b>Army bonus</b><span id="armybonus"></span></div></div><div id="armytabs"></div>
     <div class="arow"><button id="armygo">Lead This Army</button><button class="sec" id="armyback">Back</button></div></div></div>
 <div id="title" class="scene"><video id="titlevid" muted loop playsinline autoplay></video><img class="bgm" id="titleimg" alt="" style="display:none"><div class="shade"></div>
   <div class="box"><h2>Ray's Realm</h2><div class="tag">Four armies. One crown. Hold the gold, rule the realm.</div>
@@ -220,6 +223,7 @@
   <a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a>
   <div id="musicnote" style="display:none;margin-top:10px;font-size:13px;opacity:.85;text-shadow:0 2px 6px #000">♪ Click anywhere to start the music</div>
   <details><summary>How to play</summary><ul>
+    <li><b>Armies:</b> each army recruits one special unit and has its own bonus. Order of the Cross: the Paladin, and units next to a Paladin heal 2 health each turn. Dark Host: the Marsh Stalker (hidden unless an enemy is within 2 hexes) and 2 gold for every enemy unit destroyed. Golden Valkyries: the winged Valkyrie, mines that pay +1 gold, and Mercenaries for 2 gold. Emerald Court: the Elven Ranger (range 2–4), 1 extra hex of sight and 1 less damage in forest.</li>
     <li><b>Omens:</b> from round 4 on, the sky or the land sometimes turns on everyone. Each omen is announced one round ahead (see the Omens panel). Fog Bank: everyone sees 1 hex less. Thunderstorm: ships cannot sail and ranged units lose 1 range. Hard Frost: rivers freeze for 2–3 rounds so units can walk across (ships are stuck), then the ice cracks: anyone still on it takes 4 damage and is thrown onto the nearest bank. Bountiful Harvest: mines pay double. Plague: the largest army loses 2 health on each unit that can move. Barbarian Surge: each barbarian tower musters 2 extra raiders, who march a round later.</li>
     <li>Each unit has <b>movement points</b> per turn and can spend them in several steps until you press End Turn. Attacking ends that unit's turn. Catapults can't fire after moving.</li>
     <li><b>Gold mines:</b> end a move on one to seize it. Each held mine pays +2 gold at the start of your turn.</li>
@@ -247,9 +251,12 @@ const SPR = {
   ship:{w:302,h:365,cx:151,bottom:364,bw:300}, catapult:{w:335,h:291,cx:151,bottom:290,bw:300},
   cavalry:{w:313,h:468,cx:162,bottom:466,bw:300}, dragon:{w:334,h:360,cx:151,bottom:358,bw:300},
   archer:{w:325,h:456,cx:151,bottom:454,bw:300}, scout:{w:302,h:418,cx:151,bottom:416,bw:300},
-  barbarcher:{w:302,h:446,cx:151,bottom:444,bw:300}, barbtower:{w:302,h:394,cx:151,bottom:393,bw:300}, barbrider:{w:302,h:443,cx:151,bottom:441,bw:300}, merc:{w:337,h:440,cx:186,bottom:438,bw:300}, archertower:{w:302,h:354,cx:151,bottom:353,bw:300}
+  barbarcher:{w:302,h:446,cx:151,bottom:444,bw:300}, barbtower:{w:302,h:394,cx:151,bottom:393,bw:300}, barbrider:{w:302,h:443,cx:151,bottom:441,bw:300}, merc:{w:337,h:440,cx:186,bottom:438,bw:300}, archertower:{w:302,h:354,cx:151,bottom:353,bw:300},
+  paladin:{w:302,h:475,cx:149,bottom:474,bw:300}, stalker:{w:302,h:400,cx:151,bottom:399,bw:300}, valkyrie:{w:302,h:400,cx:151,bottom:399,bw:300}, ranger:{w:302,h:400,cx:151,bottom:399,bw:300}
 };
 const IMG = {};
+const SPRM = {f1_archer:{w:323,h:451,cx:152,bottom:450,bw:300}, f1_archertower:{w:302,h:374,cx:149,bottom:373,bw:300}, f1_catapult:{w:340,h:304,cx:155,bottom:303,bw:300}, f1_cavalry:{w:339,h:467,cx:188,bottom:466,bw:300}, f1_dragon:{w:332,h:356,cx:149,bottom:355,bw:300}, f1_knight:{w:319,h:416,cx:167,bottom:415,bw:300}, f1_scout:{w:300,h:390,cx:149,bottom:389,bw:300}, f1_ship:{w:300,h:369,cx:149,bottom:368,bw:300}, f1_stalker:{w:329,h:366,cx:149,bottom:365,bw:300}, f1_wizard:{w:302,h:367,cx:149,bottom:366,bw:300}, f2_archer:{w:323,h:454,cx:150,bottom:453,bw:300}, f2_archertower:{w:301,h:416,cx:149,bottom:415,bw:300}, f2_catapult:{w:356,h:307,cx:162,bottom:306,bw:300}, f2_cavalry:{w:312,h:467,cx:160,bottom:466,bw:300}, f2_dragon:{w:332,h:358,cx:149,bottom:357,bw:300}, f2_knight:{w:337,h:410,cx:186,bottom:409,bw:300}, f2_scout:{w:300,h:415,cx:149,bottom:414,bw:300}, f2_ship:{w:300,h:361,cx:149,bottom:360,bw:300}, f2_valkyrie:{w:484,h:511,cx:241,bottom:510,bw:300}, f2_wizard:{w:300,h:357,cx:149,bottom:356,bw:300}, f3_archer:{w:327,h:455,cx:149,bottom:454,bw:300}, f3_archertower:{w:300,h:445,cx:149,bottom:444,bw:300}, f3_catapult:{w:325,h:313,cx:150,bottom:312,bw:300}, f3_cavalry:{w:312,h:466,cx:160,bottom:465,bw:300}, f3_dragon:{w:333,h:358,cx:150,bottom:357,bw:300}, f3_knight:{w:344,h:464,cx:190,bottom:463,bw:300}, f3_ranger:{w:313,h:445,cx:149,bottom:444,bw:300}, f3_scout:{w:300,h:410,cx:149,bottom:409,bw:300}, f3_ship:{w:300,h:367,cx:149,bottom:366,bw:300}, f3_wizard:{w:300,h:357,cx:149,bottom:356,bw:300}, f0_paladin:{w:302,h:475,cx:149,bottom:474,bw:300}};   // per-sprite metrics for the new army art (falls back to SPR by unit type)
+const SPECIAL = {paladin:0, stalker:1, valkyrie:2, ranger:3};   // army-only units: the sprite exists for that army alone
 const spriteKey = (team,type) => type==='merc' ? 'f4_merc' : 'f'+team+'_'+type;   // mercenaries share one neutral sprite; the hex ring shows who hired them
 const TILEIMG = {};
 const TILEFILE = {'~':'t_water','f':'t_forest','^':'t_crags','G':'tf_mine','K':'tf_keep','F':'tf_fort'};
@@ -257,7 +264,7 @@ const tilesReady = Promise.all(Object.entries(TILEFILE).map(([ch,n]) => new Prom
   const i = new Image(); i.onload = () => { TILEIMG[ch]=i; res(); }; i.onerror = res; i.src = 'assets/'+n+'.png';
 })));
 const BARB_TYPES = ['barbarcher','barbrider','barbtower','merc'];   // Barbarians (team 4) only have their own sprite set
-const imgReady = Promise.all(Object.keys(SPR).flatMap(n => (BARB_TYPES.includes(n)?[4]:[0,1,2,3]).map(t => new Promise(res => {
+const imgReady = Promise.all(Object.keys(SPR).flatMap(n => (BARB_TYPES.includes(n)?[4]:SPECIAL[n]!=null?[SPECIAL[n]]:[0,1,2,3]).map(t => new Promise(res => {
   const i = new Image(); i.onload = i.onerror = res; i.src = 'assets/'+spriteKey(t,n)+'.png'; IMG[spriteKey(t,n)] = i;
 }))));
 
@@ -307,9 +314,20 @@ const TYPES = {
   wizard:  {name:'Wizard', short:'Wizard', cost:8, hp:8, atk:6, def:0, mv:2, rng:[1,3], cls:'ground', pierce:true,
             desc:'Arcane bolt ignores armour and terrain. Range 1–3. Fragile.'},
   dragon:  {name:'Dragon', short:'Dragon', cost:18, hp:22, atk:7, def:2, mv:5, rng:[1,2], cls:'fly',
-            desc:'Flies over anything. Fire breath reaches 2 hexes. The terror of the field.'}
+            desc:'Flies over anything. Fire breath reaches 2 hexes. The terror of the field.'},
+  // ---- army-only units (each army recruits exactly one)
+  paladin: {name:'Paladin', short:'Paladin', cost:9, hp:16, atk:6, def:3, mv:2, rng:[1,1], cls:'ground', only:0,
+            desc:'The Order\'s holy champion: 16 hit points and 3 defence. Healing Light: friendly units within 1 hex of a Paladin heal 2 health at the start of your turn.'},
+  stalker: {name:'Marsh Stalker', short:'Stalker', cost:6, hp:8, atk:6, def:1, mv:3, rng:[1,1], cls:'wade', only:1,
+            desc:'Swamp assassin of the Dark Host. Wades through water and forest at no extra cost, and stays hidden from enemies more than 2 hexes away.'},
+  valkyrie:{name:'Valkyrie', short:'Valkyrie', cost:8, hp:9, atk:6, def:1, mv:4, rng:[1,1], cls:'fly', only:2,
+            desc:'A winged shield-maiden who flies over rivers, forests and crags. Fast and hard-hitting.'},
+  ranger:  {name:'Elven Ranger', short:'Ranger', cost:6, hp:7, atk:5, def:0, mv:2, rng:[2,4], cls:'ground', vision:4, only:3,
+            desc:'Elite Emerald Court sharpshooter. Longbow reaches 2–4 hexes and sees 4 hexes, but cannot fire at adjacent foes.'}
 };
 const SHOP_ORDER = Object.keys(TYPES).filter(k=>!TYPES[k].barb).sort((a,b)=>TYPES[a].cost-TYPES[b].cost);   // recruit menu, cheapest first
+const shopFor = team => SHOP_ORDER.filter(k=>TYPES[k].only==null||TYPES[k].only===team);   // army-only units show for that army alone
+const PALADIN_HEAL = 2, SPOILS = 2;
 const MIN_COST = 3;   // no cap on army size: armies are limited only by gold and free hexes
 const MERC_ROUNDS = 5, MERC_MAX = 3;
 const KEEP_RECRUITS = 4;   // units an army may recruit per turn for each keep it holds (plus one per unused fort); mercenaries are hired outside this quota
@@ -339,7 +357,7 @@ function hexDist(a,b){
 }
 function visTiles(src,out){
   for(const q of src){
-    const rad=Math.max(1,((q.type&&q.type.vision)||VISION)-(omenIs('fog')?1:0));
+    const rad=Math.max(1,((q.type&&q.type.vision)||VISION)+(q.team===3?1:0)-(omenIs('fog')?1:0));   // Emerald Court units see 1 hex farther
     for(let r=Math.max(0,q.r-rad-1);r<=Math.min(ROWS-1,q.r+rad+1);r++)
       for(let c=Math.max(0,q.c-rad);c<=Math.min(COLS-1,q.c+rad);c++) if(hexDist(q,{c,r})<=rad) out.add(key(c,r));
   }
@@ -347,6 +365,7 @@ function visTiles(src,out){
 function tileCost(cls,c,r){
   const t=tileCh(c,r);
   if(cls==='fly') return 1;
+  if(cls==='wade') return t==='^' ? null : 1;   // Marsh Stalkers wade through water and forest at normal cost
   if(cls==='water') return (t==='~'&&!omenIs('frost')&&!omenIs('storm')) ? 1 : null;   // frozen or storm-bound: ships cannot sail
   if(t==='~') return omenIs('frost') ? 1 : null;   // the frozen river can be walked
   if(t==='^') return null;
@@ -357,10 +376,10 @@ function tileCost(cls,c,r){
 // how many enemy armies you face (chosen on the title screen). Unused corners are left as abandoned keeps anyone can claim.
 const ENEMY_SETS={1:[2],2:[1,3],3:[1,2,3]};   // for the Order (army 0): one enemy sits in the far corner; two take the neighbouring corners
 const ARMY_INFO=[
- {cmd:'Lord Ray, Head of the Order of the Cross', text:"The oldest banner in the realm. Lord Ray's knights march under the red cross, sworn to guard the crown and the common folk alike. Disciplined, well-armoured and proud, the Order fights shoulder to shoulder and has never yielded its keep. Where the Cross is raised, the realm still has a king worth defending."},
- {cmd:'Warlord Szarok, Head of the Dark Host', text:"Scaled, patient and merciless, the Dark Host crept out of the southern marshes to claim the realm that once shunned them. Warlord Szarok wears the plate of fallen champions over his own armoured hide and wastes nothing: not an hour, not a soldier, not a grudge. Fear is the Host's first weapon. The sword is only the second."},
- {cmd:'Empress Joy, Head of the Golden Valkyries', text:"Empress Joy leads the Golden Valkyries, shield-maidens forged in the northern passes and loyal to no throne but hers. They ride light, strike first and take their gold in battle. Where the Valkyries pass, mines change hands and keeps fall quiet. Join her, and glory is paid in advance."},
- {cmd:'Lord Aelindor, Head of the Emerald Court', text:"Ancient, graceful and cold as the green deep forest, the Emerald Court has watched the human kingdoms rise and fall for a thousand years. Lord Aelindor wears armour of living emerald and fights with the calm of one who has already seen the ending. The Court does not seek war. It simply never loses one."}
+ {unit:'Paladin (9 gold): 16 health, 3 defence. A holy champion who cannot be moved easily.', bonus:'Healing Light: friendly units within 1 hex of a Paladin heal 2 health at the start of each of your turns.', cmd:'Lord Ray, Head of the Order of the Cross', text:"The oldest banner in the realm. Lord Ray's knights march under the red cross, sworn to guard the crown and the common folk alike. Disciplined, well-armoured and proud, the Order fights shoulder to shoulder and has never yielded its keep. Where the Cross is raised, the realm still has a king worth defending."},
+ {unit:'Marsh Stalker (6 gold): 3 moves; wades through water and forest at no extra cost, and stays hidden from enemies more than 2 hexes away.', bonus:'Spoils of War: gain 2 gold for every enemy unit you destroy.', cmd:'Warlord Szarok, Head of the Dark Host', text:"Scaled, patient and merciless, the Dark Host crept out of the southern marshes to claim the realm that once shunned them. Warlord Szarok wears the plate of fallen champions over his own armoured hide and wastes nothing: not an hour, not a soldier, not a grudge. Fear is the Host's first weapon. The sword is only the second."},
+ {unit:'Valkyrie (8 gold): a winged flyer with 4 moves that ignores rivers, forests and crags.', bonus:'Gold Hoard: your gold mines pay +1 gold and Mercenaries cost only 2.', cmd:'Empress Joy, Head of the Golden Valkyries', text:"Empress Joy leads the Golden Valkyries, shield-maidens forged in the northern passes and loyal to no throne but hers. They ride light, strike first and take their gold in battle. Where the Valkyries pass, mines change hands and keeps fall quiet. Join her, and glory is paid in advance."},
+ {unit:'Elven Ranger (6 gold): longbow with range 2–4 and 4-hex sight.', bonus:'Forest Sight: your units see 1 hex farther and take 1 less damage while standing in forest.', cmd:'Lord Aelindor, Head of the Emerald Court', text:"Ancient, graceful and cold as the green deep forest, the Emerald Court has watched the human kingdoms rise and fall for a thousand years. Lord Aelindor wears armour of living emerald and fights with the calm of one who has already seen the ending. The Court does not seek war. It simply never loses one."}
 ];
 let myArmy=0; try{ const a=+localStorage.getItem('raysRealm.myArmy'); if(a>=0&&a<4) myArmy=a; }catch(e){}   // the army you pick on the title screen for a game against the computer
 // enemies for army `me`: the far corner is me^2 (0<->2, 1<->3), the other two are its neighbours
@@ -385,11 +404,11 @@ const unitAt = (c,r) => units.find(u => u.c===c && u.r===r);
 const alive = team => units.filter(u => u.team===team);
 const TOWER_COST = 30;
 let towers = new Map(), towerUsed = new Set();
-const terrainDef = u => (u.type.cls==='fly' ? 0 : TERR[tileCh(u.c,u.r)].def) + (towers.get(key(u.c,u.r))===u.team ? 2 : 0);
+const terrainDef = u => (u.type.cls==='fly' ? 0 : TERR[tileCh(u.c,u.r)].def) + (towers.get(key(u.c,u.r))===u.team ? 2 : 0) + (u.team===3&&u.type.cls!=='fly'&&tileCh(u.c,u.r)==='f' ? 1 : 0);   // Emerald Court: +1 defence in forest
 const minesOf = t => MINES.filter(m=>mineOwner.get(key(m.c,m.r))===t).length;
 const KEEP_INCOME = 2;
 const keepsOf = t => keepOwner.filter(o=>o===t).length;
-const income = t => FACTIONS[t].base + MINE_INCOME*minesOf(t)*(omenIs('harvest')?2:1) + KEEP_INCOME*keepsOf(t);
+const income = t => FACTIONS[t].base + (MINE_INCOME+(t===2?1:0))*minesOf(t)*(omenIs('harvest')?2:1) + KEEP_INCOME*keepsOf(t);
 
 // ---- undo: one level, the last move/board/unload/recruit/tower (attacks and end of turn clear it)
 function takeSnap(label){
@@ -903,7 +922,7 @@ const canStop = (u,e) => !unitAt(e.c,e.r) || (e.c===u.c && e.r===u.r);
 function targetsFrom(u,c,r){
   if(u.type.noattack) return [];
   if(u.team===ME) updateVision();
-  return units.filter(t => t.team!==u.team && (u.team===ME?visible.has(key(t.c,t.r)):aiCanSee(u.team,t.c,t.r)) && (d=>d>=u.type.rng[0]&&d<=rmax(u))(hexDist({c,r},t)));
+  return units.filter(t => t.team!==u.team && !stalkerHidden(t,u.team) && (u.team===ME?visible.has(key(t.c,t.r)):aiCanSee(u.team,t.c,t.r)) && (d=>d>=u.type.rng[0]&&d<=rmax(u))(hexDist({c,r},t)));
 }
 function calcDmg(a,d,charge){
   const atk=a.type.atk+(charge&&a.type.charge?2:0);
@@ -953,7 +972,7 @@ function towerTiles(team){
   }
   return out;
 }
-const costOf = type => type==='tower' ? TOWER_COST : TYPES[type].cost;
+const costOf = (type,team=ME) => type==='tower' ? TOWER_COST : (type==='merc'&&team===2 ? TYPES.merc.cost-1 : TYPES[type].cost);   // Golden Valkyries hire Mercenaries for 2
 const tilesFor = (team,type) => type==='tower' ? towerTiles(team) : spawnTiles(team,type);
 function buildTower(team,c,r){
   gold[team]-=TOWER_COST; towers.set(key(c,r),team);
@@ -961,10 +980,10 @@ function buildTower(team,c,r){
     log(`${FACTIONS[team].short} builds a fort (-${TOWER_COST}g).`,'t'+team); sfx('recruit'); }
 }
 function recruit(team,type,c,r,tw){
-  const T=TYPES[type]; gold[team]-=T.cost; if(tw) towerUsed.add(tw); else if(!T.merc) recruitsUsed[team]++;
+  const T=TYPES[type], cost=costOf(type,team); gold[team]-=cost; if(tw) towerUsed.add(tw); else if(!T.merc) recruitsUsed[team]++;
   const u=makeUnit(type,team,c,r); u.done=true; u.moved=true; u.mp=0; units.push(u); mpRec({k:'spawn',u:packUnit(u)});
   if(team===ME||isVis(c,r)){ const p=center(c,r); effects.push({ring:true,x:p.x,y:p.y-S*0.3,t0:performance.now(),life:500,color:'#9be28a'});
-    log(T.merc?`${FACTIONS[team].short} hires a Mercenary (-${T.cost}g).`:`${FACTIONS[team].short} recruits ${u.name} at ${tw?'a fort':'the keep'} (-${T.cost}g).`,'t'+team); sfx('recruit'); }
+    log(T.merc?`${FACTIONS[team].short} hires a Mercenary (-${cost}g).`:`${FACTIONS[team].short} recruits ${u.name} at ${tw?'a fort':'the keep'} (-${cost}g).`,'t'+team); sfx('recruit'); }
 }
 function captureAt(u){
   if(u.team>=4) return;   // barbarians do not hold ground
@@ -986,9 +1005,18 @@ function captureAt(u){
   const k=key(u.c,u.r); if(mineOwner.get(k)===u.team) return;
   mineOwner.set(k,u.team); const p=center(u.c,u.r);
   if(seen){ addText(p.x,p.y-S*1.3,'Mine seized!',FACTIONS[u.team].color);
-    log(`${FACTIONS[u.team].short} seizes a gold mine (+${MINE_INCOME}/turn).`,'t'+u.team); sfx('coin'); }
+    log(`${FACTIONS[u.team].short} seizes a gold mine (+${MINE_INCOME+(u.team===2?1:0)}/turn).`,'t'+u.team); sfx('coin'); }
 }
 // ---- healing: wounded units that stayed out of battle recover 5% of max HP per turn, 10% within 2 hexes of a keep or fort they hold
+// Order of the Cross: friendly units within 1 hex of a Paladin heal a little at the start of the turn
+function paladinAura(t){
+  const pals=units.filter(x=>x.team===t&&x.key==='paladin'); if(!pals.length) return;
+  for(const u of units.filter(x=>x.team===t).flatMap(x=>[x,...x.cargo])){
+    if(u.key==='paladin'||u.aboard||u.hp>=u.type.hp||!pals.some(q=>hexDist(q,u)<=1)) continue;
+    const g=Math.min(PALADIN_HEAL,u.type.hp-u.hp); u.hp+=g;
+    if(t===ME||isVis(u.c,u.r)){ const q=center(u.c,u.r); addText(q.x,q.y-S*1.1,'+'+g+' ✚','#f2d36b'); }
+  }
+}
 function healTeam(t){
   const homes=[...KEEPS.filter((k,i)=>keepOwner[i]===t).map(([c,r])=>({c,r})),
     ...[...towers].filter(([k,tm])=>tm===t).map(([k])=>{ const [c,r]=k.split(',').map(Number); return {c,r}; })];
@@ -1006,7 +1034,7 @@ function healTeam(t){
 function startTeamTurn(t){
   for(const u of [...units]){ if(u.team===t&&u.key==='merc'&&--u.rounds<=0){ units=units.filter(x=>x!==u); units.forEach(h=>{ h.cargo=h.cargo.filter(x=>x!==u); }); if(sel===u) clearSel();
     if(t===ME){ const p=center(u.c,u.r); addText(p.x,p.y-S*1.2,'Contract ended',FACTIONS[ME].color); log('A Mercenary\'s contract has ended. He walks away.','sys'); } } }
-  healTeam(t); recruitsUsed[t]=0;
+  healTeam(t); paladinAura(t); recruitsUsed[t]=0;
   for(const [k,tm] of towers) if(tm===t) towerUsed.delete(k);
   units.filter(u=>u.team===t).forEach(u=>{u.done=false;u.moved=false;u.steps=0;u.mp=u.type.mv;u.cargo.forEach(c=>{c.done=false;c.moved=false;c.steps=0;c.mp=c.type.mv;});});
   const inc=income(t); gold[t]+=inc; lastPay[t]=inc;
@@ -1039,7 +1067,7 @@ function rollOmen(forTurn){
 const omenLeft = () => omenNow ? omenNow.start+omenNow.len-turn : 0;   // rounds remaining including this one
 function thawIce(){
   let n=0; playOmenSample('ice_crack',0.7);
-  for(const u of [...units]){ if(u.type.cls==='fly'||tileCh(u.c,u.r)!=='~'||u.type.cls==='water') continue; u.hp=Math.max(1,u.hp-4); n++;
+  for(const u of [...units]){ if(u.type.cls==='fly'||u.type.cls==='wade'||tileCh(u.c,u.r)!=='~'||u.type.cls==='water') continue; u.hp=Math.max(1,u.hp-4); n++;
     const was=unitVisible(u), p0=center(u.c,u.r);
     // the survivors scramble onto the nearest free bank, so nobody is left standing in open water
     let best=null; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ if(unitAt(c,r)||tileCost('ground',c,r)==null||tileCh(c,r)==='~') continue; const ch=tileCh(c,r); if(ch==='K'||ch==='G') continue; const d=hexDist(u,{c,r}); if(!best||d<best.d) best={c,r,d}; }
@@ -1172,7 +1200,9 @@ const upos = u => u.anim ? u.anim : center(u.c,u.r);
 
 // ---- fog of war: your units, keeps and towers see 3 hexes; explored hexes stay revealed
 const isVis = (c,r) => visible.has(key(c,r));
-const unitVisible = u => u.team===ME || isVis(u.c,u.r);
+// Marsh Stalkers stay hidden unless an enemy unit or keep is within 2 hexes
+const stalkerHidden = (u,viewer) => u.key==='stalker' && u.team!==viewer && !units.some(x=>x.team===viewer&&hexDist(x,u)<=2) && !KEEPS.some((k,i)=>keepOwner[i]===viewer&&hexDist({c:k[0],r:k[1]},u)<=2);
+const unitVisible = u => u.team===ME || (isVis(u.c,u.r) && !stalkerHidden(u,ME));
 function visionSources(){
   return [...units.filter(u=>u.team===ME),
     ...KEEPS.filter((k,i)=>keepOwner[i]===ME).map(([c,r])=>({c,r})),
@@ -1197,7 +1227,7 @@ function ensureInView(pt){
 async function moveUnit(u,path){
   mpRec({k:'move',id:u.id,path:path.map(p=>({c:p.c,r:p.r}))});
   for(let i=1;i<path.length;i++){
-    if(u.team===ME) revealAround(path[i].c,path[i].r,u.type.vision||VISION);
+    if(u.team===ME) revealAround(path[i].c,path[i].r,(u.type.vision||VISION)+(u.team===3?1:0));
     // animate and make footstep noise only for steps you can actually see (either end of the step in view)
     if(u.team!==ME && !isVis(path[i-1].c,path[i-1].r) && !isVis(path[i].c,path[i].r)) continue;
     const a=center(path[i-1].c,path[i-1].r), b=center(path[i].c,path[i].r);
@@ -1219,7 +1249,7 @@ async function strike(a,d,amount,counter){
   a.fought=true; d.fought=true;
   if(!(unitVisible(a)||unitVisible(d))){
     d.hp=Math.max(0,d.hp-amount);
-    if(d.hp<=0){ if(towers.get(key(d.c,d.r))===d.team) towers.delete(key(d.c,d.r)); if(d.key==='barbtower'&&a.team<BARB_TEAM) gold[a.team]+=BARB_BOUNTY; units=units.filter(x=>x!==d); if(sel===d) clearSel(); }
+    if(d.hp<=0){ if(towers.get(key(d.c,d.r))===d.team) towers.delete(key(d.c,d.r)); if(d.key==='barbtower'&&a.team<BARB_TEAM) gold[a.team]+=BARB_BOUNTY; if(a.team===1&&d.team!==1) gold[1]+=SPOILS; units=units.filter(x=>x!==d); if(sel===d) clearSel(); }
     return;
   }
   ensureInView(upos(d));
@@ -1246,6 +1276,7 @@ async function strike(a,d,amount,counter){
   if(d.hp<=0){
     log(`${d.name} is destroyed!${d.cargo.length?' Its passengers are lost!':''}`,'sys'); sfx('die');
     if(d.key==='barbtower'&&a.team<BARB_TEAM){ gold[a.team]+=BARB_BOUNTY; addText(D.x,D.y-S*1.6,`+${BARB_BOUNTY}🪙`,FACTIONS[a.team].color); log(`${FACTIONS[a.team].name} destroys a Barbarian Tower and claims ${BARB_BOUNTY} gold!`,'sys'); }
+    if(a.team===1&&d.team!==1){ gold[1]+=SPOILS; addText(D.x,D.y-S*1.3,`+${SPOILS}🪙`,FACTIONS[1].color); log(`Spoils of War: the Dark Host takes ${SPOILS} gold.`,'t1'); }
     await tween(450,t=>{ d.alpha=1-t; d.off={x:0,y:t*S*0.3}; });
     if(towers.get(key(d.c,d.r))===d.team){ towers.delete(key(d.c,d.r)); log('Its fort collapses with it!','sys'); }
     units=units.filter(x=>x!==d);
@@ -1379,7 +1410,7 @@ async function onTile(c,r,pickedUnit){
   if(u && selectable(u)) select(u);
 }
 
-function canRecruitAny(){ return gold[ME]>=MIN_COST && [...SHOP_ORDER,'tower'].some(t=>gold[ME]>=costOf(t) && tilesFor(ME,t).length); }
+function canRecruitAny(){ return gold[ME]>=MIN_COST && [...shopFor(ME),'tower'].some(t=>gold[ME]>=costOf(t) && tilesFor(ME,t).length); }
 function maybeAutoEnd(){
   if(over||side!==ME||busy) return;
   const mine=alive(ME);
@@ -1483,7 +1514,7 @@ async function aiTryBoard(u,info,dm){
 async function aiTower(t){
   if(gold[t]<TOWER_COST || [...towers.values()].filter(x=>x===t).length>=3) return;
   updateAIVision(t);
-  const foes=units.filter(f=>f.team!==t&&aiCanSee(t,f.c,f.r)); if(!foes.length) return;
+  const foes=units.filter(f=>f.team!==t&&aiCanSee(t,f.c,f.r)&&!stalkerHidden(f,t)); if(!foes.length) return;
   const cands=towerTiles(t).filter(({c,r})=>{ const o=unitAt(c,r); return o&&o.team===t&&!o.type.noattack; })
     .map(q=>({q,d:Math.min(...foes.map(f=>hexDist(q,f)))})).filter(x=>x.d<=5).sort((a,b)=>a.d-b.d);
   if(cands.length) buildTower(t,cands[0].q.c,cands[0].q.r);
@@ -1525,9 +1556,9 @@ async function aiAct(u){
 
 async function aiRecruit(t){
   updateAIVision(t);
-  const foes=()=>units.filter(f=>f.team!==t&&aiCanSee(t,f.c,f.r));
+  const foes=()=>units.filter(f=>f.team!==t&&aiCanSee(t,f.c,f.r)&&!stalkerHidden(f,t));
   while(!over){
-    const opts=SHOP_ORDER.filter(k=>!TYPES[k].merc && gold[t]>=TYPES[k].cost && spawnTiles(t,k).length);
+    const opts=shopFor(t).filter(k=>!TYPES[k].merc && gold[t]>=costOf(k,t) && spawnTiles(t,k).length);
     if(!opts.length) break;
     let pick;
     if(opts.includes('dragon') && Math.random()<0.6) pick='dragon';
@@ -1669,8 +1700,8 @@ function tipHTML(k){
   if(k==='tower') return `<div class="top"><img src="assets/tf_fort.png" alt="" style="width:60px;height:auto"><div><h4>Fort</h4><div class="cost">${TOWER_COST} gold</div></div></div>
     <p style="margin:6px 0 0">Build it on a grass hex near your units. <b>+2 defence</b> to your unit standing there, and it recruits <b>1 unit per turn</b> on adjacent hexes (ships too, if water is adjacent). Collapses if that unit is slain; enemies can raze it.</p>`;
   const T=TYPES[k], rng=T.rng[0]===T.rng[1]?T.rng[0]:T.rng[0]+'–'+T.rng[1];
-  const why = gold[ME]<T.cost ? `Need ${T.cost-gold[ME]} more gold.` : !spawnTiles(ME,k).length ? (k==='archertower'?'No open space next to your units.':T.cls==='water'?'No open water near your keeps or forts.':'No open space near your keeps or forts.') : '';
-  return `<div class="top"><img src="assets/${spriteKey(ME,k)}.png" alt=""><div><h4>${T.name}</h4><div class="cost">${T.cost} gold${T.cap?' · carries '+T.cap:''}</div></div></div>
+  const why = gold[ME]<costOf(k) ? `Need ${costOf(k)-gold[ME]} more gold.` : !spawnTiles(ME,k).length ? (k==='archertower'?'No open space next to your units.':T.cls==='water'?'No open water near your keeps or forts.':'No open space near your keeps or forts.') : '';
+  return `<div class="top"><img src="assets/${spriteKey(ME,k)}.png" alt=""><div><h4>${T.name}</h4><div class="cost">${costOf(k)} gold${T.cap?' · carries '+T.cap:''}</div></div></div>
     <div class="stats"><div><b>${T.hp}</b>HP</div><div><b>${T.noattack?'—':T.atk}</b>ATK</div><div><b>${T.def}</b>DEF</div><div><b>${T.mv}</b>MOVE</div><div><b>${T.noattack?'—':rng}</b>RANGE</div></div>
     <div>${T.desc}</div>${why?`<div class="warn">${why}</div>`:''}`;
 }
@@ -1696,9 +1727,9 @@ function refreshUI(){
     : hover ? `<div class="empty"><b>${TERR[tileCh(hover.c,hover.r)].name}</b>${mineInfo(hover)}<br>${TERR[tileCh(hover.c,hover.r)].note||'Open ground.'}${seenTower.has(key(hover.c,hover.r))?`<br>🏯 ${FACTIONS[seenTower.get(key(hover.c,hover.r))].short} fort: +2 defence for its owner; recruits 1 unit per turn nearby${towerUsed.has(key(hover.c,hover.r))?' (used this turn)':''}.`:''}</div>`
     : '<div class="empty">Select one of your units, or hover anything for details.</div>');
   // shop
-  const shop=setHTML('shop',`<h3><span>Recruit at your keeps · ${recruitsLeft(ME)} left this turn</span><span>🪙 ${gold[ME]}</span></h3><div class="grid">${SHOP_ORDER.map(k=>{
-    const T=TYPES[k], ok=gold[ME]>=T.cost&&side===ME&&!busy&&!over&&spawnTiles(ME,k).length>0;
-    return `<div class="sw" data-k="${k}"><button class="sec ${recruitType===k?'on':''}" data-k="${k}" ${ok||recruitType===k?'':'disabled'}><span>${T.short}</span><span>${T.cost}🪙</span></button></div>`;}).join('')}<div class="sw" data-k="tower" style="grid-column:1/3"><button class="sec ${recruitType==='tower'?'on':''}" data-k="tower" ${(gold[ME]>=TOWER_COST&&side===ME&&!busy&&!over&&towerTiles(ME).length)||recruitType==='tower'?'':'disabled'}><span>Fort (+2 def, 1 recruit/turn)</span><span>${TOWER_COST}🪙</span></button></div></div>`);
+  const shop=setHTML('shop',`<h3><span>Recruit at your keeps · ${recruitsLeft(ME)} left this turn</span><span>🪙 ${gold[ME]}</span></h3><div class="grid">${shopFor(ME).map(k=>{
+    const T=TYPES[k], ok=gold[ME]>=costOf(k)&&side===ME&&!busy&&!over&&spawnTiles(ME,k).length>0;
+    return `<div class="sw" data-k="${k}"><button class="sec ${recruitType===k?'on':''}" data-k="${k}" ${ok||recruitType===k?'':'disabled'}><span>${T.short}</span><span>${costOf(k)}🪙</span></button></div>`;}).join('')}<div class="sw" data-k="tower" style="grid-column:1/3"><button class="sec ${recruitType==='tower'?'on':''}" data-k="tower" ${(gold[ME]>=TOWER_COST&&side===ME&&!busy&&!over&&towerTiles(ME).length)||recruitType==='tower'?'':'disabled'}><span>Fort (+2 def, 1 recruit/turn)</span><span>${TOWER_COST}🪙</span></button></div></div>`);
   shop.querySelectorAll('button').forEach(b=>b.onclick=()=>chooseRecruit(b.dataset.k));
   shop.querySelectorAll('.sw').forEach(w=>{ w.onmouseenter=()=>showTip(w); w.onmouseleave=hideTip; });
   const cp=sel&&sel.cargo.length&&side===ME&&!busy?sel:null;
@@ -1796,7 +1827,7 @@ function showIntro(){
   const showArmy=t=>{ myArmy=t; const F=FACTIONS[t], I=ARMY_INFO[t];
     as.style.setProperty('--ac',F.color);
     document.getElementById('armyimg').src='assets/commander_'+t+'.jpg';
-    document.getElementById('armyname').textContent=F.name; document.getElementById('armycmd').textContent=I.cmd; document.getElementById('armytext').textContent=I.text;
+    document.getElementById('armyname').textContent=F.name; document.getElementById('armycmd').textContent=I.cmd; document.getElementById('armytext').textContent=I.text; document.getElementById('armyunit').textContent=I.unit; document.getElementById('armybonus').textContent=I.bonus;
     document.getElementById('armygo').textContent='Lead the '+F.name;
     tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.t===t)); };
   tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>{ showArmy(+b.dataset.t); sfx('step'); });
@@ -1892,7 +1923,7 @@ function resize(){
 }
 
 function drawUnit(u){
-  const m=SPR[u.key], img=IMG[u.sprite], p=upos(u), k=(BASE_W*S)/m.bw;
+  const m=SPRM[u.sprite]||SPR[u.key], img=IMG[u.sprite], p=upos(u), k=(BASE_W*S)/m.bw;
   const dx=p.x+u.off.x-m.cx*k, dy=p.y+u.off.y-(m.bottom-BASE_CY*m.bw/300)*k;
   const tired=u.done&&u.team===ME&&side===ME;
   if(u.alpha>0.5){ hexPath(p.x+u.off.x,p.y+u.off.y,S*(BASE_W/2+0.03)); ctx.strokeStyle=FACTIONS[u.team].color; ctx.lineWidth=Math.max(2,S*0.07); ctx.globalAlpha=tired?0.4:0.95; ctx.stroke(); ctx.globalAlpha=1; }
@@ -1900,7 +1931,7 @@ function drawUnit(u){
   ctx.globalAlpha=u.alpha*(tired?0.55:1);
   ctx.imageSmoothingQuality='high';
   if(img.complete&&img.naturalWidth) ctx.drawImage(img,dx,dy,m.w*k,m.h*k);
-  u.cargo.forEach((cu,i)=>{ const cm=SPR[cu.key], ci=IMG[cu.sprite], k2=(0.8*S)/cm.bw, cx=p.x+u.off.x+(i?0.42:-0.42)*S, cb=p.y+u.off.y+S*0.15;
+  u.cargo.forEach((cu,i)=>{ const cm=SPRM[cu.sprite]||SPR[cu.key], ci=IMG[cu.sprite], k2=(0.8*S)/cm.bw, cx=p.x+u.off.x+(i?0.42:-0.42)*S, cb=p.y+u.off.y+S*0.15;
     if(ci.complete&&ci.naturalWidth) ctx.drawImage(ci,cx-cm.cx*k2,cb-cm.bottom*k2,cm.w*k2,cm.h*k2); });
   ctx.restore();
   if(u.key==='merc'&&u.alpha>0.5){ const bx2=p.x+u.off.x+S*0.55, by2=p.y+u.off.y-S*1.55; ctx.beginPath(); ctx.arc(bx2,by2,S*0.24,0,Math.PI*2); ctx.fillStyle='#1b1710'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle=FACTIONS[u.team].color; ctx.stroke(); ctx.fillStyle='#f1e3b0'; ctx.font='700 '+Math.round(S*0.3)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(u.rounds,bx2,by2+1); ctx.textBaseline='alphabetic'; }
@@ -2041,7 +2072,7 @@ function pick(x,y){
     const order=[...units].sort((a,b)=>upos(b).y-upos(a).y);
     for(const v of order){
       if(!unitVisible(v)) continue;
-      const m=SPR[v.key], k=(BASE_W*S)/m.bw, p=upos(v), top=p.y-(m.bottom-BASE_CY*m.bw/300)*k;
+      const m=SPRM[v.sprite]||SPR[v.key], k=(BASE_W*S)/m.bw, p=upos(v), top=p.y-(m.bottom-BASE_CY*m.bw/300)*k;
       if(Math.abs(x-p.x)<m.bw*k*0.28 && y>top && y<p.y+S*0.4) { u=v; break; }
     }
   }
