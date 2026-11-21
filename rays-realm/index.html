@@ -130,6 +130,20 @@
   .scene button{font-size:20px;padding:14px 40px}
   #armypick{display:flex;align-items:center;gap:6px;margin:0 6px 12px;padding:6px 6px 6px 12px;background:#000a;border:1px solid #ffffff30;border-radius:8px;font-family:Cinzel,Georgia,serif;font-size:15px;color:var(--gold);text-shadow:0 2px 6px #000}
   #armypick span{margin-right:6px}
+  #armyscreen{z-index:9;justify-content:flex-end;padding-right:clamp(16px,5vw,90px);padding-left:16px}
+  #armyscreen .shade{background:linear-gradient(90deg,#0000 40%,#000c 100%),linear-gradient(#0006,#0000 28%,#000a)}
+  #armyscreen .box{text-align:left;align-items:flex-start;max-width:min(520px,92vw);padding:20px 0}
+  #armyscreen .alabel{font-family:Cinzel,Georgia,serif;letter-spacing:.2em;text-transform:uppercase;font-size:14px;color:#f3e6c4;text-shadow:0 2px 8px #000}
+  #armyscreen h2{font-size:clamp(34px,6vw,68px);color:var(--ac,var(--gold));margin:6px 0 0}
+  #armyscreen .tag{margin:6px 0 14px}
+  #armyscreen p{margin:0 0 18px;font-size:clamp(14px,1.7vw,17px);line-height:1.55;color:#f6eed6;text-shadow:0 2px 8px #000,0 0 14px #000;background:#0007;padding:12px 14px;border-radius:8px;border-left:4px solid var(--ac,var(--gold))}
+  #armytabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+  #armytabs button{display:flex;align-items:center;gap:6px;font-size:14px;padding:7px 12px;background:linear-gradient(#d9ccaa,#b4a279);box-shadow:0 2px 0 #6d5f3f}
+  #armytabs button i{width:11px;height:11px;border-radius:50%;background:var(--fc);box-shadow:0 0 0 2px #0004}
+  #armytabs button.on{background:linear-gradient(#f0cd6a,#c9962b);box-shadow:0 2px 0 #7a5614,0 0 0 2px #fff8 inset}
+  #armyscreen .arow{display:flex;gap:10px;flex-wrap:wrap}
+  #armyscreen .arow button{font-size:18px;padding:12px 28px}
+  @media(max-width:700px){#armyscreen{align-items:flex-end}#armyscreen .box{padding-bottom:14px}#armyscreen p{font-size:13px;padding:9px 11px;margin-bottom:12px}}
   #armypick button{font-size:16px;padding:6px 14px;background:linear-gradient(#d9ccaa,#b4a279);box-shadow:0 2px 0 #6d5f3f}
   #armypick button.on{background:linear-gradient(#f0cd6a,#c9962b);box-shadow:0 2px 0 #7a5614,0 0 0 2px #fff8 inset}
   .scene details{margin-top:22px;text-align:left;background:#000a;border-radius:8px;padding:8px 14px;font-size:14px;line-height:1.5}
@@ -169,6 +183,10 @@
 <div id="victory" class="scene hidden"><video id="vicvid" src="assets/title.mp4" poster="assets/title.jpg" preload="auto" muted loop playsinline></video><div class="shade"></div>
   <div class="box"><h2>Realm Conquered!</h2><div class="tag">You have conquered the realm — it's Miller time!</div><button id="again2">Play Again</button><a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a></div></div>
 <div id="defeat" class="scene hidden"><video id="defvid" src="assets/defeat.mp4" preload="auto" playsinline></video><div class="shade"></div><div id="deftext">DEFEAT</div></div>
+<div id="armyscreen" class="scene hidden"><img class="bgm" id="armyimg" alt=""><div class="shade"></div>
+  <div class="box" id="armybox"><div class="alabel">Choose Your Army</div><h2 id="armyname"></h2><div class="tag" id="armycmd"></div>
+    <p id="armytext"></p><div id="armytabs"></div>
+    <div class="arow"><button id="armygo">Lead This Army</button><button class="sec" id="armyback">Back</button></div></div></div>
 <div id="title" class="scene"><video id="titlevid" muted loop playsinline autoplay></video><img class="bgm" id="titleimg" alt="" style="display:none"><div class="shade"></div>
   <div class="box"><h2>Ray's Realm</h2><div class="tag">Four armies. One crown. Hold the gold, rule the realm.</div>
   <div id="armypick"><span>Enemy armies</span><button data-n="1">1</button><button data-n="2">2</button><button data-n="3">3</button></div>
@@ -222,7 +240,7 @@ const imgReady = Promise.all(Object.keys(SPR).flatMap(n => (BARB_TYPES.includes(
 const FACTIONS = [
   {name:'Order of the Cross', short:'Order', color:'#4a8fe0', base:2, human:true},
   {name:'Dark Host',          short:'Dark',  color:'#a06ae0', base:2},
-  {name:'Black Legion',       short:'Legion',color:'#e8a73a', base:2},
+  {name:'Golden Valkyries',   short:'Valkyrie',color:'#e8a73a', base:2},
   {name:'Emerald Court',      short:'Emerald',color:'#4fcf7a', base:2},
   {name:'Barbarian Horde',    short:'Barbarian',color:'#d6cdb8', base:0, barb:true}
 ];
@@ -313,12 +331,21 @@ function tileCost(cls,c,r){
 
 // ---------------------------------------------------------------- state
 // how many enemy armies you face (chosen on the title screen). Unused corners are left as abandoned keeps anyone can claim.
-const ENEMY_SETS={1:[2],2:[1,3],3:[1,2,3]};   // one enemy sits in the far corner; two take the neighbouring corners
+const ENEMY_SETS={1:[2],2:[1,3],3:[1,2,3]};   // for the Order (army 0): one enemy sits in the far corner; two take the neighbouring corners
+const ARMY_INFO=[
+ {cmd:'Lord Ray, Head of the Order of the Cross', text:"The oldest banner in the realm. Lord Ray's knights march under the red cross, sworn to guard the crown and the common folk alike. Disciplined, well-armoured and proud, the Order fights shoulder to shoulder and has never yielded its keep. Where the Cross is raised, the realm still has a king worth defending."},
+ {cmd:'Warlord of the Dark Host', text:"Scaled, patient and merciless, the Dark Host crept out of the southern marshes to claim the realm that once shunned them. Their warlord wears the plate of fallen champions over his own armoured hide and wastes nothing: not an hour, not a soldier, not a grudge. Fear is the Host's first weapon. The sword is only the second."},
+ {cmd:'Empress Joy, Head of the Golden Valkyries', text:"Empress Joy leads the Golden Valkyries, shield-maidens forged in the northern passes and loyal to no throne but hers. They ride light, strike first and take their gold in battle. Where the Valkyries pass, mines change hands and keeps fall quiet. Join her, and glory is paid in advance."},
+ {cmd:'Lord of the Emerald Court', text:"Ancient, graceful and cold as the green deep forest, the Emerald Court has watched the human kingdoms rise and fall for a thousand years. Their lord wears armour of living emerald and fights with the calm of one who has already seen the ending. The Court does not seek war. It simply never loses one."}
+];
+let myArmy=0; try{ const a=+localStorage.getItem('raysRealm.myArmy'); if(a>=0&&a<4) myArmy=a; }catch(e){}   // the army you pick on the title screen for a game against the computer
+// enemies for army `me`: the far corner is me^2 (0<->2, 1<->3), the other two are its neighbours
+const enemiesOf = (n,me) => ENEMY_SETS[n].map(t=>t^me);
 let enemyCount=3, activeArmies=[true,true,true,true];
 try{ const n=+localStorage.getItem('raysRealm.enemies'); if(ENEMY_SETS[n]) enemyCount=n; }catch(e){}
-const setArmies = n => { enemyCount=ENEMY_SETS[n]?n:3; activeArmies=[0,1,2,3].map(t=>t===0||ENEMY_SETS[enemyCount].includes(t)); };
+const setArmies = n => { enemyCount=ENEMY_SETS[n]?n:3; activeArmies=[0,1,2,3].map(t=>t===ME||enemiesOf(enemyCount,ME).includes(t)); };
 const enemyWord = () => ['','the enemy keep','both enemy keeps','all three enemy keeps'][enemyCount];
-let ME=0, MP=null, lastPay=[0,0,0,0];   // lastPay: gold each army collected at the start of its latest turn   // ME: the army this computer plays; MP: online head-to-head session (null in a normal game)
+let ME=myArmy, MP=null, lastPay=[0,0,0,0];   // lastPay: gold each army collected at the start of its latest turn   // ME: the army this computer plays; MP: online head-to-head session (null in a normal game)
 let units=[], turn=1, side=0, sel=null, hover=null, busy=false, over=false;
 let moveInfo=null, targets=[], recruitType=null, spawnSet=[], boardShips=[], undoSnap=null;
 let gold=[0,0,0,0], elim=[false,false,false,false], mineOwner=new Map(), keepOwner=[0,1,2,3];
@@ -370,7 +397,7 @@ function packUnit(u){
 const canSave = () => gameStarted && !MP && !over && side===ME && !busy && MAP.length>0;
 const myFog = () => ({explored:[...explored], seenMine:[...seenMine], seenKeep:[...seenKeep], seenTower:[...seenTower], barbSeen:[...barbSeen]});
 function packState(){
-  return {v:1, savedAt:Date.now(), enemyCount, mapSeed, turn, side, uid, gold, recruitsUsed, elim, keepOwner, seenKeep,
+  return {v:1, savedAt:Date.now(), me:ME, enemyCount, mapSeed, turn, side, uid, gold, recruitsUsed, elim, keepOwner, seenKeep,
     mineOwner:[...mineOwner], towers:[...towers], towerUsed:[...towerUsed], explored:[...explored], seenMine:[...seenMine], seenTower:[...seenTower],
     barbSeen:[...barbSeen], omenNow, omenNext, omenLast, armies:activeArmies, lastPay,
     aiFog:aiFog.map(F=>F&&{explored:[...F.explored], seenMine:[...F.seenMine], seenKeep:F.seenKeep}),
@@ -406,7 +433,7 @@ function restoreState(d){
   updateVision();
 }
 function loadGame(d){
-  ME=0; MP=null; stopAmbience(); restoreState(d); loadOmenSfx(); logEl.innerHTML='';
+  ME=(d.me>=0&&d.me<4)?d.me:0; MP=null; stopAmbience(); restoreState(d); loadOmenSfx(); logEl.innerHTML='';
   log(`Saved game loaded: turn ${turn}, ${enemyCount} enem${enemyCount>1?'ies':'y'} (map seed ${mapSeed}).`,'sys');
   if(omenNow) log(`Omen in effect: ${OMENS[omenNow.type].name}. ${OMENS[omenNow.type].rule}`,'sys');
   refreshUI(); scrollToKeep();
@@ -1509,8 +1536,8 @@ async function endTurn(){
   alive(ME).forEach(u=>u.done=true); clearSel(); recruitType=null; spawnSet=[];
   busy=true; refreshUI();
   if(MP){ await mpEndTurn(); return; }
-  for(const t of [1,2,3]){
-    if(over) break; if(elim[t]) continue;
+  for(const t of [0,1,2,3].filter(x=>x!==ME)){
+    if(over) break; if(elim[t]||!activeArmies[t]) continue;
     await aiTeamTurn(t);
   }
   if(!over) await barbTurn();
@@ -1682,7 +1709,7 @@ function showEnd(win,why){
   if(win){
     const v=document.getElementById('victory'), vid=document.getElementById('vicvid');
     v.classList.remove('hidden'); try{ vid.currentTime=0; vid.play().catch(()=>{}); }catch(e){}
-    document.getElementById('again2').onclick=()=>{ v.classList.add('hidden'); vid.pause(); stopMusic(); if(MP){ mpClose(); goHome(); return; } newGame(); playAmbient(); };
+    document.getElementById('again2').onclick=()=>{ v.classList.add('hidden'); vid.pause(); stopMusic(); if(MP){ mpClose(); goHome(); return; } ME=myArmy; newGame(); playAmbient(); };
     stopAmbient(); playMusic(true); return;
   }
   startDefeat();
@@ -1709,14 +1736,14 @@ function startDefeat(){
   v.play().catch(()=>{ v.muted=true; return v.play(); }).catch(()=>{ clearTimeout(defeatTimer); defeatTimer=setTimeout(finish,5000); });
 }
 function goHome(){
-  gameStarted=false; mpClose(); ME=0;
+  gameStarted=false; mpClose(); ME=myArmy;
   newGame();                                          // fresh random map waiting behind the title
   document.getElementById('title').classList.remove('hidden');
   showIntro();                                        // restarts the title video and music
 }
 function enterGame(){
   const t=document.getElementById('title'), v=document.getElementById('titlevid');
-  t.classList.add('hidden'); document.getElementById('overlay').classList.add('hidden'); document.getElementById('panel').classList.remove('mp'); v.pause(); stopMusic(); gameStarted=true; refreshUI(); playAmbient(); sfx('turn');
+  t.classList.add('hidden'); document.getElementById('armyscreen').classList.add('hidden'); document.getElementById('overlay').classList.add('hidden'); document.getElementById('panel').classList.remove('mp'); v.pause(); stopMusic(); gameStarted=true; refreshUI(); playAmbient(); sfx('turn');
   banner(side===ME?'Your Turn':`${FACTIONS[side].short}'s Turn`);
 }
 function showIntro(){
@@ -1740,7 +1767,18 @@ function showIntro(){
   pick.querySelectorAll('button').forEach(b=>b.onclick=()=>{ enemyCount=+b.dataset.n; try{ localStorage.setItem('raysRealm.enemies',enemyCount); }catch(e){} mark(); sfx('step'); });
   mark();
   pick.title='How many computer armies you fight in a New Battle';
-  go.onclick=()=>{ mpClose(); ME=0; newGame(); enter(); };
+  const as=document.getElementById('armyscreen'), tabs=document.getElementById('armytabs');
+  tabs.innerHTML=[0,1,2,3].map(t=>`<button data-t="${t}" style="--fc:${FACTIONS[t].color}"><i></i>${FACTIONS[t].name}</button>`).join('');
+  const showArmy=t=>{ myArmy=t; const F=FACTIONS[t], I=ARMY_INFO[t];
+    as.style.setProperty('--ac',F.color);
+    document.getElementById('armyimg').src='assets/commander_'+t+'.jpg';
+    document.getElementById('armyname').textContent=F.name; document.getElementById('armycmd').textContent=I.cmd; document.getElementById('armytext').textContent=I.text;
+    document.getElementById('armygo').textContent='Lead the '+F.name;
+    tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.t===t)); };
+  tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>{ showArmy(+b.dataset.t); sfx('step'); });
+  document.getElementById('armyback').onclick=()=>as.classList.add('hidden');
+  document.getElementById('armygo').onclick=()=>{ try{ localStorage.setItem('raysRealm.myArmy',myArmy); }catch(e){} as.classList.add('hidden'); mpClose(); ME=myArmy; newGame(); enter(); };
+  go.onclick=()=>{ showArmy(myArmy); as.classList.remove('hidden'); };
   document.getElementById('mpopen').onclick=()=>mpMenu();   // fresh map with the chosen number of enemies
   cont.onclick=()=>{
     const d=readSave();
