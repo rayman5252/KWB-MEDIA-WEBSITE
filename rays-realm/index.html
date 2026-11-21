@@ -130,6 +130,21 @@
   .scene button{font-size:20px;padding:14px 40px}
   #armypick{display:flex;align-items:center;gap:6px;margin:0 6px 12px;padding:6px 6px 6px 12px;background:#000a;border:1px solid #ffffff30;border-radius:8px;font-family:Cinzel,Georgia,serif;font-size:15px;color:var(--gold);text-shadow:0 2px 6px #000}
   #armypick span{margin-right:6px}
+  #storyscreen{z-index:9}
+  #storyscreen .shade{background:linear-gradient(90deg,#0000 25%,#000d 100%),linear-gradient(#0006,#0000 25%,#0009)}
+  #storyscreen .box{text-align:left;align-items:flex-start;max-width:min(560px,92vw)}
+  #storyscreen .alabel{font-family:Cinzel,Georgia,serif;letter-spacing:.2em;text-transform:uppercase;font-size:14px;color:#f3e6c4;text-shadow:0 2px 8px #000}
+  #storyscreen h2{font-size:clamp(34px,6vw,66px);margin:4px 0 12px}
+  #storytext p{margin:0 0 12px;font-size:clamp(14px,1.7vw,17px);line-height:1.55;color:#f6eed6;text-shadow:0 2px 8px #000,0 0 14px #000;background:#0007;padding:10px 14px;border-radius:8px;border-left:4px solid var(--gold);opacity:0;animation:storyIn .9s ease-out forwards}
+  #storytext p:nth-child(1){animation-delay:.3s}#storytext p:nth-child(2){animation-delay:2.2s}#storytext p:nth-child(3){animation-delay:4.2s}#storytext p:nth-child(4){animation-delay:6.2s;font-weight:600}
+  #storyscreen .arow{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;opacity:0;animation:storyIn .9s ease-out 7.4s forwards}
+  #storyscreen .arow button{font-size:18px;padding:12px 28px}
+  #storyscreen.skip #storytext p,#storyscreen.skip .arow{animation-duration:.01s;animation-delay:0s}
+  @keyframes storyIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes armyDrift{from{transform:scale(1)}to{transform:scale(1.07) translateX(-1.2%)}}
+  #armyimg{animation:armyDrift 26s ease-in-out infinite alternate}
+  @media(max-width:700px){#storyscreen{align-items:flex-end}#storytext p{font-size:13px;padding:8px 11px;margin-bottom:8px}#storyscreen h2{font-size:34px;margin-bottom:8px}}
+  @media(prefers-reduced-motion:reduce){#storytext p,#storyscreen .arow{animation-duration:.01s;animation-delay:0s}#armyimg{animation:none}}
   #armyscreen{z-index:9;justify-content:flex-end;padding-right:clamp(16px,5vw,90px);padding-left:16px}
   #armyscreen .shade{background:linear-gradient(90deg,#0000 40%,#000c 100%),linear-gradient(#0006,#0000 28%,#000a)}
   #armyscreen .box{text-align:left;align-items:flex-start;max-width:min(520px,92vw);padding:20px 0}
@@ -183,6 +198,15 @@
 <div id="victory" class="scene hidden"><video id="vicvid" src="assets/title.mp4" poster="assets/title.jpg" preload="auto" muted loop playsinline></video><div class="shade"></div>
   <div class="box"><h2>Realm Conquered!</h2><div class="tag">You have conquered the realm — it's Miller time!</div><button id="again2">Play Again</button><a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a></div></div>
 <div id="defeat" class="scene hidden"><video id="defvid" src="assets/defeat.mp4" preload="auto" playsinline></video><div class="shade"></div><div id="deftext">DEFEAT</div></div>
+<div id="storyscreen" class="scene hidden"><video id="storyvid" src="assets/title.mp4" poster="assets/title.jpg" muted loop playsinline></video><div class="shade"></div>
+  <div class="box"><div class="alabel">The Tale of the Realm</div><h2>War Comes</h2>
+    <div id="storytext">
+      <p>For a hundred years Ray's Realm knew peace. The harvests were full, the river roads were open, and four great houses kept faith with the crown from the four corners of the land.</p>
+      <p>Then the borders began to bleed. A stolen herd. A burned mill. A toll too cruel at the river bridge. Small quarrels hardened into raids, and raids into sieges, until no house trusted another.</p>
+      <p>Now barbarian hordes gather in the hills, the gold mines are the last wealth in the land, and every keep has barred its gates. There is room for only one crown.</p>
+      <p class="last">To survive, you must choose your army, hold your keep, seize the mines and conquer the realm before it conquers you. Choose well.</p>
+    </div>
+    <div class="arow"><button id="storygo">Choose Your Army</button><button class="sec" id="storyback">Back</button></div></div></div>
 <div id="armyscreen" class="scene hidden"><img class="bgm" id="armyimg" alt=""><div class="shade"></div>
   <div class="box" id="armybox"><div class="alabel">Choose Your Army</div><h2 id="armyname"></h2><div class="tag" id="armycmd"></div>
     <p id="armytext"></p><div id="armytabs"></div>
@@ -1743,7 +1767,7 @@ function goHome(){
 }
 function enterGame(){
   const t=document.getElementById('title'), v=document.getElementById('titlevid');
-  t.classList.add('hidden'); document.getElementById('armyscreen').classList.add('hidden'); document.getElementById('overlay').classList.add('hidden'); document.getElementById('panel').classList.remove('mp'); v.pause(); stopMusic(); gameStarted=true; refreshUI(); playAmbient(); sfx('turn');
+  t.classList.add('hidden'); document.getElementById('armyscreen').classList.add('hidden'); document.getElementById('storyscreen').classList.add('hidden'); document.getElementById('overlay').classList.add('hidden'); document.getElementById('panel').classList.remove('mp'); v.pause(); stopMusic(); gameStarted=true; refreshUI(); playAmbient(); sfx('turn');
   banner(side===ME?'Your Turn':`${FACTIONS[side].short}'s Turn`);
 }
 function showIntro(){
@@ -1776,9 +1800,16 @@ function showIntro(){
     document.getElementById('armygo').textContent='Lead the '+F.name;
     tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.t===t)); };
   tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>{ showArmy(+b.dataset.t); sfx('step'); });
-  document.getElementById('armyback').onclick=()=>as.classList.add('hidden');
-  document.getElementById('armygo').onclick=()=>{ try{ localStorage.setItem('raysRealm.myArmy',myArmy); }catch(e){} as.classList.add('hidden'); mpClose(); ME=myArmy; newGame(); enter(); };
-  go.onclick=()=>{ showArmy(myArmy); as.classList.remove('hidden'); };
+    document.getElementById('armygo').onclick=()=>{ try{ localStorage.setItem('raysRealm.myArmy',myArmy); }catch(e){} as.classList.add('hidden'); mpClose(); ME=myArmy; newGame(); enter(); };
+const st=document.getElementById('storyscreen'), sv=document.getElementById('storyvid');
+  const openStory=()=>{ st.classList.remove('hidden'); st.classList.toggle('skip',storySeen); storySeen=true;
+    try{ sv.currentTime=0; sv.play().catch(()=>{}); }catch(e){} };
+  let storySeen=false;
+  st.onclick=e=>{ if(e.target.closest('button')) return; st.classList.add('skip'); };   // click anywhere to skip the slow reveal
+  document.getElementById('storyback').onclick=()=>{ st.classList.add('hidden'); sv.pause(); };
+  document.getElementById('storygo').onclick=()=>{ showArmy(myArmy); as.classList.remove('hidden'); st.classList.add('hidden'); sv.pause(); };
+  document.getElementById('armyback').onclick=()=>{ as.classList.add('hidden'); openStory(); };
+  go.onclick=openStory;
   document.getElementById('mpopen').onclick=()=>mpMenu();   // fresh map with the chosen number of enemies
   cont.onclick=()=>{
     const d=readSave();
