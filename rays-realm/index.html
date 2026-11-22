@@ -16,6 +16,10 @@
   #app{display:flex;height:100vh}
   #stage{flex:1;position:relative;min-width:0;background:radial-gradient(ellipse at 50% 45%,#5a3d27 0%,#33220f 60%,#1d130a 100%)}
   #stage{overflow:hidden}
+  #zoombox{position:absolute;left:12px;bottom:12px;display:flex;flex-direction:column;gap:4px;z-index:5}
+  #zoombox button{width:38px;height:38px;padding:0;border-radius:8px;border:2px solid #1a1109;background:linear-gradient(#5a3d27,#3b281a);color:#f2d36b;font:700 22px/1 Georgia,serif;cursor:pointer;box-shadow:0 2px 6px #0008}
+  #zoombox button:hover{background:linear-gradient(#6d4a2f,#4a3322)}
+  #zoombox #zreset{font-size:10px;font-family:system-ui,sans-serif}
   #scroller{position:absolute;inset:0;overflow:auto;scrollbar-color:#8a6a3a #1d130a}
   canvas{position:absolute;left:0;top:0;display:block;touch-action:pan-x pan-y}
   #side{width:330px;flex:none;background:linear-gradient(#3b281a,#2a1d14);border-left:3px solid #1a1109;padding:12px;display:flex;flex-direction:column;gap:9px;overflow:auto}
@@ -186,7 +190,7 @@
 </head>
 <body>
 <div id="app">
-  <div id="stage"><div id="scroller"><canvas id="board"></canvas></div><div id="banner"></div></div>
+  <div id="stage"><div id="scroller"><canvas id="board"></canvas></div><div id="banner"></div><div id="zoombox"><button id="zin" title="Zoom in (+)">+</button><button id="zout" title="Zoom out (-)">&minus;</button><button id="zreset" title="Reset zoom (0)"><span id="zoomval">100%</span></button></div></div>
   <aside id="side">
     <h1>Ray's Realm</h1>
     <a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a>
@@ -1942,13 +1946,23 @@ function buildBackground(){
   ctx=prev;
 }
 
-let canvasEl, ctx;
+let canvasEl, ctx, ZOOM=1;
+const ZMIN=0.7, ZMAX=3;
+// zoom the board, keeping the point under (px,py) (stage pixels; default: the middle of the view) where it is
+function zoomBy(f,px,py){
+  const sc=document.getElementById('scroller'), nz=Math.max(ZMIN,Math.min(ZMAX,ZOOM*f)); if(Math.abs(nz-ZOOM)<1e-6) return;
+  if(px==null){ px=sc.clientWidth/2; py=sc.clientHeight/2; }
+  const w0=canvasEl.clientWidth, h0=canvasEl.clientHeight, fx=(sc.scrollLeft+px)/w0, fy=(sc.scrollTop+py)/h0;
+  ZOOM=nz; resize();
+  sc.scrollLeft=fx*canvasEl.clientWidth-px; sc.scrollTop=fy*canvasEl.clientHeight-py;
+  const z=document.getElementById('zoomval'); if(z) z.textContent=Math.round(ZOOM*100)+'%';
+}
 function resize(){
   if(!MAP.length) return;
   const st=document.getElementById('stage'), w=st.clientWidth, h=st.clientHeight;
   dpr=Math.min(2,window.devicePixelRatio||1);
   const bw=1.5*(COLS-1)+2.6, bh=2.7+TILT*SQ*(ROWS+0.5)+0.9;
-  S=Math.max(MIN_S,Math.min((w-24)/bw,(h-16)/bh));
+  S=Math.max(MIN_S,Math.min((w-24)/bw,(h-16)/bh))*ZOOM;
   const cw=Math.max(w,Math.ceil(S*bw+24)), ch=Math.max(h,Math.ceil(S*bh+16));
   canvasEl.style.width=cw+'px'; canvasEl.style.height=ch+'px';
   canvasEl.width=Math.round(cw*dpr); canvasEl.height=Math.round(ch*dpr);
@@ -2153,9 +2167,16 @@ window.addEventListener('DOMContentLoaded',async()=>{
     if(e.key==='Escape'&&!busy){ if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); }
     if((e.key===' '||e.key==='w')&&sel&&!busy){ e.preventDefault(); finishUnit(sel); }
     if((e.key==='u'||e.key==='U'||((e.ctrlKey||e.metaKey)&&e.key==='z'))&&!busy){ e.preventDefault(); undoLast(); }
+    if((e.key==='+'||e.key==='=')&&!e.ctrlKey&&!e.metaKey){ e.preventDefault(); zoomBy(1.25); }
+    if((e.key==='-'||e.key==='_')&&!e.ctrlKey&&!e.metaKey){ e.preventDefault(); zoomBy(0.8); }
+    if(e.key==='0'&&!e.ctrlKey&&!e.metaKey&&ZOOM!==1){ zoomBy(1/ZOOM); }
     if(e.key==='Enter'&&!busy) endTurn();
     if((e.key==='s'||e.key==='S')&&!e.altKey&&gameStarted){ e.preventDefault(); saveGame(false); }   // S or Ctrl/Cmd+S
   });
+  document.getElementById('zin').onclick=()=>zoomBy(1.25);
+  document.getElementById('zout').onclick=()=>zoomBy(0.8);
+  document.getElementById('zreset').onclick=()=>zoomBy(1/ZOOM);
+  document.getElementById('scroller').addEventListener('wheel',e=>{ if(!(e.ctrlKey||e.metaKey)) return; e.preventDefault(); const b=document.getElementById('scroller').getBoundingClientRect(); zoomBy(Math.exp(-e.deltaY*0.0025),e.clientX-b.left,e.clientY-b.top); },{passive:false});
   document.getElementById('save').onclick=()=>saveGame(false);
   // leaving mid-turn keeps your progress (only on your own turn, never while the title screen is up)
   window.addEventListener('pagehide',()=>saveGame(true));
