@@ -844,7 +844,7 @@ function newGame(seed){
   omenNow=null; omenLast=null; stopAmbience(); omenNext=rollOmen(2); refreshOmenPanel(); loadOmenSfx();
   explored=new Set(); visible=new Set(); seenMine=new Map(); seenKeep=[null,null,null,null]; seenTower=new Map();
   MINES.forEach(m=>{ const o=info.owners[key(m.c,m.r)]; mineOwner.set(key(m.c,m.r),o!=null&&activeArmies[o]?o:null); });
-  resetAIFog(); updateVision(); barbSeen=new Set(); for(let i=0;i<(MP?BARB_START_MP:3);i++) spawnBarbTower(); updateVision(); logEl.innerHTML='';
+  resetAIFog(); updateVision(); barbSeen=new Set(); for(let i=0;i<(MP?BARB_START_MP:3)+(mapSize==='large'?2:0);i++) spawnBarbTower(); updateVision(); logEl.innerHTML='';
   if(MP) log(`Head to head: ${FACTIONS[ME].name} vs ${FACTIONS[MP.foe].name}. Take their keep and guard your own. The barbarians are out in force.`,'sys');
   else log(`Welcome to Ray's Realm. Capture ${enemyWord()} to rule the realm — and guard your own!`,'sys');
   if(!MP&&enemyCount<3) log(`You face ${enemyCount} enem${enemyCount>1?'ies':'y'}. The empty corner keep${enemyCount<2?'s are':' is'} abandoned: claim ${enemyCount<2?'them':'it'} for gold and income.`,'sys');
@@ -1660,7 +1660,7 @@ async function barbTurn(){
   if(!mine().length&&Math.random()>0.12) return;
   mine().forEach(u=>{ u.done=false; u.moved=false; u.steps=0; u.mp=u.type.mv; });
   const towersB=mine().filter(u=>u.key==='barbtower');
-  if(towersB.length<(MP?9:6)&&Math.random()<(MP?0.25:0.12)) spawnBarbTower();               // a new tower rises somewhere undiscovered
+  if(towersB.length<(MP?9:6)+(mapSize==='large'?3:0)&&Math.random()<(MP?0.25:0.12)*(mapSize==='large'?1.5:1)) spawnBarbTower();               // a new tower rises somewhere undiscovered
   for(const tw of towersB) if(units.includes(tw)&&Math.random()<0.5) spawnBarbUnit(tw);   // 50%: one more recruit
   updateAIVision(BARB_TEAM);
   for(const u of [...mine()]){ if(over) break; if(!units.includes(u)) continue; if(u.hold){ u.hold=false; u.done=true; continue; } u.steps=0; await barbAct(u); }   // surge raiders muster for a round first
@@ -1865,13 +1865,21 @@ function showIntro(){
   go.title=save?'Start a fresh map. Your saved game is replaced once you play.':'';
   const pick=document.getElementById('armypick');
   const mark=()=>pick.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.n===enemyCount));
-  pick.querySelectorAll('button').forEach(b=>b.onclick=()=>{ enemyCount=+b.dataset.n; try{ localStorage.setItem('raysRealm.enemies',enemyCount); }catch(e){} mark(); sfx('step'); });
+  pick.querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(b.disabled) return; enemyCount=+b.dataset.n; prevEnemies=enemyCount; try{ localStorage.setItem('raysRealm.enemies',enemyCount); }catch(e){} mark(); sfx('step'); });
   mark();
   const mp=document.getElementById('mappick');
-  const markM=()=>mp.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.m===mapSize));
+  let prevEnemies=enemyCount;
+  const limitArmies=()=>{   // the small map holds only two armies: you and one enemy
+    if(mapSize==='small'){ if(enemyCount>1){ prevEnemies=enemyCount; enemyCount=1; } } else if(prevEnemies>enemyCount&&limited){ enemyCount=prevEnemies; }
+    limited=mapSize==='small';
+    pick.querySelectorAll('button').forEach(b=>{ b.disabled=limited&&+b.dataset.n>1; b.style.opacity=b.disabled?.4:''; });
+    pick.title=limited?'The small map holds two armies: you and one enemy.':'How many computer armies you fight in a New Battle';
+    mark();
+  };
+  let limited=false;
+  const markM=()=>{ mp.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.m===mapSize)); limitArmies(); };
   mp.querySelectorAll('button').forEach(b=>b.onclick=()=>{ mapSize=b.dataset.m; try{ localStorage.setItem('raysRealm.mapSize',mapSize); }catch(e){} markM(); sfx('step'); });
   markM(); mp.title='How big the battlefield is in a New Battle';
-  pick.title='How many computer armies you fight in a New Battle';
   const as=document.getElementById('armyscreen'), tabs=document.getElementById('armytabs');
   tabs.innerHTML=[0,1,2,3].map(t=>`<button data-t="${t}" style="--fc:${FACTIONS[t].color}"><i></i>${FACTIONS[t].name}</button>`).join('');
   const showArmy=t=>{ myArmy=t; const F=FACTIONS[t], I=ARMY_INFO[t];
