@@ -138,8 +138,12 @@
   .scene h2{font-family:Cinzel,Georgia,serif;font-size:clamp(44px,9vw,104px);margin:0;color:var(--gold);letter-spacing:.06em;text-shadow:0 4px 18px #000,0 0 40px #000}
   .scene .tag{font-size:clamp(15px,2.4vw,22px);margin:6px 0 26px;text-shadow:0 2px 8px #000;color:#f3e6c4}
   .scene button{font-size:20px;padding:14px 40px}
-  #armypick{display:flex;align-items:center;gap:6px;margin:0 6px 12px;padding:6px 6px 6px 12px;background:#000a;border:1px solid #ffffff30;border-radius:8px;font-family:Cinzel,Georgia,serif;font-size:15px;color:var(--gold);text-shadow:0 2px 6px #000}
-  #armypick span{margin-right:6px}
+  #armypick,#mappick{display:flex;align-items:center;gap:6px;margin:0 6px 12px;padding:6px 6px 6px 12px;background:#000a;border:1px solid #ffffff30;border-radius:8px;font-family:Cinzel,Georgia,serif;font-size:15px;color:var(--gold);text-shadow:0 2px 6px #000}
+  #armypick span,#mappick span{margin-right:6px}
+  #mappick{flex-wrap:wrap;justify-content:center;padding-left:6px}
+  #mappick span{width:100%;text-align:center;margin:0 0 2px}
+  #mappick button{font-size:13px;padding:7px 11px;line-height:1.15}
+  #mappick button small{display:block;font-size:10px;opacity:.8}
   #storyscreen{z-index:9}
   #storyscreen .shade{background:linear-gradient(90deg,#0000 25%,#000d 100%),linear-gradient(#0006,#0000 25%,#0009)}
   #storyscreen .box{text-align:left;align-items:flex-start;max-width:min(560px,92vw)}
@@ -172,8 +176,8 @@
   #armyscreen .arow{display:flex;gap:10px;flex-wrap:wrap}
   #armyscreen .arow button{font-size:18px;padding:12px 28px}
   @media(max-width:700px){#armyscreen{align-items:flex-end}#armyscreen .box{padding-bottom:14px}#armyscreen p{font-size:13px;padding:9px 11px;margin-bottom:12px}}
-  #armypick button{font-size:16px;padding:6px 14px;background:linear-gradient(#d9ccaa,#b4a279);box-shadow:0 2px 0 #6d5f3f}
-  #armypick button.on{background:linear-gradient(#f0cd6a,#c9962b);box-shadow:0 2px 0 #7a5614,0 0 0 2px #fff8 inset}
+  #armypick button,#mappick button{font-size:16px;padding:6px 14px;background:linear-gradient(#d9ccaa,#b4a279);box-shadow:0 2px 0 #6d5f3f}
+  #armypick button.on,#mappick button.on{background:linear-gradient(#f0cd6a,#c9962b);box-shadow:0 2px 0 #7a5614,0 0 0 2px #fff8 inset}
   .scene details{margin-top:22px;text-align:left;background:#000a;border-radius:8px;padding:8px 14px;font-size:14px;line-height:1.5}
   .scene summary{cursor:pointer;text-align:right;font-family:Cinzel,Georgia,serif;color:var(--gold)}
   .scene ul{margin:8px 0 4px;padding-left:20px}
@@ -227,6 +231,7 @@
 <div id="title" class="scene"><video id="titlevid" muted loop playsinline autoplay></video><img class="bgm" id="titleimg" alt="" style="display:none"><div class="shade"></div>
   <div class="box"><h2>Ray's Realm</h2><div class="tag">Four armies. One crown. Hold the gold, rule the realm.</div>
   <div id="armypick"><span>Enemy armies</span><button data-n="1">1</button><button data-n="2">2</button><button data-n="3">3</button></div>
+  <div id="mappick"><span>Map size</span><button data-m="small">FAST GAME<small>(SMALL MAP)</small></button><button data-m="normal">NORMAL MAP</button><button data-m="large">LONG GAME<small>(LARGER MAP)</small></button></div>
   <button id="continue" style="display:none;margin:0 6px 10px">Continue</button>
   <button id="go" style="margin:0 6px 10px">Begin Battle</button>
   <button id="mpopen" class="sec" style="margin:0 6px 10px;font-size:16px;padding:10px 26px">⚔ Head to Head Online</button>
@@ -287,6 +292,9 @@ const FACTIONS = [
 ];
 const FACTION_INK = ['#2c5fa8','#6a3fa6','#a6661a','#2f8f4a','#6b6455'];   // readable on parchment
 const MINE_INCOME = 2;
+const MAP_SIZES={small:[19,15],normal:[25,19],large:[31,23]};
+let mapSize='normal';
+try{ const m=localStorage.getItem('raysRealm.mapSize'); if(MAP_SIZES[m]) mapSize=m; }catch(e){}
 let COLS = 25, ROWS = 19, MAP = [], KEEPS = [], START = [], mapSeed = 0, groundReach = new Set();
 const MINES = [];
 // . meadow  f forest  ~ river  ^ crags  G gold mine  K keep
@@ -450,7 +458,7 @@ function packUnit(u){
 const canSave = () => gameStarted && !MP && !over && side===ME && !busy && MAP.length>0;
 const myFog = () => ({explored:[...explored], seenMine:[...seenMine], seenKeep:[...seenKeep], seenTower:[...seenTower], barbSeen:[...barbSeen]});
 function packState(){
-  return {v:1, savedAt:Date.now(), me:ME, enemyCount, mapSeed, turn, side, uid, gold, recruitsUsed, elim, keepOwner, seenKeep,
+  return {v:1, savedAt:Date.now(), me:ME, enemyCount, mapSeed, mapSize, turn, side, uid, gold, recruitsUsed, elim, keepOwner, seenKeep,
     mineOwner:[...mineOwner], towers:[...towers], towerUsed:[...towerUsed], explored:[...explored], seenMine:[...seenMine], seenTower:[...seenTower],
     barbSeen:[...barbSeen], omenNow, omenNext, omenLast, armies:activeArmies, lastPay,
     aiFog:aiFog.map(F=>F&&{explored:[...F.explored], seenMine:[...F.seenMine], seenKeep:F.seenKeep}),
@@ -469,7 +477,7 @@ function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
 // rebuild the whole game from a packed state (a save, or a turn sent by the other player online)
 function restoreState(d){
   undoSnap=null; setArmies(d.enemyCount??3); if(Array.isArray(d.armies)) activeArmies=d.armies.slice(0,4);
-  if(d.mapSeed!==mapSeed||!MAP.length){ mapSeed=d.mapSeed; generateMap(mapSeed); resize(); }
+  { const ms=MAP_SIZES[d.mapSize]?d.mapSize:'normal'; if(d.mapSeed!==mapSeed||ms!==mapSize||!MAP.length){ mapSeed=d.mapSeed; mapSize=ms; generateMap(mapSeed); resize(); } }
   const unpack=(o,ship)=>{ const T=TYPES[o.key]; if(!T) return null;
     const u={...o, type:T, anim:null, off:{x:0,y:0}, alpha:1, aboard:ship||null, cargo:[]};
     u.cargo=(o.cargo||[]).map(c=>unpack(c,u)).filter(Boolean); return u; };
@@ -728,7 +736,7 @@ const ROSTERS = [
 // Four armies start in the four corners; a river cross and lake split the map, every army gets a pond for ships,
 // the same number of home mines, and shared mines sit on the borders and centre. Fords are carved so nothing is cut off.
 function generateMap(seed){
-  COLS=25; ROWS=19;
+  [COLS,ROWS]=MAP_SIZES[mapSize]||MAP_SIZES.normal;
   const rnd=mulberry32(seed), ri=(a,b)=>a+Math.floor(rnd()*(b-a+1)), pick=arr=>arr[Math.floor(rnd()*arr.length)];
   const g=Array.from({length:ROWS},()=>Array(COLS).fill('.'));
   const ok=(c,r)=>c>=0&&r>=0&&c<COLS&&r<ROWS, put=(c,r,ch)=>{ if(ok(c,r)) g[r][c]=ch; }, at=(c,r)=>g[r][c];
@@ -1859,6 +1867,10 @@ function showIntro(){
   const mark=()=>pick.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.n===enemyCount));
   pick.querySelectorAll('button').forEach(b=>b.onclick=()=>{ enemyCount=+b.dataset.n; try{ localStorage.setItem('raysRealm.enemies',enemyCount); }catch(e){} mark(); sfx('step'); });
   mark();
+  const mp=document.getElementById('mappick');
+  const markM=()=>mp.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.m===mapSize));
+  mp.querySelectorAll('button').forEach(b=>b.onclick=()=>{ mapSize=b.dataset.m; try{ localStorage.setItem('raysRealm.mapSize',mapSize); }catch(e){} markM(); sfx('step'); });
+  markM(); mp.title='How big the battlefield is in a New Battle';
   pick.title='How many computer armies you fight in a New Battle';
   const as=document.getElementById('armyscreen'), tabs=document.getElementById('armytabs');
   tabs.innerHTML=[0,1,2,3].map(t=>`<button data-t="${t}" style="--fc:${FACTIONS[t].color}"><i></i>${FACTIONS[t].name}</button>`).join('');
