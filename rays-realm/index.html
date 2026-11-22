@@ -33,7 +33,7 @@
   .frow.out{opacity:.4;text-decoration:line-through}
   .dot{width:10px;height:10px;border-radius:50%}
   .frow span.n{opacity:.85;white-space:nowrap}
-  #card{background:var(--parch);color:var(--ink);border-radius:8px;padding:9px;min-height:140px;border:2px solid var(--parch2);box-shadow:inset 0 0 18px #0003}
+  #card{flex:none;background:var(--parch);color:var(--ink);border-radius:8px;padding:9px;min-height:140px;border:2px solid var(--parch2);box-shadow:inset 0 0 18px #0003}
   #card .top{display:flex;gap:10px;align-items:center}
   #card img{width:60px;height:60px;object-fit:contain;flex:none;filter:drop-shadow(0 2px 2px #0006)}
   #card h2{margin:0;font-family:Cinzel,Georgia,serif;font-size:16px}
@@ -43,6 +43,12 @@
   #card .stats b{display:block;font-size:15px}
   #card p{margin:4px 0 0;font-size:12.5px;line-height:1.35}
   #card .preview{margin-top:6px;padding:5px 7px;background:#a3352c22;border-left:3px solid var(--red);font-size:12.5px}
+  #card .hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px}
+  #card .hero img{width:130px;height:130px;object-fit:contain;filter:drop-shadow(0 4px 4px #0007)}
+  #card .hpbar{position:relative;height:16px;background:#0003;border-radius:8px;overflow:hidden;margin-top:6px;border:1px solid #0004}
+  #card .hpbar i{position:absolute;left:0;top:0;bottom:0}
+  #card .hpbar span{position:relative;display:block;text-align:center;font-size:11px;font-weight:700;line-height:16px;color:#fff;text-shadow:0 1px 2px #000}
+  #card .notes{margin:4px 0 2px;padding-left:16px;font-size:12px;line-height:1.35}
   #card .empty{opacity:.7;font-style:italic;font-size:13px;padding:8px 0}
   #cargo:empty{display:none}
   #shop,#cargo{background:#00000035;border-radius:6px;padding:7px}
@@ -1681,13 +1687,41 @@ function log(msg,cls){
 function banner(txt){
   const b=document.getElementById('banner'); b.textContent=txt; b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
 }
+function unitNotes(u){
+  const T=u.type, n=[], pos={c:u.c,r:u.r}, ink=(t,c)=>n.push(`<li style="color:${c||'inherit'}">${t}</li>`);
+  if(u.aboard) ink('Aboard a ship.');
+  if(u.hp<T.hp&&!u.aboard){
+    let heal=0, why=[];
+    if(!u.fought){
+      const homes=[...KEEPS.filter((k,i)=>keepOwner[i]===u.team).map(([c,r])=>({c,r})),...[...towers].filter(([k,tm])=>tm===u.team).map(([k])=>{ const [c,r]=k.split(',').map(Number); return {c,r}; })];
+      const near=homes.some(h=>hexDist(pos,h)<=2), rate=(near?0.10:0.05)*T.hp;
+      ink(`Rests: about <b>+${rate<1?'1 per '+Math.round(1/rate)+' turns':Math.round(rate*10)/10+' HP/turn'}</b>${near?' (near a keep or fort)':' (faster near a keep or fort)'}. Fighting stops it.`,'#2f6b2a');
+    } else ink('Fought this turn: no rest healing next turn.','#8a5a1a');
+    if(u.key!=='paladin'&&units.some(x=>x.team===u.team&&x.key==='paladin'&&hexDist(x,u)<=1)) ink(`<b>+${PALADIN_HEAL} HP per turn</b> from the Paladin beside it.`,'#8a6a00');
+    else if(u.key!=='paladin'&&units.some(x=>x.team===u.team&&x.key==='paladin')) ink(`Paladin aura: +${PALADIN_HEAL} HP/turn if within 1 hex of a Paladin.`,'#6b5a2a');
+  }
+  if(u.key==='paladin') ink(`<b>Aura:</b> allies within 1 hex heal ${PALADIN_HEAL} HP at the start of each turn.`,'#8a6a00');
+  if(u.key==='stalker') ink('<b>Stealth:</b> hidden from enemies more than 2 hexes away.','#2f6b2a');
+  if(u.key==='valkyrie') ink('<b>Flies</b> over any terrain.','#2a5a8a');
+  if(u.key==='ranger') ink('<b>Keen eyes:</b> sees 4 hexes.','#2a5a8a');
+  if(u.team===1) ink(`<b>Spoils of War:</b> +${SPOILS} gold for each enemy it slays.`,'#8a6a00');
+  if(u.team===3&&T.cls!=='fly') ink('Emerald Court: sees +1 hex; +1 defence in forest.','#2f6b2a');
+  const tdef=terrainDef(u); if(tdef) ink(`Terrain/fort bonus: <b>+${tdef} defence</b> here.`);
+  if(omenIs('fog')) ink('Fog Bank: vision reduced by 1.','#556');
+  if(omenIs('storm')&&(T.rng[1]>1)) ink('Thunderstorm: ranged attacks lose 1 range.','#556');
+  if(u.rounds!=null) ink(`<b>Contract:</b> leaves in ${u.rounds} round${u.rounds===1?'':'s'}.`,'#8a5a1a');
+  if(u.team===ME&&!u.aboard) ink(u.done?'Has acted this turn.':u.mp<T.mv?`Moved: ${u.mp} of ${T.mv} move left.`:'Ready.','#555');
+  return n.length?`<ul class="notes">${n.join('')}</ul>`:'';
+}
 function cardHTML(u,preview){
   const T=u.type, mx=rmax(u), rng=(T.rng[0]===mx?T.rng[0]:T.rng[0]+'–'+mx)+(mx<T.rng[1]?' ⛈':''), tdef=terrainDef(u);
-  return `<div class="top"><img src="assets/${u.sprite}.png" alt=""><div><h2>${u.name}</h2>
+  const pct=Math.max(0,Math.min(100,Math.round(100*u.hp/T.hp))), hc=pct>60?'#4c9a3c':pct>30?'#d1a52a':'#b8362b';
+  return `<div class="hero"><img src="assets/${u.sprite}.png" alt=""><div class="who"><h2>${u.name}</h2>
     <div class="sub" style="color:${FACTION_INK[u.team]}">${FACTIONS[u.team].name}</div>
     <div class="sub">${TERR[tileCh(u.c,u.r)].name}${towers.get(key(u.c,u.r))===u.team?' + Fort':''}${tdef?` (+${tdef} def)`:''}</div></div></div>
+    <div class="hpbar"><i style="width:${pct}%;background:${hc}"></i><span>${u.hp} / ${T.hp} HP</span></div>
     <div class="stats"><div><b>${u.hp}/${T.hp}</b>HP</div><div><b>${T.atk}</b>ATK</div><div><b>${T.def}</b>DEF</div><div><b>${u.team===ME?u.mp+'/'+T.mv:T.mv}</b>MOVE</div><div><b>${rng}</b>RANGE</div></div>
-    <p>${T.desc}</p>${u.rounds!=null?`<p><b>Contract:</b> ${u.rounds} round${u.rounds===1?'':'s'} left</p>`:''}${u.cargo.length?`<p><b>Aboard:</b> ${u.cargo.map(c=>c.name).join(', ')}</p>`:''}${preview?`<div class="preview">${preview}</div>`:''}`;
+    ${unitNotes(u)}<p>${T.desc}</p>${u.cargo.length?`<p><b>Aboard:</b> ${u.cargo.map(c=>c.name).join(', ')}</p>`:''}${preview?`<div class="preview">${preview}</div>`:''}`;
 }
 function previewFor(t){
   if(!sel||!targets.includes(t)) return '';
@@ -1990,8 +2024,23 @@ function drawWeather(w,h,now){
       WX.flash=Math.max(0,WX.flash-dt*3.3); }
   } else if(type==='fog'||type==='plague'){
     const rgb=type==='fog'?'205,214,225':'120,180,70', tex=fogTexture(rgb);
-    ctx.fillStyle=type==='fog'?`rgba(190,200,215,${0.20*L})`:`rgba(80,130,40,${0.16*L})`; ctx.fillRect(0,0,w,h);
-    tileFog(tex,now*0.012,now*0.003,0.85*L,w,h); tileFog(tex,-now*0.02+200,now*0.005+90,0.7*L,w,h);
+    if(type==='fog'){
+      ctx.fillStyle=`rgba(190,200,215,${0.10*L})`; ctx.fillRect(0,0,w,h);
+      tileFog(tex,now*0.012,now*0.003,0.425*L,w,h); tileFog(tex,-now*0.02+200,now*0.005+90,0.35*L,w,h);
+    } else {
+      // plague: green haze built off-screen, then the middle is rubbed clear so only the edges stay thick
+      const pc=WX.pc||(WX.pc=document.createElement('canvas'));
+      if(pc.width!==w||pc.height!==h){ pc.width=w; pc.height=h; }
+      const pg=pc.getContext('2d'); pg.setTransform(1,0,0,1,0,0); pg.clearRect(0,0,w,h);
+      const mainCtx=ctx; ctx=pg;
+      ctx.fillStyle='rgba(80,130,40,0.22)'; ctx.fillRect(0,0,w,h);
+      tileFog(tex,now*0.012,now*0.003,0.85,w,h); tileFog(tex,-now*0.02+200,now*0.005+90,0.7,w,h);
+      ctx.globalCompositeOperation='destination-out';
+      const rg=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*0.12,w/2,h/2,Math.hypot(w,h)*0.5);
+      rg.addColorStop(0,'rgba(0,0,0,0.95)'); rg.addColorStop(0.45,'rgba(0,0,0,0.7)'); rg.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=rg; ctx.fillRect(0,0,w,h); ctx.globalCompositeOperation='source-over';
+      ctx=mainCtx; ctx.globalAlpha=L; ctx.drawImage(pc,0,0); ctx.globalAlpha=1;
+    }
     if(type==='plague'){ ctx.fillStyle=`rgba(20,30,10,${0.8*L})`; for(let i=0;i<16;i++){ const a=now/900+i*1.7, cx=((i*173)%w), cy=((i*97)%h); ctx.beginPath(); ctx.arc(cx+Math.sin(a*1.3)*70,cy+Math.cos(a*1.7)*50,1.6,0,7); ctx.fill(); } }
   } else if(type==='harvest'){
     ctx.fillStyle=`rgba(255,190,70,${0.07*L})`; ctx.fillRect(0,0,w,h);
