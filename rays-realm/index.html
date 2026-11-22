@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ray's Realm</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Pinyon+Script&display=swap" rel="stylesheet">
 <style>
   :root{
     --wood:#2a1d14; --parch:#e8d9b5; --parch2:#cdb98a; --ink:#2b1d10;
@@ -181,6 +181,24 @@
   .scene details{margin-top:22px;text-align:left;background:#000a;border-radius:8px;padding:8px 14px;font-size:14px;line-height:1.5}
   .scene summary{cursor:pointer;text-align:right;font-family:Cinzel,Georgia,serif;color:var(--gold)}
   .scene ul{margin:8px 0 4px;padding-left:20px}
+  /* quote scrolls: loading screen + victory */
+  .qscroll{position:relative;width:min(92vw,880px);aspect-ratio:3/2;background:center/100% 100% no-repeat;container-type:inline-size;border-radius:6px;box-shadow:0 10px 50px #000}
+  .qscroll .qvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;pointer-events:none}
+  .qscroll.novid{background-image:url(assets/scroll.jpg)}
+  .qscroll.novid .qvid{display:none}
+  .qscroll .qin{opacity:0;transition:opacity 1s ease .1s}
+  .qscroll.open .qin,.qscroll.novid .qin{opacity:1}
+  .qscroll .qin{position:absolute;left:25%;right:25%;top:29%;bottom:29%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#3a2713;font-family:Cinzel,Georgia,serif}
+  .qscroll .qt{font-family:'Pinyon Script','Snell Roundhand','Apple Chancery',cursive;font-style:normal;font-weight:400;font-size:clamp(13px,4.5cqw,38px);line-height:1.22}
+  .qscroll .qb{margin-top:1.1em;font-size:clamp(9px,2.3cqw,20px);letter-spacing:.08em;color:#6b4a22}
+  #quotescene{z-index:40;background:#0a0705 radial-gradient(ellipse at center,#2a1d10 0%,#0a0705 75%);flex-direction:column;justify-content:center;align-items:center;padding:0;cursor:pointer;text-align:center}
+  #quotescene .qhint{margin-top:18px;color:#c9b27a;font-family:Cinzel,Georgia,serif;letter-spacing:.2em;font-size:13px;text-transform:uppercase;opacity:.75}
+  #quotescene .qscroll,#victory .qscroll{animation:qfade 1.2s ease-out}
+  @keyframes qfade{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+  #victory .qscroll{width:min(94vw,500px);margin:-40px 0 -32px auto;box-shadow:none;border-radius:0;-webkit-mask-image:radial-gradient(ellipse 60% 56% at 50% 50%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 60% 56% at 50% 50%,#000 62%,transparent 100%)}
+  #victory .qscroll .qt{font-size:clamp(13px,5.1cqw,30px);line-height:1.15}
+  #victory .qscroll .qb{font-size:clamp(10px,3cqw,17px)}
+  @media(max-height:700px){#victory .qscroll{width:min(88vw,330px);margin:-24px 0 -20px auto}}
   #defeat{justify-content:center;padding:0;background:#000;cursor:pointer}
   #defeat .shade{background:radial-gradient(ellipse at center,#0000 30%,#000a 100%)}
   #deftext{position:relative;font-family:Cinzel,Georgia,serif;font-weight:700;font-size:clamp(56px,15vw,190px);letter-spacing:.14em;margin-right:-.14em;color:#d3281f;text-shadow:0 0 28px #000,0 6px 26px #000,0 0 60px #7a0d08;animation:defIn 1.8s ease-out both;pointer-events:none}
@@ -213,7 +231,8 @@
 <div id="tip"></div>
 <div id="overlay" class="hidden"><div class="panel" id="panel"></div></div>
 <div id="victory" class="scene hidden"><video id="vicvid" src="assets/title.mp4" poster="assets/title.jpg" preload="auto" muted loop playsinline></video><div class="shade"></div>
-  <div class="box"><h2>Realm Conquered!</h2><div class="tag">You have conquered the realm — it's Miller time!</div><button id="again2">Play Again</button><a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a></div></div>
+  <div class="box"><h2>Realm Conquered!</h2><div class="tag">You have conquered the realm — it's Miller time!</div><div class="qscroll"><video class="qvid" src="assets/scroll-unroll.mp4" muted playsinline preload="auto"></video><div class="qin"><div class="qt" id="qvt"></div><div class="qb" id="qvb"></div></div></div><button id="again2">Play Again</button><a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a></div></div>
+<div id="quotescene" class="scene hidden"><div class="qscroll"><video class="qvid" src="assets/scroll-unroll.mp4" muted playsinline preload="auto"></video><div class="qin"><div class="qt" id="qlt"></div><div class="qb" id="qlb"></div></div></div><div class="qhint" id="qhint">Preparing the realm&hellip;</div></div>
 <div id="defeat" class="scene hidden"><video id="defvid" src="assets/defeat.mp4" preload="auto" playsinline></video><div class="shade"></div><div id="deftext">DEFEAT</div></div>
 <div id="storyscreen" class="scene hidden"><video id="storyvid" src="assets/title.mp4" poster="assets/title.jpg" muted loop playsinline></video><div class="shade"></div>
   <div class="box"><div class="alabel">The Tale of the Realm</div><h2>War Comes</h2>
@@ -1805,11 +1824,55 @@ function mineInfo(h){
   if(tileCh(h.c,h.r)!=='G') return '';
   const o=seenMine.get(key(h.c,h.r)); return ` — ${o==null?'unclaimed':'held by '+FACTIONS[o].short}`;
 }
+// ---- quotes on parchment scrolls (loading screen + victory)
+const LOAD_QUOTES=[
+  ['The supreme art of war is to subdue the enemy without fighting.','Sun Tzu'],
+  ['Know the enemy and know yourself; in a hundred battles you will never be in peril.','Sun Tzu'],
+  ['Let him who desires peace prepare for war.','Vegetius'],
+  ['The bravest are surely those who have the clearest vision of what is before them, glory and danger alike, and yet notwithstanding go out to meet it.','Thucydides'],
+  ['Come and take them.','King Leonidas of Sparta'],
+  ['Discipline is the soul of an army. It makes small numbers formidable, procures success to the weak, and esteem to all.','George Washington'],
+  ['The impediment to action advances action. What stands in the way becomes the way.','Marcus Aurelius'],
+  ['Difficulties strengthen the mind, as labor does the body.','Seneca'],
+  ['Difficulties show men what they are.','Epictetus'],
+  ['He who conquers others is strong; he who conquers himself is mighty.','Lao Tzu']];
+const WIN_QUOTES=[
+  ['The harder the conflict, the more glorious the triumph.','Thomas Paine'],
+  ['I came, I saw, I conquered.','Julius Caesar'],
+  ['Fortune favors the bold.','Virgil'],
+  ['He will win who knows when to fight and when not to fight.','Sun Tzu'],
+  ['What we obtain too cheap, we esteem too lightly; it is dearness only that gives everything its value.','Thomas Paine'],
+  ['The secret of happiness is freedom, and the secret of freedom, courage.','Thucydides'],
+  ['I have not yet begun to fight!','John Paul Jones']];
+let lastQ=-1;
+function pickQuote(list){ let i; do{ i=Math.floor(Math.random()*list.length); }while(list.length>1&&i===lastQ); lastQ=i; return list[i]; }
+function setQuote(tid,bid,q){ document.getElementById(tid).textContent='\u201C'+q[0]+'\u201D'; document.getElementById(bid).textContent='\u2014 '+q[1]; }
+// plays the unrolling animation on a .qscroll, then fades the quote in; falls back to the still scroll if the video can't play
+function playScroll(sc,cb){
+  const v=sc.querySelector('.qvid'); let done=false;
+  const show=()=>{ if(done) return; done=true; clearTimeout(fs); sc.classList.add('open'); if(cb) cb(); };
+  const bad=()=>{ sc.classList.add('novid'); show(); };
+  sc.classList.remove('open','novid');
+  const fs=setTimeout(()=>{ if(!done) bad(); },14000);   // failsafe: never leave the quote hidden
+  if(!v||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){ bad(); return {skip:()=>{}}; }
+  v.onended=show; v.onerror=bad;
+  try{ v.currentTime=0; v.playbackRate=1.3; const p=v.play(); if(p&&p.catch) p.catch(bad); }catch(e){ bad(); }
+  return {skip:()=>{ try{ v.currentTime=v.duration||5; v.pause(); }catch(e){} show(); }};
+}
+// loading screen: unrolling scroll + quote, then click/key (or a few seconds) to start
+function showLoadingQuote(done){
+  const sc=document.getElementById('quotescene'), qs=sc.querySelector('.qscroll'), hint=document.getElementById('qhint'); let fin=false, ready=false, tm, h;
+  setQuote('qlt','qlb',pickQuote(LOAD_QUOTES)); hint.textContent='Preparing the realm\u2026'; sc.classList.remove('hidden');
+  const go=()=>{ if(fin) return; if(!ready){ h&&h.skip(); return; } fin=true; clearTimeout(tm); sc.classList.add('hidden'); sc.onclick=null; window.removeEventListener('keydown',key,true); try{ qs.querySelector('.qvid').pause(); }catch(e){} done(); };
+  const key=e=>{ if(e.key===' '||e.key==='Enter'||e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); go(); } };
+  window.addEventListener('keydown',key,true); sc.onclick=go;
+  h=playScroll(qs,()=>{ ready=true; hint.textContent='Click to begin'; tm=setTimeout(go,4500); });
+}
 function showEnd(win,why){
   if(MP) mpClearSave(); else clearSave();   // a finished battle can't be continued
   if(win){
     const v=document.getElementById('victory'), vid=document.getElementById('vicvid');
-    v.classList.remove('hidden'); try{ vid.currentTime=0; vid.play().catch(()=>{}); }catch(e){}
+    setQuote('qvt','qvb',pickQuote(WIN_QUOTES)); playScroll(document.querySelector('#victory .qscroll')); v.classList.remove('hidden'); try{ vid.currentTime=0; vid.play().catch(()=>{}); }catch(e){}
     document.getElementById('again2').onclick=()=>{ v.classList.add('hidden'); vid.pause(); stopMusic(); if(MP){ mpClose(); goHome(); return; } ME=myArmy; newGame(); playAmbient(); };
     stopAmbient(); playMusic(true); return;
   }
@@ -1889,7 +1952,7 @@ function showIntro(){
     document.getElementById('armygo').textContent='Lead the '+F.name;
     tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.t===t)); };
   tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>{ showArmy(+b.dataset.t); sfx('step'); });
-    document.getElementById('armygo').onclick=()=>{ try{ localStorage.setItem('raysRealm.myArmy',myArmy); }catch(e){} as.classList.add('hidden'); mpClose(); ME=myArmy; newGame(); enter(); };
+    document.getElementById('armygo').onclick=()=>{ try{ localStorage.setItem('raysRealm.myArmy',myArmy); }catch(e){} as.classList.add('hidden'); mpClose(); ME=myArmy; showLoadingQuote(()=>{ newGame(); enter(); }); };
 const st=document.getElementById('storyscreen'), sv=document.getElementById('storyvid');
   const openStory=()=>{ st.classList.remove('hidden'); st.classList.toggle('skip',storySeen); storySeen=true;
     try{ sv.currentTime=0; sv.play().catch(()=>{}); }catch(e){} };
