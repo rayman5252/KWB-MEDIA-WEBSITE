@@ -1946,15 +1946,18 @@ function buildBackground(){
   ctx=prev;
 }
 
-let canvasEl, ctx, ZOOM=1;
+let canvasEl, ctx, ZOOM=1, lastCell=null;
 const ZMIN=0.7, ZMAX=3;
 // zoom the board, keeping the point under (px,py) (stage pixels; default: the middle of the view) where it is
 function zoomBy(f,px,py){
+  const pxy=px;
   const sc=document.getElementById('scroller'), nz=Math.max(ZMIN,Math.min(ZMAX,ZOOM*f)); if(Math.abs(nz-ZOOM)<1e-6) return;
   if(px==null){ px=sc.clientWidth/2; py=sc.clientHeight/2; }
   const w0=canvasEl.clientWidth, h0=canvasEl.clientHeight, fx=(sc.scrollLeft+px)/w0, fy=(sc.scrollTop+py)/h0;
   ZOOM=nz; resize();
-  sc.scrollLeft=fx*canvasEl.clientWidth-px; sc.scrollTop=fy*canvasEl.clientHeight-py;
+  const foc=pxy==null?(sel?{c:sel.c,r:sel.r}:lastCell):null;   // button / key zoom: centre on the selected piece or last-clicked hex
+  if(foc){ const q=center(foc.c,foc.r); sc.scrollLeft=q.x-sc.clientWidth/2; sc.scrollTop=q.y-sc.clientHeight/2; }
+  else { sc.scrollLeft=fx*canvasEl.clientWidth-px; sc.scrollTop=fy*canvasEl.clientHeight-py; }
   const z=document.getElementById('zoomval'); if(z) z.textContent=Math.round(ZOOM*100)+'%';
 }
 function resize(){
@@ -2157,7 +2160,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
       if(d0.moved){ sc.scrollLeft=d0.sl-dx; sc.scrollTop=d0.st-dy; } });
     window.addEventListener('pointerup',()=>{ if(d0&&d0.moved){ window.__dragged=true; setTimeout(()=>window.__dragged=false,0); } d0=null; });
   }
-  canvasEl.addEventListener('click',e=>{ if(mpReplaying){ mpFast=true; return; } if(window.__dragged) return; const {x,y}=evPos(e); const p=pick(x,y); if(p.cell) onTile(p.cell.c,p.cell.r,p.unit); else if(!busy){ if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); } });
+  canvasEl.addEventListener('click',e=>{ if(mpReplaying){ mpFast=true; return; } if(window.__dragged) return; const {x,y}=evPos(e); const p=pick(x,y); if(p.cell) lastCell={c:p.cell.c,r:p.cell.r}; if(p.cell) onTile(p.cell.c,p.cell.r,p.unit); else if(!busy){ if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); } });
   canvasEl.addEventListener('contextmenu',e=>{ e.preventDefault(); if(busy) return; if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); });
   window.addEventListener('keydown',e=>{
     if(mpReplaying){ if(e.key===' '||e.key==='Escape'||e.key==='Enter'){ e.preventDefault(); mpFast=true; } return; }
