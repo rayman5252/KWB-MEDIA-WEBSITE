@@ -99,6 +99,9 @@
   @keyframes bgf{0%{opacity:0}8%{opacity:.3}33%{opacity:.3}41%{opacity:0}100%{opacity:0}}
   #title>*:not(.bgshow){position:relative;z-index:1}
   #overlay{overflow:hidden}.panel{position:relative;z-index:1}
+  @keyframes bgf4{0%{opacity:0}6%{opacity:.3}25%{opacity:.3}31%{opacity:0}100%{opacity:0}}
+  .bgshow.four i{animation-name:bgf4;animation-duration:36s}
+  .bgshow.four i:nth-child(1){animation-delay:0s}.bgshow.four i:nth-child(2){animation-delay:9s}.bgshow.four i:nth-child(3){animation-delay:18s}.bgshow.four i:nth-child(4){animation-delay:27s}
   @media (prefers-reduced-motion:reduce){.bgshow i{animation:none}.bgshow i:first-child{opacity:.3}}
   @media (max-width:820px){
     #app{flex-direction:column}
@@ -1344,6 +1347,8 @@ async function startGame(n,seed){
   document.querySelectorAll('.mapbtn[data-kind]').forEach(b=>{ b.onclick=()=>{ customKind=b.dataset.kind; syncMenu(); try{ localStorage.setItem('lfKind',customKind); }catch(e){} }; });
   try{ const m=localStorage.getItem('lfMap'), k=localStorage.getItem('lfKind'); if(['default','custom','random'].includes(m)) mapMode=m; if(CUSTOM_SEEDS[k]) customKind=k; }catch(e){}
   syncMenu();
+  // 4th menu background (the general), used automatically once assets/bg4-general.jpg exists
+  const gi=new Image(); gi.onload=()=>{ document.querySelectorAll('.bgshow').forEach(b=>{ const i=document.createElement('i'); i.style.backgroundImage='url(assets/bg4-general.jpg)'; b.appendChild(i); b.classList.add('four'); }); }; gi.src='assets/bg4-general.jpg';
   addEventListener('resize',()=>{ resize(); });
   nations=[0,1,2,3,4].map(()=>({alive:false,ip:0}));
   resize();
