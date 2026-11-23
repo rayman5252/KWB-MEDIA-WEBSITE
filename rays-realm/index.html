@@ -272,11 +272,11 @@
     <li><b>Gold mines:</b> end a move on one to seize it. Each held mine pays +2 gold at the start of your turn.</li>
     <li><b>Income:</b> every army earns 2 gold a turn no matter what, plus 2 for each keep and 2 for each mine it holds.</li>
     <li><b>Barbarians:</b> skull-banner towers hide in undiscovered land. Their riders and archers only defend their home, but they hit hard. Destroy a tower for a 10 gold bounty.</li>
-    <li><b>Recruit</b> from the sidebar: new units appear near your keep and rest until next turn. Each keep you hold lets you recruit up to 4 units per turn, and each unused fort adds one more (the sidebar shows how many are left). Ships spawn on the river.</li>
+    <li><b>Recruit</b> from the sidebar: new units appear near your keep and rest until next turn. Each keep you hold lets you recruit up to 4 units per turn, and each fort can also recruit two more units beside it. Ships spawn on the river.</li>
     <li><b>Mercenaries</b> cost 3 gold and match a Foot Soldier. They are hired on the spot: place one on any hex you can see, not just near a keep. A contract lasts 5 rounds (a badge shows the rounds left), or until he is killed. Three at a time at most, and they don't use up your keep recruits.</li>
     <li><b>Ships</b> are unarmed transports. Walk a land unit onto a ship (max 2) to board: that ends its turn and the ship's. Next turn the ship sails 3 hexes and passengers may land on any adjacent shore.</li>
     <li>Forests: +1 defence, cost 2 to enter. Crags and river block foot soldiers; cross at the fords.</li>
-    <li><b>Forts:</b> pay 30 gold to build one on any grass hex near your units. It gives +2 defence to your unit standing there, and lets you recruit one unit per turn on an adjacent hex (even a ship, if water is adjacent). It collapses if that unit is slain, and is razed if an enemy steps on it. Keeps give +2 and recruit without limit; each tower recruits one unit per turn.</li>
+    <li><b>Forts:</b> pay 30 gold to build one on any grass hex near your units. It gives +2 defence to your unit standing there, and lets you recruit two units per turn on adjacent hexes (even a ship, if water is adjacent). It collapses if that unit is slain, and is razed if an enemy steps on it. Keeps give +2 and recruit without limit; each fort recruits two units per turn.</li>
     <li><b>Fog of war:</b> every army, yours and theirs, sees only 3 hexes around its units, keeps and forts (scouts and archer towers see 4). Explored ground stays revealed, but enemies in the dark are hidden.</li>
     <li><b>Healing:</b> wounded units that stay out of battle recover 5% of their health each turn, or 10% if they end within 2 hexes of a keep or fort you hold.</li>
     <li>Defenders counter-attack if the attacker is within their range.</li>
@@ -339,7 +339,7 @@ const TYPES = {
             desc:'Steady front-line infantry. Tough, reliable, hits hard in melee.'},
   merc:    {name:'Mercenary', short:'Mercenary', cost:3, hp:12, atk:6, def:2, mv:2, rng:[1,1], cls:'ground', merc:true,
             desc:'A sellsword with Foot Soldier stats for only 3 gold. Hired on the spot: place him on any hex you can see. His contract lasts 5 rounds, or until he is killed. You can field 3 at a time.'},
-  cavalry: {name:'Knight', short:'Knight', cost:7, hp:10, atk:8, def:2, mv:3, rng:[1,1], cls:'ground', charge:true,
+  cavalry: {name:'Knight', short:'Knight', cost:8, hp:10, atk:8, def:2, mv:3, rng:[1,1], cls:'ground', charge:true,
             desc:'Mounted warrior. Charge: +2 damage if it moved 2 or more hexes before striking. Great for seizing mines.'},
   archer:  {name:'Archer', short:'Archer', cost:5, hp:7, atk:5, def:0, mv:2, rng:[2,3], cls:'ground',
             desc:'Shoots 2–3 hexes. Cannot fire at adjacent foes, so keep it behind the line.'},
@@ -450,6 +450,11 @@ const unitAt = (c,r) => units.find(u => u.c===c && u.r===r);
 const alive = team => units.filter(u => u.team===team);
 const TOWER_COST = 30;
 let towers = new Map(), towerUsed = new Set();
+const TOWER_RECRUITS = 2;   // units a fort can recruit each turn. towerUsed holds the key for the 1st use and key+'#1' for the 2nd, so saves and undo keep working
+const towerUseId = (k,i) => i ? k+'#'+i : k;
+const towerUses = k => { let n=0; for(let i=0;i<TOWER_RECRUITS;i++) if(towerUsed.has(towerUseId(k,i))) n++; return n; };
+const towerSpent = k => towerUses(k)>=TOWER_RECRUITS;
+const towerMark = k => { for(let i=0;i<TOWER_RECRUITS;i++) if(!towerUsed.has(towerUseId(k,i))){ towerUsed.add(towerUseId(k,i)); return; } };
 const terrainDef = u => (u.type.cls==='fly' ? 0 : TERR[tileCh(u.c,u.r)].def) + (towers.get(key(u.c,u.r))===u.team ? 2 : 0) + (u.team===3&&u.type.cls!=='fly'&&tileCh(u.c,u.r)==='f' ? 1 : 0);   // Emerald Court: +1 defence in forest
 const minesOf = t => MINES.filter(m=>mineOwner.get(key(m.c,m.r))===t).length;
 const KEEP_INCOME = 2;
@@ -1018,7 +1023,7 @@ function spawnTiles(team,type){
   }
   const T=TYPES[type], maxD = T.cls==='water'?4:2, out=[];
   const owned=KEEPS.filter((k,i)=>keepOwner[i]===team);
-  const myTowers=[...towers].filter(([k,tm])=>tm===team&&!towerUsed.has(k)).map(([k])=>({k,c:+k.split(',')[0],r:+k.split(',')[1]}));
+  const myTowers=[...towers].filter(([k,tm])=>tm===team&&!towerSpent(k)).map(([k])=>({k,c:+k.split(',')[0],r:+k.split(',')[1]}));
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
     if(unitAt(c,r)||tileCost(T.cls,c,r)==null) continue;
     if(type==='archertower'&&tileCh(c,r)!=='.') continue;   // towers are built on open grass only (no forest, crags, mines, keeps or water)
@@ -1051,7 +1056,7 @@ function buildTower(team,c,r){
     log(`${FACTIONS[team].short} builds a fort (-${TOWER_COST}g).`,'t'+team); sfx('recruit'); }
 }
 function recruit(team,type,c,r,tw){
-  const T=TYPES[type], cost=costOf(type,team); gold[team]-=cost; if(tw) towerUsed.add(tw); else if(!T.merc) recruitsUsed[team]++;
+  const T=TYPES[type], cost=costOf(type,team); gold[team]-=cost; if(tw) towerMark(tw); else if(!T.merc) recruitsUsed[team]++;
   const u=makeUnit(type,team,c,r); u.done=true; u.moved=true; u.mp=0; units.push(u); mpRec({k:'spawn',u:packUnit(u)});
   if(team===ME||isVis(c,r)){ const p=center(c,r); effects.push({ring:true,x:p.x,y:p.y-S*0.3,t0:performance.now(),life:500,color:'#9be28a'});
     log(T.merc?`${FACTIONS[team].short} hires a Mercenary (-${cost}g).`:`${FACTIONS[team].short} recruits ${u.name} at ${tw?'a fort':'the keep'} (-${cost}g).`,'t'+team); sfx('recruit'); }
@@ -1106,7 +1111,7 @@ function startTeamTurn(t){
   for(const u of [...units]){ if(u.team===t&&u.key==='merc'&&--u.rounds<=0){ units=units.filter(x=>x!==u); units.forEach(h=>{ h.cargo=h.cargo.filter(x=>x!==u); }); if(sel===u) clearSel();
     if(t===ME){ const p=center(u.c,u.r); addText(p.x,p.y-S*1.2,'Contract ended',FACTIONS[ME].color); log('A Mercenary\'s contract has ended. He walks away.','sys'); } } }
   healTeam(t); paladinAura(t); recruitsUsed[t]=0;
-  for(const [k,tm] of towers) if(tm===t) towerUsed.delete(k);
+  for(const [k,tm] of towers) if(tm===t) for(let i=0;i<TOWER_RECRUITS;i++) towerUsed.delete(towerUseId(k,i));
   units.filter(u=>u.team===t).forEach(u=>{u.done=false;u.moved=false;u.steps=0;u.mp=u.type.mv;u.cargo.forEach(c=>{c.done=false;c.moved=false;c.steps=0;c.mp=c.type.mv;});});
   const inc=income(t); gold[t]+=inc; lastPay[t]=inc;
   if(t===ME) log(`${FACTIONS[t].name}: +${inc} gold (${gold[t]} total).`,'t'+t);
@@ -1797,7 +1802,7 @@ function previewFor(t){
 function setHTML(id,html){ const el=document.getElementById(id); if(el.dataset.html!==html){ el.dataset.html=html; el.innerHTML=html; } return el; }
 function tipHTML(k){
   if(k==='tower') return `<div class="top"><img src="assets/tf_fort.png" alt="" style="width:60px;height:auto"><div><h4>Fort</h4><div class="cost">${TOWER_COST} gold</div></div></div>
-    <p style="margin:6px 0 0">Build it on a grass hex near your units. <b>+2 defence</b> to your unit standing there, and it recruits <b>1 unit per turn</b> on adjacent hexes (ships too, if water is adjacent). Collapses if that unit is slain; enemies can raze it.</p>`;
+    <p style="margin:6px 0 0">Build it on a grass hex near your units. <b>+2 defence</b> to your unit standing there, and it recruits <b>2 units per turn</b> on adjacent hexes (ships too, if water is adjacent). Collapses if that unit is slain; enemies can raze it.</p>`;
   const T=TYPES[k], rng=T.rng[0]===T.rng[1]?T.rng[0]:T.rng[0]+'–'+T.rng[1];
   const why = gold[ME]<costOf(k) ? `Need ${costOf(k)-gold[ME]} more gold.` : !spawnTiles(ME,k).length ? (k==='archertower'?'No open space next to your units.':T.cls==='water'?'No open water near your keeps or forts.':'No open space near your keeps or forts.') : '';
   return `<div class="top"><img src="assets/${spriteKey(ME,k)}.png" alt=""><div><h4>${T.name}</h4><div class="cost">${costOf(k)} gold${T.cap?' · carries '+T.cap:''}</div></div></div>
@@ -1823,12 +1828,12 @@ function refreshUI(){
   const hu=hover&&unitAt(hover.c,hover.r), shown=(hu&&unitVisible(hu)?hu:null)||sel;
   setHTML('card', shown ? cardHTML(shown,previewFor(shown))
     : hover&&!explored.has(key(hover.c,hover.r)) ? '<div class="empty"><b>Unexplored</b><br>Send units this way to reveal the map.</div>'
-    : hover ? `<div class="empty"><b>${TERR[tileCh(hover.c,hover.r)].name}</b>${mineInfo(hover)}<br>${TERR[tileCh(hover.c,hover.r)].note||'Open ground.'}${seenTower.has(key(hover.c,hover.r))?`<br>🏯 ${FACTIONS[seenTower.get(key(hover.c,hover.r))].short} fort: +2 defence for its owner; recruits 1 unit per turn nearby${towerUsed.has(key(hover.c,hover.r))?' (used this turn)':''}.`:''}</div>`
+    : hover ? `<div class="empty"><b>${TERR[tileCh(hover.c,hover.r)].name}</b>${mineInfo(hover)}<br>${TERR[tileCh(hover.c,hover.r)].note||'Open ground.'}${seenTower.has(key(hover.c,hover.r))?`<br>🏯 ${FACTIONS[seenTower.get(key(hover.c,hover.r))].short} fort: +2 defence for its owner; recruits 2 units per turn nearby${towerSpent(key(hover.c,hover.r))?' (used this turn)':''}.`:''}</div>`
     : '<div class="empty">Select one of your units, or hover anything for details.</div>');
   // shop
   const shop=setHTML('shop',`<h3><span>Recruit at your keeps · ${recruitsLeft(ME)} left this turn</span><span>🪙 ${gold[ME]}</span></h3><div class="grid">${shopFor(ME).map(k=>{
     const T=TYPES[k], ok=gold[ME]>=costOf(k)&&side===ME&&!busy&&!over&&spawnTiles(ME,k).length>0;
-    return `<div class="sw" data-k="${k}"><button class="sec ${recruitType===k?'on':''}" data-k="${k}" ${ok||recruitType===k?'':'disabled'}><span>${T.short}</span><span>${costOf(k)}🪙</span></button></div>`;}).join('')}<div class="sw" data-k="tower" style="grid-column:1/3"><button class="sec ${recruitType==='tower'?'on':''}" data-k="tower" ${(gold[ME]>=TOWER_COST&&side===ME&&!busy&&!over&&towerTiles(ME).length)||recruitType==='tower'?'':'disabled'}><span>Fort (+2 def, 1 recruit/turn)</span><span>${TOWER_COST}🪙</span></button></div></div>`);
+    return `<div class="sw" data-k="${k}"><button class="sec ${recruitType===k?'on':''}" data-k="${k}" ${ok||recruitType===k?'':'disabled'}><span>${T.short}</span><span>${costOf(k)}🪙</span></button></div>`;}).join('')}<div class="sw" data-k="tower" style="grid-column:1/3"><button class="sec ${recruitType==='tower'?'on':''}" data-k="tower" ${(gold[ME]>=TOWER_COST&&side===ME&&!busy&&!over&&towerTiles(ME).length)||recruitType==='tower'?'':'disabled'}><span>Fort (+2 def, 2 recruits/turn)</span><span>${TOWER_COST}🪙</span></button></div></div>`);
   shop.querySelectorAll('button').forEach(b=>b.onclick=()=>chooseRecruit(b.dataset.k));
   shop.querySelectorAll('.sw').forEach(w=>{ w.onmouseenter=()=>showTip(w); w.onmouseleave=hideTip; });
   const cp=sel&&sel.cargo.length&&side===ME&&!busy?sel:null;
@@ -2177,7 +2182,7 @@ function draw(){
   // forts: your own and any you have seen
   for(const [k,team] of seenTower){ const [c,r]=k.split(',').map(Number), {x,y}=center(c,r);
     ctx.save(); hexPath(x,y,S); ctx.clip(); ctx.translate(x,y); ctx.scale(1,TILT); if(TILEIMG.F) ctx.drawImage(TILEIMG.F,-S,-SQ*S*0.5,2*S,SQ*S); ctx.restore();
-    if(towerUsed.has(k)){ hexPath(x,y,S); ctx.fillStyle='rgba(0,0,0,0.32)'; ctx.fill(); }
+    if(towerSpent(k)){ hexPath(x,y,S); ctx.fillStyle='rgba(0,0,0,0.32)'; ctx.fill(); }
     hexPath(x,y,S*0.9); ctx.strokeStyle=FACTIONS[team].color; ctx.lineWidth=3; ctx.stroke(); }
   drawIce(now);
   // fog of war
