@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ray's Realm</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Pinyon+Script&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --wood:#2a1d14; --parch:#e8d9b5; --parch2:#cdb98a; --ink:#2b1d10;
@@ -16,6 +16,19 @@
   #app{display:flex;height:100vh}
   #stage{flex:1;position:relative;min-width:0;background:radial-gradient(ellipse at 50% 45%,#5a3d27 0%,#33220f 60%,#1d130a 100%)}
   #stage{overflow:hidden}
+  #shout{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;z-index:8;pointer-events:none;opacity:0;padding:0 5%;font:900 clamp(34px,7vw,84px)/1.05 Cinzel,Georgia,serif;color:#fff3c4;letter-spacing:.04em;text-shadow:0 0 18px #000,0 4px 0 #000,0 0 40px #c0392b}
+  #shout.show{animation:shoutin 3.6s ease-out forwards}
+  @keyframes shoutin{0%{opacity:0;transform:translateY(-50%) scale(1.5)}8%{opacity:1;transform:translateY(-50%) scale(1)}78%{opacity:1}100%{opacity:0}}
+  #chatbox{position:absolute;left:62px;bottom:12px;z-index:6;display:flex;flex-direction:column-reverse;align-items:flex-start;gap:4px;font-family:system-ui,sans-serif}
+  #chattog{height:38px;padding:0 12px;border-radius:8px;border:2px solid #1a1109;background:linear-gradient(#5a3d27,#3b281a);color:#f2d36b;font:700 14px/1 system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 6px #0008}
+  #chattog b{margin-left:7px;background:#c0392b;color:#fff;border-radius:9px;padding:2px 7px;font-size:12px}
+  #chatpanel{width:min(300px,calc(100vw - 90px));background:#1d130aee;border:2px solid #1a1109;border-radius:8px;box-shadow:0 4px 14px #000a;overflow:hidden}
+  #chatlog{height:170px;overflow-y:auto;padding:7px 9px;font-size:13px;line-height:1.35;color:#eadfc4}
+  #chatlog div{margin-bottom:4px;word-wrap:break-word}
+  #chatlog .sys{opacity:.6;font-style:italic}
+  #chatform{display:flex;border-top:1px solid #ffffff22}
+  #chatin{flex:1;min-width:0;background:#0006;border:0;color:#fff;padding:8px 9px;font-size:14px;outline:0}
+  #chatform button{border:0;background:#8a6a3a;color:#fff;padding:0 12px;font-weight:700;cursor:pointer}
   #zoombox{position:absolute;left:12px;bottom:12px;display:flex;flex-direction:column;gap:4px;z-index:5}
   #zoombox button{width:38px;height:38px;padding:0;border-radius:8px;border:2px solid #1a1109;background:linear-gradient(#5a3d27,#3b281a);color:#f2d36b;font:700 22px/1 Georgia,serif;cursor:pointer;box-shadow:0 2px 6px #0008}
   #zoombox button:hover{background:linear-gradient(#6d4a2f,#4a3322)}
@@ -181,24 +194,6 @@
   .scene details{margin-top:22px;text-align:left;background:#000a;border-radius:8px;padding:8px 14px;font-size:14px;line-height:1.5}
   .scene summary{cursor:pointer;text-align:right;font-family:Cinzel,Georgia,serif;color:var(--gold)}
   .scene ul{margin:8px 0 4px;padding-left:20px}
-  /* quote scrolls: loading screen + victory */
-  .qscroll{position:relative;width:min(92vw,880px);aspect-ratio:3/2;background:center/100% 100% no-repeat;container-type:inline-size;border-radius:6px;box-shadow:0 10px 50px #000}
-  .qscroll .qvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;pointer-events:none}
-  .qscroll.novid{background-image:url(assets/scroll.jpg)}
-  .qscroll.novid .qvid{display:none}
-  .qscroll .qin{opacity:0;transition:opacity 1s ease .1s}
-  .qscroll.open .qin,.qscroll.novid .qin{opacity:1}
-  .qscroll .qin{position:absolute;left:25%;right:25%;top:29%;bottom:29%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#3a2713;font-family:Cinzel,Georgia,serif}
-  .qscroll .qt{font-family:'Pinyon Script','Snell Roundhand','Apple Chancery',cursive;font-style:normal;font-weight:400;font-size:clamp(13px,4.5cqw,38px);line-height:1.22}
-  .qscroll .qb{margin-top:1.1em;font-size:clamp(9px,2.3cqw,20px);letter-spacing:.08em;color:#6b4a22}
-  #quotescene{z-index:40;background:#0a0705 radial-gradient(ellipse at center,#2a1d10 0%,#0a0705 75%);flex-direction:column;justify-content:center;align-items:center;padding:0;cursor:pointer;text-align:center}
-  #quotescene .qhint{margin-top:18px;color:#c9b27a;font-family:Cinzel,Georgia,serif;letter-spacing:.2em;font-size:13px;text-transform:uppercase;opacity:.75}
-  #quotescene .qscroll,#victory .qscroll{animation:qfade 1.2s ease-out}
-  @keyframes qfade{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
-  #victory .qscroll{width:min(94vw,500px);margin:-40px 0 -32px auto;box-shadow:none;border-radius:0;-webkit-mask-image:radial-gradient(ellipse 60% 56% at 50% 50%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 60% 56% at 50% 50%,#000 62%,transparent 100%)}
-  #victory .qscroll .qt{font-size:clamp(13px,5.1cqw,30px);line-height:1.15}
-  #victory .qscroll .qb{font-size:clamp(10px,3cqw,17px)}
-  @media(max-height:700px){#victory .qscroll{width:min(88vw,330px);margin:-24px 0 -20px auto}}
   #defeat{justify-content:center;padding:0;background:#000;cursor:pointer}
   #defeat .shade{background:radial-gradient(ellipse at center,#0000 30%,#000a 100%)}
   #deftext{position:relative;font-family:Cinzel,Georgia,serif;font-weight:700;font-size:clamp(56px,15vw,190px);letter-spacing:.14em;margin-right:-.14em;color:#d3281f;text-shadow:0 0 28px #000,0 6px 26px #000,0 0 60px #7a0d08;animation:defIn 1.8s ease-out both;pointer-events:none}
@@ -212,7 +207,7 @@
 </head>
 <body>
 <div id="app">
-  <div id="stage"><div id="scroller"><canvas id="board"></canvas></div><div id="banner"></div><div id="zoombox"><button id="zin" title="Zoom in (+)">+</button><button id="zout" title="Zoom out (-)">&minus;</button><button id="zreset" title="Reset zoom (0)"><span id="zoomval">100%</span></button></div></div>
+  <div id="stage"><div id="scroller"><canvas id="board"></canvas></div><div id="banner"></div><div id="shout"></div><div id="chatbox" style="display:none"><button id="chattog" title="Chat with your opponent">💬 Chat<b id="chatbadge" style="display:none">0</b></button><div id="chatpanel" style="display:none"><div id="chatlog"></div><form id="chatform" autocomplete="off"><input id="chatin" maxlength="200" placeholder="Message your opponent…"><button type="submit">Send</button></form></div></div><div id="zoombox"><button id="zin" title="Zoom in (+)">+</button><button id="zout" title="Zoom out (-)">&minus;</button><button id="zreset" title="Reset zoom (0)"><span id="zoomval">100%</span></button></div></div>
   <aside id="side">
     <h1>Ray's Realm</h1>
     <a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a>
@@ -231,8 +226,7 @@
 <div id="tip"></div>
 <div id="overlay" class="hidden"><div class="panel" id="panel"></div></div>
 <div id="victory" class="scene hidden"><video id="vicvid" src="assets/title.mp4" poster="assets/title.jpg" preload="auto" muted loop playsinline></video><div class="shade"></div>
-  <div class="box"><h2>Realm Conquered!</h2><div class="tag">You have conquered the realm — it's Miller time!</div><div class="qscroll"><video class="qvid" src="assets/scroll-unroll.mp4" muted playsinline preload="auto"></video><div class="qin"><div class="qt" id="qvt"></div><div class="qb" id="qvb"></div></div></div><button id="again2">Play Again</button><a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a></div></div>
-<div id="quotescene" class="scene hidden"><div class="qscroll"><video class="qvid" src="assets/scroll-unroll.mp4" muted playsinline preload="auto"></video><div class="qin"><div class="qt" id="qlt"></div><div class="qb" id="qlb"></div></div></div><div class="qhint" id="qhint">Preparing the realm&hellip;</div></div>
+  <div class="box"><h2>Realm Conquered!</h2><div class="tag">You have conquered the realm — it's Miller time!</div><button id="again2">Play Again</button><a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a></div></div>
 <div id="defeat" class="scene hidden"><video id="defvid" src="assets/defeat.mp4" preload="auto" playsinline></video><div class="shade"></div><div id="deftext">DEFEAT</div></div>
 <div id="storyscreen" class="scene hidden"><video id="storyvid" src="assets/title.mp4" poster="assets/title.jpg" muted loop playsinline></video><div class="shade"></div>
   <div class="box"><div class="alabel">The Tale of the Realm</div><h2>War Comes</h2>
@@ -289,16 +283,16 @@ const SPR = {
   paladin:{w:302,h:475,cx:149,bottom:474,bw:300}, stalker:{w:302,h:400,cx:151,bottom:399,bw:300}, valkyrie:{w:302,h:400,cx:151,bottom:399,bw:300}, ranger:{w:302,h:400,cx:151,bottom:399,bw:300}
 };
 const IMG = {};
-const SPRM = {f1_archer:{w:323,h:451,cx:152,bottom:450,bw:300}, f1_archertower:{w:302,h:374,cx:149,bottom:373,bw:300}, f1_catapult:{w:340,h:304,cx:155,bottom:303,bw:300}, f1_cavalry:{w:339,h:467,cx:188,bottom:466,bw:300}, f1_dragon:{w:332,h:356,cx:149,bottom:355,bw:300}, f1_knight:{w:319,h:416,cx:167,bottom:415,bw:300}, f1_scout:{w:300,h:390,cx:149,bottom:389,bw:300}, f1_ship:{w:300,h:369,cx:149,bottom:368,bw:300}, f1_stalker:{w:329,h:366,cx:149,bottom:365,bw:300}, f1_wizard:{w:302,h:367,cx:149,bottom:366,bw:300}, f2_archer:{w:323,h:454,cx:150,bottom:453,bw:300}, f2_archertower:{w:301,h:416,cx:149,bottom:415,bw:300}, f2_catapult:{w:356,h:307,cx:162,bottom:306,bw:300}, f2_cavalry:{w:312,h:467,cx:160,bottom:466,bw:300}, f2_dragon:{w:332,h:358,cx:149,bottom:357,bw:300}, f2_knight:{w:337,h:410,cx:186,bottom:409,bw:300}, f2_scout:{w:300,h:415,cx:149,bottom:414,bw:300}, f2_ship:{w:300,h:361,cx:149,bottom:360,bw:300}, f2_valkyrie:{w:484,h:511,cx:241,bottom:510,bw:300}, f2_wizard:{w:300,h:357,cx:149,bottom:356,bw:300}, f3_archer:{w:327,h:455,cx:149,bottom:454,bw:300}, f3_archertower:{w:300,h:445,cx:149,bottom:444,bw:300}, f3_catapult:{w:325,h:313,cx:150,bottom:312,bw:300}, f3_cavalry:{w:312,h:466,cx:160,bottom:465,bw:300}, f3_dragon:{w:333,h:358,cx:150,bottom:357,bw:300}, f3_knight:{w:344,h:464,cx:190,bottom:463,bw:300}, f3_ranger:{w:313,h:445,cx:149,bottom:444,bw:300}, f3_scout:{w:300,h:410,cx:149,bottom:409,bw:300}, f3_ship:{w:300,h:367,cx:149,bottom:366,bw:300}, f3_wizard:{w:300,h:357,cx:149,bottom:356,bw:300}, f0_paladin:{w:302,h:475,cx:149,bottom:474,bw:300}};   // per-sprite metrics for the new army art (falls back to SPR by unit type)
+const SPRM = {f0_merc:{w:335,h:438,cx:184,bottom:437,bw:300}, f1_merc:{w:336,h:438,cx:184,bottom:437,bw:300}, f2_merc:{w:332,h:441,cx:181,bottom:440,bw:300}, f3_merc:{w:333,h:437,cx:182,bottom:436,bw:300}, f1_archer:{w:323,h:451,cx:152,bottom:450,bw:300}, f1_archertower:{w:302,h:374,cx:149,bottom:373,bw:300}, f1_catapult:{w:340,h:304,cx:155,bottom:303,bw:300}, f1_cavalry:{w:339,h:467,cx:188,bottom:466,bw:300}, f1_dragon:{w:332,h:356,cx:149,bottom:355,bw:300}, f1_knight:{w:319,h:416,cx:167,bottom:415,bw:300}, f1_scout:{w:300,h:390,cx:149,bottom:389,bw:300}, f1_ship:{w:300,h:369,cx:149,bottom:368,bw:300}, f1_stalker:{w:329,h:366,cx:149,bottom:365,bw:300}, f1_wizard:{w:302,h:367,cx:149,bottom:366,bw:300}, f2_archer:{w:323,h:454,cx:150,bottom:453,bw:300}, f2_archertower:{w:301,h:416,cx:149,bottom:415,bw:300}, f2_catapult:{w:356,h:307,cx:162,bottom:306,bw:300}, f2_cavalry:{w:312,h:467,cx:160,bottom:466,bw:300}, f2_dragon:{w:332,h:358,cx:149,bottom:357,bw:300}, f2_knight:{w:337,h:410,cx:186,bottom:409,bw:300}, f2_scout:{w:300,h:415,cx:149,bottom:414,bw:300}, f2_ship:{w:300,h:361,cx:149,bottom:360,bw:300}, f2_valkyrie:{w:484,h:511,cx:241,bottom:510,bw:300}, f2_wizard:{w:300,h:357,cx:149,bottom:356,bw:300}, f3_archer:{w:327,h:455,cx:149,bottom:454,bw:300}, f3_archertower:{w:300,h:445,cx:149,bottom:444,bw:300}, f3_catapult:{w:325,h:313,cx:150,bottom:312,bw:300}, f3_cavalry:{w:312,h:466,cx:160,bottom:465,bw:300}, f3_dragon:{w:333,h:358,cx:150,bottom:357,bw:300}, f3_knight:{w:344,h:464,cx:190,bottom:463,bw:300}, f3_ranger:{w:313,h:445,cx:149,bottom:444,bw:300}, f3_scout:{w:300,h:410,cx:149,bottom:409,bw:300}, f3_ship:{w:300,h:367,cx:149,bottom:366,bw:300}, f3_wizard:{w:300,h:357,cx:149,bottom:356,bw:300}, f0_paladin:{w:302,h:475,cx:149,bottom:474,bw:300}};   // per-sprite metrics for the new army art (falls back to SPR by unit type)
 const SPECIAL = {paladin:0, stalker:1, valkyrie:2, ranger:3};   // army-only units: the sprite exists for that army alone
-const spriteKey = (team,type) => type==='merc' ? 'f4_merc' : 'f'+team+'_'+type;   // mercenaries share one neutral sprite; the hex ring shows who hired them
+const spriteKey = (team,type) => 'f'+team+'_'+type;   // each army's mercenaries wear its colours; barbarians keep the plain one (f4_merc)
 const TILEIMG = {};
 const TILEFILE = {'~':'t_water','f':'t_forest','^':'t_crags','G':'tf_mine','K':'tf_keep','F':'tf_fort'};
 const tilesReady = Promise.all(Object.entries(TILEFILE).map(([ch,n]) => new Promise(res => {
   const i = new Image(); i.onload = () => { TILEIMG[ch]=i; res(); }; i.onerror = res; i.src = 'assets/'+n+'.png';
 })));
 const BARB_TYPES = ['barbarcher','barbrider','barbtower','merc'];   // Barbarians (team 4) only have their own sprite set
-const imgReady = Promise.all(Object.keys(SPR).flatMap(n => (BARB_TYPES.includes(n)?[4]:SPECIAL[n]!=null?[SPECIAL[n]]:[0,1,2,3]).map(t => new Promise(res => {
+const imgReady = Promise.all(Object.keys(SPR).flatMap(n => (n==='merc'?[0,1,2,3,4]:BARB_TYPES.includes(n)?[4]:SPECIAL[n]!=null?[SPECIAL[n]]:[0,1,2,3]).map(t => new Promise(res => {
   const i = new Image(); i.onload = i.onerror = res; i.src = 'assets/'+spriteKey(t,n)+'.png'; IMG[spriteKey(t,n)] = i;
 }))));
 
@@ -579,7 +573,7 @@ async function mpOpen(role,code,onConn,onErr){
   setTimeout(()=>{ if(!ok&&mpPeer) onErr('Could not connect. One of your networks may be blocking direct connections (common on work or school Wi-Fi).'); },15000);
 }
 function mpShutdown(){ if(mpConn){ mpConn.onclose=null; mpConn.close(); mpConn=null; } if(mpPeer){ try{ mpPeer.destroy(); }catch(e){} mpPeer=null; } }
-function mpClose(){ clearTimeout(mpRetry); mpRetry=null; mpShutdown(); MP=null; mpLobby=null; }
+function mpClose(){ clearTimeout(mpRetry); mpRetry=null; mpShutdown(); MP=null; mpLobby=null; if(typeof chat!=="undefined"){ chat.lines=[]; chat.unread=0; chatRender(); chatVisible(); } }
 
 // ---- the match record each computer keeps, so a dropped or reloaded game can pick up again
 function mpStore(d){ try{ localStorage.setItem(MP_SAVE,JSON.stringify({code:MP.code,role:MP.role,me:ME,foe:MP.foe,state:d})); }catch(e){} }
@@ -667,8 +661,32 @@ function mpReconnect(tries=0){
     catch(e){ if(tries<40) mpReconnect(tries+1); }
   },tries?6000:1500);
 }
+// ---- in-game chat between the two players (rides the same connection as the turns)
+const chat={open:false,unread:0,lines:[]};
+function chatRender(){
+  const L=document.getElementById('chatlog'); if(!L) return;
+  L.innerHTML=''; chat.lines.forEach(l=>{ const d=document.createElement('div'); if(l.sys){ d.className='sys'; d.textContent=l.text; } else { const b=document.createElement('b'); b.textContent=l.name+': '; b.style.color=FACTIONS[l.team].color; d.appendChild(b); d.appendChild(document.createTextNode(l.text)); } L.appendChild(d); });
+  L.scrollTop=L.scrollHeight;
+  const bd=document.getElementById('chatbadge'); bd.style.display=chat.unread?'':'none'; bd.textContent=chat.unread;
+}
+const isShout=t=>/[A-Z]/.test(t)&&!/[a-z]/.test(t)&&/!\s*$/.test(t);
+function shoutShow(t){ const el=document.getElementById('shout'); el.textContent=t; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+function chatAdd(l){ chat.lines.push(l); if(chat.lines.length>100) chat.lines.shift(); if(!l.mine&&!l.sys&&!chat.open){ chat.unread++; sfx('step'); } chatRender(); }
+function chatSend(text){
+  text=(text||'').trim().slice(0,200); if(!text||!MP) return;
+  if(!mpConn){ chatAdd({sys:true,text:'Your opponent is offline: message not delivered.'}); return; }
+  mpConn.send({t:'chat',text}); chatAdd({team:ME,name:FACTIONS[ME].short,text,mine:true});
+}
+function chatSetup(){
+  const tog=document.getElementById('chattog'), panel=document.getElementById('chatpanel'), form=document.getElementById('chatform'), inp=document.getElementById('chatin');
+  tog.onclick=()=>{ chat.open=!chat.open; panel.style.display=chat.open?'':'none'; if(chat.open){ chat.unread=0; chatRender(); inp.focus(); } };
+  form.onsubmit=e=>{ e.preventDefault(); chatSend(inp.value); inp.value=''; };
+  inp.addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Escape'){ inp.blur(); } },true);
+}
+function chatVisible(){ const b=document.getElementById('chatbox'); if(b) b.style.display=(MP&&gameStarted)?'':'none'; }
 function mpOnMsg(m){
   if(!m||!MP) return;
+  if(m.t==='chat'){ if(typeof m.text==='string'&&MP.foe!=null&&gameStarted){ const tx=m.text.slice(0,200); chatAdd({team:MP.foe,name:FACTIONS[MP.foe].short,text:tx}); if(isShout(tx)) shoutShow(tx.trim()); } return; }
   if(m.t==='hello'&&MP.role==='host'){
     if(gameStarted&&MP.match){ mpConn.send({t:'start',host:ME,guest:MP.foe,state:mpPack()}); log(`${FACTIONS[MP.foe].name} is connected.`,'sys'); banner('Opponent Connected'); return; }
     mpConn.send({t:'lobby',host:ME}); mpStatus('Your opponent is here and choosing an army…'); return;
@@ -1781,7 +1799,7 @@ function showTip(w){
 }
 function hideTip(){ document.getElementById('tip').style.display='none'; }
 function refreshUI(){
-  updateVision();
+  updateVision(); chatVisible();
   const p=document.getElementById('turn');
   setHTML('turn',`<b>Turn ${turn}</b><span class="pill" style="background:${FACTIONS[side].color}">${side===ME?'Your move':FACTIONS[side].short+' moves'}</span><span>🪙 ${gold[ME]}</span>`);
   setHTML('factions',FACTIONS.slice(0,4).map((f,i)=>!activeArmies[i]?'':`<div class="frow ${side===i&&!over?'active':''} ${elim[i]?'out':''}"><span class="dot" style="background:${f.color}"></span><span>${f.name}</span>
@@ -1824,55 +1842,11 @@ function mineInfo(h){
   if(tileCh(h.c,h.r)!=='G') return '';
   const o=seenMine.get(key(h.c,h.r)); return ` — ${o==null?'unclaimed':'held by '+FACTIONS[o].short}`;
 }
-// ---- quotes on parchment scrolls (loading screen + victory)
-const LOAD_QUOTES=[
-  ['The supreme art of war is to subdue the enemy without fighting.','Sun Tzu'],
-  ['Know the enemy and know yourself; in a hundred battles you will never be in peril.','Sun Tzu'],
-  ['Let him who desires peace prepare for war.','Vegetius'],
-  ['The bravest are surely those who have the clearest vision of what is before them, glory and danger alike, and yet notwithstanding go out to meet it.','Thucydides'],
-  ['Come and take them.','King Leonidas of Sparta'],
-  ['Discipline is the soul of an army. It makes small numbers formidable, procures success to the weak, and esteem to all.','George Washington'],
-  ['The impediment to action advances action. What stands in the way becomes the way.','Marcus Aurelius'],
-  ['Difficulties strengthen the mind, as labor does the body.','Seneca'],
-  ['Difficulties show men what they are.','Epictetus'],
-  ['He who conquers others is strong; he who conquers himself is mighty.','Lao Tzu']];
-const WIN_QUOTES=[
-  ['The harder the conflict, the more glorious the triumph.','Thomas Paine'],
-  ['I came, I saw, I conquered.','Julius Caesar'],
-  ['Fortune favors the bold.','Virgil'],
-  ['He will win who knows when to fight and when not to fight.','Sun Tzu'],
-  ['What we obtain too cheap, we esteem too lightly; it is dearness only that gives everything its value.','Thomas Paine'],
-  ['The secret of happiness is freedom, and the secret of freedom, courage.','Thucydides'],
-  ['I have not yet begun to fight!','John Paul Jones']];
-let lastQ=-1;
-function pickQuote(list){ let i; do{ i=Math.floor(Math.random()*list.length); }while(list.length>1&&i===lastQ); lastQ=i; return list[i]; }
-function setQuote(tid,bid,q){ document.getElementById(tid).textContent='\u201C'+q[0]+'\u201D'; document.getElementById(bid).textContent='\u2014 '+q[1]; }
-// plays the unrolling animation on a .qscroll, then fades the quote in; falls back to the still scroll if the video can't play
-function playScroll(sc,cb){
-  const v=sc.querySelector('.qvid'); let done=false;
-  const show=()=>{ if(done) return; done=true; clearTimeout(fs); sc.classList.add('open'); if(cb) cb(); };
-  const bad=()=>{ sc.classList.add('novid'); show(); };
-  sc.classList.remove('open','novid');
-  const fs=setTimeout(()=>{ if(!done) bad(); },14000);   // failsafe: never leave the quote hidden
-  if(!v||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){ bad(); return {skip:()=>{}}; }
-  v.onended=show; v.onerror=bad;
-  try{ v.currentTime=0; v.playbackRate=1.3; const p=v.play(); if(p&&p.catch) p.catch(bad); }catch(e){ bad(); }
-  return {skip:()=>{ try{ v.currentTime=v.duration||5; v.pause(); }catch(e){} show(); }};
-}
-// loading screen: unrolling scroll + quote, then click/key (or a few seconds) to start
-function showLoadingQuote(done){
-  const sc=document.getElementById('quotescene'), qs=sc.querySelector('.qscroll'), hint=document.getElementById('qhint'); let fin=false, ready=false, tm, h;
-  setQuote('qlt','qlb',pickQuote(LOAD_QUOTES)); hint.textContent='Preparing the realm\u2026'; sc.classList.remove('hidden');
-  const go=()=>{ if(fin) return; if(!ready){ h&&h.skip(); return; } fin=true; clearTimeout(tm); sc.classList.add('hidden'); sc.onclick=null; window.removeEventListener('keydown',key,true); try{ qs.querySelector('.qvid').pause(); }catch(e){} done(); };
-  const key=e=>{ if(e.key===' '||e.key==='Enter'||e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); go(); } };
-  window.addEventListener('keydown',key,true); sc.onclick=go;
-  h=playScroll(qs,()=>{ ready=true; hint.textContent='Click to begin'; tm=setTimeout(go,4500); });
-}
 function showEnd(win,why){
   if(MP) mpClearSave(); else clearSave();   // a finished battle can't be continued
   if(win){
     const v=document.getElementById('victory'), vid=document.getElementById('vicvid');
-    setQuote('qvt','qvb',pickQuote(WIN_QUOTES)); playScroll(document.querySelector('#victory .qscroll')); v.classList.remove('hidden'); try{ vid.currentTime=0; vid.play().catch(()=>{}); }catch(e){}
+    v.classList.remove('hidden'); try{ vid.currentTime=0; vid.play().catch(()=>{}); }catch(e){}
     document.getElementById('again2').onclick=()=>{ v.classList.add('hidden'); vid.pause(); stopMusic(); if(MP){ mpClose(); goHome(); return; } ME=myArmy; newGame(); playAmbient(); };
     stopAmbient(); playMusic(true); return;
   }
@@ -1952,7 +1926,7 @@ function showIntro(){
     document.getElementById('armygo').textContent='Lead the '+F.name;
     tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.t===t)); };
   tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>{ showArmy(+b.dataset.t); sfx('step'); });
-    document.getElementById('armygo').onclick=()=>{ try{ localStorage.setItem('raysRealm.myArmy',myArmy); }catch(e){} as.classList.add('hidden'); mpClose(); ME=myArmy; showLoadingQuote(()=>{ newGame(); enter(); }); };
+    document.getElementById('armygo').onclick=()=>{ try{ localStorage.setItem('raysRealm.myArmy',myArmy); }catch(e){} as.classList.add('hidden'); mpClose(); ME=myArmy; newGame(); enter(); };
 const st=document.getElementById('storyscreen'), sv=document.getElementById('storyvid');
   const openStory=()=>{ st.classList.remove('hidden'); st.classList.toggle('skip',storySeen); storySeen=true;
     try{ sv.currentTime=0; sv.play().catch(()=>{}); }catch(e){} };
@@ -2259,6 +2233,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
     if(e.key==='Enter'&&!busy) endTurn();
     if((e.key==='s'||e.key==='S')&&!e.altKey&&gameStarted){ e.preventDefault(); saveGame(false); }   // S or Ctrl/Cmd+S
   });
+  chatSetup();
   document.getElementById('zin').onclick=()=>zoomBy(1.25);
   document.getElementById('zout').onclick=()=>zoomBy(0.8);
   document.getElementById('zreset').onclick=()=>zoomBy(1/ZOOM);
