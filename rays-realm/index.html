@@ -285,7 +285,7 @@
   <a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a>
   <div id="musicnote" style="display:none;margin-top:10px;font-size:13px;opacity:.85;text-shadow:0 2px 6px #000">♪ Click anywhere to start the music</div>
   <details><summary>How to play</summary><ul>
-    <li><b>Armies:</b> each army recruits one special unit and has its own bonus. Order of the Cross: the Paladin, and units next to a Paladin heal 2 health each turn. Dark Host: the Hydra (9 attack; replaces the Dragon) and 2 gold for every enemy unit destroyed. Golden Valkyries: the winged Valkyrie, mines that pay +1 gold, and Mercenaries for 2 gold. Emerald Court: the Elven Ranger (range 2–4), 1 extra hex of sight and 1 less damage in forest.</li>
+    <li><b>Armies:</b> each army recruits one special unit and has its own bonus. Order of the Cross: the Paladin, and units next to a Paladin heal 3 health each turn. Dark Host: the Hydra (9 attack; replaces the Dragon) and 2 gold for every enemy unit destroyed. Golden Valkyries: the winged Valkyrie, mines that pay +1 gold, and Mercenaries for 2 gold. Emerald Court: the Elven Ranger (range 2–4), 1 extra hex of sight and 1 less damage in forest.</li>
     <li><b>Omens:</b> from round 4 on, the sky or the land sometimes turns on everyone. Each omen is announced one round ahead (see the Omens panel). Fog Bank: everyone sees 1 hex less. Thunderstorm: ships cannot sail and ranged units lose 1 range. Hard Frost: rivers freeze for 2–3 rounds so units can walk across (ships are stuck), then the ice cracks: anyone still on it takes 4 damage and is thrown onto the nearest bank. Bountiful Harvest: mines pay double. Plague: the largest army loses 2 health on each unit that can move. Frost Giants Spotted: huge Frost Giants appear at random places and attack anyone; slay one for 15 gold.</li>
     <li>Each unit has <b>movement points</b> per turn and can spend them in several steps until you press End Turn. Attacking ends that unit's turn. Catapults can't fire after moving.</li>
     <li><b>Gold mines:</b> end a move on one to seize it. Each held mine pays +2 gold at the start of your turn.</li>
@@ -294,7 +294,7 @@
     <li><b>Recruit</b> from the sidebar: new units appear near your keep and rest until next turn. Each keep you hold lets you recruit up to 4 units per turn, and each fort can also recruit two more units beside it. Ships spawn on the river.</li>
     <li><b>Mercenaries</b> cost 3 gold and match a Foot Soldier. They are hired on the spot: place one on any hex you can see, not just near a keep. A contract lasts 5 rounds (a badge shows the rounds left), or until he is killed. Three at a time at most, and they don't use up your keep recruits.</li>
     <li><b>Ships</b> are unarmed transports. Walk a land unit onto a ship (max 2) to board: that ends its turn and the ship's. Next turn the ship sails 3 hexes and passengers may land on any adjacent shore.</li>
-    <li>Forests: +1 defence, cost 2 to enter. Crags and river block foot soldiers; cross at the fords.</li>
+    <li>Forests: +1 defence, cost 2 to enter (free for the Emerald Court). Hills: +1 defence and +1 sight for a foot unit standing on them (flyers get neither). Crags and river block foot soldiers; cross at the fords.</li>
     <li><b>Forts:</b> pay 30 gold to build one on any grass hex near your units. It gives +2 defence to your unit standing there, and lets you recruit two units per turn on adjacent hexes (even a ship, if water is adjacent). It collapses if that unit is slain, and is razed if an enemy steps on it. Keeps give +2 and recruit without limit; each fort recruits two units per turn.</li>
     <li><b>Fog of war:</b> every army, yours and theirs, sees only 3 hexes around its units, keeps and forts (scouts and archer towers see 4). Explored ground stays revealed, but enemies in the dark are hidden.</li>
     <li><b>Healing:</b> wounded units that stay out of battle recover 5% of their health each turn, or 10% if they end within 2 hexes of a keep or fort you hold.</li>
@@ -321,7 +321,7 @@ const SPRM = {f4_frostgiant:{w:472,h:537,cx:233,bottom:569,bw:252}, f1_hydra:{w:
 const SPECIAL = {paladin:0, hydra:1, valkyrie:2, ranger:3};   // army-only units: the sprite exists for that army alone
 const spriteKey = (team,type) => 'f'+team+'_'+type;   // each army's mercenaries wear its colours; barbarians keep the plain one (f4_merc)
 const TILEIMG = {};
-const TILEFILE = {'~':'t_water','f':'t_forest','^':'t_crags','G':'tf_mine','K':'tf_keep','F':'tf_fort'};
+const TILEFILE = {'~':'t_water','f':'t_forest','h':'t_hills','^':'t_crags','G':'tf_mine','K':'tf_keep','F':'tf_fort'};
 const tilesReady = Promise.all(Object.entries(TILEFILE).map(([ch,n]) => new Promise(res => {
   const i = new Image(); i.onload = () => { TILEIMG[ch]=i; res(); }; i.onerror = res; i.src = 'assets/'+n+'.png';
 })));
@@ -344,9 +344,9 @@ let mapSize='normal';
 try{ const m=localStorage.getItem('raysRealm.mapSize'); if(MAP_SIZES[m]) mapSize=m; }catch(e){}
 let COLS = 25, ROWS = 19, MAP = [], KEEPS = [], START = [], mapSeed = 0, groundReach = new Set();
 const MINES = [];
-// . meadow  f forest  ~ river  ^ crags  G gold mine  K keep
+// . meadow  h hills  f forest  ~ river  ^ crags  G gold mine  K keep
 const TERR = {
-  '.':{name:'Meadow',def:0}, 'f':{name:'Forest',def:1,note:'Costs 2 to enter, +1 defence.'},
+  '.':{name:'Meadow',def:0}, 'f':{name:'Forest',def:1,note:'Costs 2 to enter, +1 defence (the Emerald Court walk through it freely).'}, 'h':{name:'Hills',def:1,note:'+1 defence and +1 sight for a foot unit standing here (not flyers). Costs 1 to enter.'},
   '~':{name:'River',def:0,note:'Ships only (dragons fly over).'}, '^':{name:'Crags',def:2,note:'Only dragons can cross.'},
   'G':{name:'Gold Mine',def:0,note:`End a move here to seize it. Held mines pay +${MINE_INCOME} gold each turn.`},
   'K':{name:'Keep',def:2,note:'+2 defence. Pays +2 gold each turn. Recruits appear within 2 hexes of a keep you hold. Walk onto an enemy keep to capture it.'}
@@ -384,8 +384,8 @@ const TYPES = {
             desc:'Flies over anything. Fire breath reaches 2 hexes. The terror of the field.'},
   // ---- army-only units (each army recruits exactly one)
   paladin: {name:'Paladin', short:'Paladin', cost:9, hp:16, atk:6, def:3, mv:2, rng:[1,1], cls:'ground', only:0,
-            desc:'The Order\'s holy champion: 16 hit points and 3 defence. Healing Light: friendly units within 1 hex of a Paladin heal 2 health at the start of your turn.'},
-  hydra:   {name:'Hydra', short:'Hydra', cost:18, hp:22, atk:9, def:2, mv:5, rng:[1,2], cls:'fly', only:1,
+            desc:'The Order\'s holy champion: 16 hit points and 3 defence. Healing Light: friendly units within 1 hex of a Paladin heal 3 health at the start of your turn.'},
+  hydra:   {name:'Hydra', short:'Hydra', cost:22, hp:22, atk:9, def:2, mv:5, rng:[1,2], cls:'fly', only:1,
             desc:'The many-headed terror of the Dark Host, which has no Dragons. Flies over anything and its heads strike up to 2 hexes away. Hits harder than any dragon: 9 attack.'},
   valkyrie:{name:'Valkyrie', short:'Valkyrie', cost:8, hp:9, atk:6, def:2, mv:3, rng:[1,1], cls:'fly', only:2,
             desc:'A winged shield-maiden who flies over rivers, forests and crags. Fast and hard-hitting.'},
@@ -394,7 +394,7 @@ const TYPES = {
 };
 const SHOP_ORDER = Object.keys(TYPES).filter(k=>!TYPES[k].barb).sort((a,b)=>TYPES[a].cost-TYPES[b].cost);   // recruit menu, cheapest first
 const shopFor = team => SHOP_ORDER.filter(k=>(TYPES[k].only==null||TYPES[k].only===team)&&!(k==='dragon'&&team===1));   // the Dark Host fields the Hydra instead of the Dragon   // army-only units show for that army alone
-const PALADIN_HEAL = 2, SPOILS = 2;
+const PALADIN_HEAL = 3, SPOILS = 2;
 const MIN_COST = 3;   // no cap on army size: armies are limited only by gold and free hexes
 const MERC_ROUNDS = 5, MERC_MAX = 3;
 const KEEP_RECRUITS = 4;   // units an army may recruit per turn for each keep it holds (plus one per unused fort); mercenaries are hired outside this quota
@@ -424,28 +424,28 @@ function hexDist(a,b){
 }
 function visTiles(src,out){
   for(const q of src){
-    const rad=Math.max(1,((q.type&&q.type.vision)||VISION)+(q.team===3?1:0)-(omenIs('fog')?1:0));   // Emerald Court units see 1 hex farther
+    const rad=Math.max(1,((q.type&&q.type.vision)||VISION)+(q.team===3?1:0)+(q.type&&q.type.cls==='fly'?0:tileCh(q.c,q.r)==='h'?1:0)-(omenIs('fog')?1:0));   // Emerald Court units see 1 hex farther; so do foot units standing on hills (not flyers)
     for(let r=Math.max(0,q.r-rad-1);r<=Math.min(ROWS-1,q.r+rad+1);r++)
       for(let c=Math.max(0,q.c-rad);c<=Math.min(COLS-1,q.c+rad);c++) if(hexDist(q,{c,r})<=rad) out.add(key(c,r));
   }
 }
-function tileCost(cls,c,r){
+function tileCost(cls,c,r,team){
   const t=tileCh(c,r);
   if(cls==='fly') return 1;
   if(cls==='water') return (t==='~'&&!omenIs('frost')&&!omenIs('storm')) ? 1 : null;   // frozen or storm-bound: ships cannot sail
   if(t==='~') return omenIs('frost') ? 1 : null;   // the frozen river can be walked
   if(t==='^') return null;
-  return t==='f' ? 2 : 1;
+  return t==='f' ? (team===3 ? 1 : 2) : 1;   // Emerald Court: no movement penalty in forest
 }
 
 // ---------------------------------------------------------------- state
 // how many enemy armies you face (chosen on the title screen). Unused corners are left as abandoned keeps anyone can claim.
 const ENEMY_SETS={1:[2],2:[1,3],3:[1,2,3]};   // for the Order (army 0): one enemy sits in the far corner; two take the neighbouring corners
 const ARMY_INFO=[
- {unit:'Paladin (9 gold): 16 health, 3 defence. A holy champion who cannot be moved easily.', bonus:'Healing Light: friendly units within 1 hex of a Paladin heal 2 health at the start of each of your turns.', cmd:'Lord Ray, Head of the Order of the Cross', text:"The oldest banner in the realm. Lord Ray's knights march under the red cross, sworn to guard the crown and the common folk alike. Disciplined, well-armoured and proud, the Order fights shoulder to shoulder and has never yielded its keep. Where the Cross is raised, the realm still has a king worth defending."},
- {unit:'Hydra (18 gold): replaces the Dragon. 22 health, 9 attack and 5 moves; flies over anything and its many heads strike up to 2 hexes away.', bonus:'Spoils of War: gain 2 gold for every enemy unit you destroy.', cmd:'Warlord Szarok, Head of the Dark Host', text:"Scaled, patient and merciless, the Dark Host crept out of the southern marshes to claim the realm that once shunned them. Warlord Szarok wears the plate of fallen champions over his own armoured hide and wastes nothing: not an hour, not a soldier, not a grudge. Fear is the Host's first weapon. The sword is only the second."},
+ {unit:'Paladin (9 gold): 16 health, 3 defence. A holy champion who cannot be moved easily.', bonus:'Healing Light: friendly units within 1 hex of a Paladin heal 3 health at the start of each of your turns.', cmd:'Lord Ray, Head of the Order of the Cross', text:"The oldest banner in the realm. Lord Ray's knights march under the red cross, sworn to guard the crown and the common folk alike. Disciplined, well-armoured and proud, the Order fights shoulder to shoulder and has never yielded its keep. Where the Cross is raised, the realm still has a king worth defending."},
+ {unit:'Hydra (22 gold): replaces the Dragon. 22 health, 9 attack and 5 moves; flies over anything and its many heads strike up to 2 hexes away.', bonus:'Spoils of War: gain 2 gold for every enemy unit you destroy.', cmd:'Warlord Szarok, Head of the Dark Host', text:"Scaled, patient and merciless, the Dark Host crept out of the southern marshes to claim the realm that once shunned them. Warlord Szarok wears the plate of fallen champions over his own armoured hide and wastes nothing: not an hour, not a soldier, not a grudge. Fear is the Host's first weapon. The sword is only the second."},
  {unit:'Valkyrie (8 gold): a winged flyer with 3 moves that ignores rivers, forests and crags.', bonus:'Gold Hoard: your gold mines pay +1 gold and Mercenaries cost only 2.', cmd:'Empress Joy, Head of the Golden Valkyries', text:"Empress Joy leads the Golden Valkyries, shield-maidens forged in the northern passes and loyal to no throne but hers. They ride light, strike first and take their gold in battle. Where the Valkyries pass, mines change hands and keeps fall quiet. Join her, and glory is paid in advance."},
- {unit:'Elven Ranger (6 gold): longbow with range 2–4 and 4-hex sight.', bonus:'Forest Sight: your units see 1 hex farther and take 1 less damage while standing in forest.', cmd:'Lord Aelindor, Head of the Emerald Court', text:"Ancient, graceful and cold as the green deep forest, the Emerald Court has watched the human kingdoms rise and fall for a thousand years. Lord Aelindor wears armour of living emerald and fights with the calm of one who has already seen the ending. The Court does not seek war. It simply never loses one."}
+ {unit:'Elven Ranger (6 gold): longbow with range 2–4 and 4-hex sight.', bonus:'Forest Sight: your units see 1 hex farther, take 1 less damage in forest and walk through forest with no movement penalty.', cmd:'Lord Aelindor, Head of the Emerald Court', text:"Ancient, graceful and cold as the green deep forest, the Emerald Court has watched the human kingdoms rise and fall for a thousand years. Lord Aelindor wears armour of living emerald and fights with the calm of one who has already seen the ending. The Court does not seek war. It simply never loses one."}
 ];
 let myArmy=0; try{ const a=+localStorage.getItem('raysRealm.myArmy'); if(a>=0&&a<4) myArmy=a; }catch(e){}   // the army you pick on the title screen for a game against the computer
 // enemies for army `me`: the far corner is me^2 (0<->2, 1<->3), the other two are its neighbours
@@ -859,12 +859,13 @@ function generateMap(seed){
   };
   const area=COLS*ROWS;
   cluster('f',Math.round(area*0.12/5),3,8,2);
+  cluster('h',Math.round(area*0.07/3),2,5,2);
   cluster('^',Math.round(area*0.035/2),1,3,3);
   // clear every keep's surroundings so each army starts on open ground
   for(const [kc,kr] of keeps){ for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(hexDist({c,r},{c:kc,r:kr})<=2) put(c,r,'.'); put(kc,kr,'K'); }
   // mines: 3 home mines per army, 4 border mines, 2 centre mines
   const mines=[], owners={};
-  const isLand=(c,r)=>at(c,r)==='.'||at(c,r)==='f';
+  const isLand=(c,r)=>at(c,r)==='.'||at(c,r)==='f'||at(c,r)==='h';
   const apart=(c,r,min)=>mines.every(m=>hexDist(m,{c,r})>=min);
   const addMine=(c,r,owner)=>{ put(c,r,'G'); mines.push({c,r}); if(owner!=null) owners[key(c,r)]=owner; };
   keeps.forEach(([kc,kr],i)=>{
@@ -1005,7 +1006,7 @@ function reach(u){
     open.sort((a,b)=>res.get(a).cost-res.get(b).cost);
     const cur=res.get(open.shift());
     for(const [nc,nr] of neighbors(cur.c,cur.r)){
-      const tc=tileCost(u.type.cls,nc,nr); if(tc==null) continue;
+      const tc=tileCost(u.type.cls,nc,nr,u.team); if(tc==null) continue;
       const occ=unitAt(nc,nr); if(occ && occ.team!==u.team) continue;
       const cost=cur.cost+tc; if(cost>u.mp) continue;
       const nk=key(nc,nr), ex=res.get(nk);
@@ -1322,7 +1323,7 @@ function ensureInView(pt){
 async function moveUnit(u,path){
   mpRec({k:'move',id:u.id,path:path.map(p=>({c:p.c,r:p.r}))});
   for(let i=1;i<path.length;i++){
-    if(u.team===ME) revealAround(path[i].c,path[i].r,(u.type.vision||VISION)+(u.team===3?1:0));
+    if(u.team===ME) revealAround(path[i].c,path[i].r,(u.type.vision||VISION)+(u.team===3?1:0)+(u.type.cls!=='fly'&&tileCh(path[i].c,path[i].r)==='h'?1:0));
     // animate and make footstep noise only for steps you can actually see (either end of the step in view)
     if(u.team!==ME && !isVis(path[i-1].c,path[i-1].r) && !isVis(path[i].c,path[i].r)) continue;
     const a=center(path[i-1].c,path[i-1].r), b=center(path[i].c,path[i].r);
@@ -1540,7 +1541,7 @@ function aiSources(t){
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(!F.explored.has(key(c,r))) src.push({c,r,d0:7});
   return src;
 }
-function distMapMulti(cls,sources){
+function distMapMulti(cls,sources,team){
   const d=new Map(), buckets=[];
   const push=(c,r,dist)=>{ (buckets[dist]||(buckets[dist]=[])).push([c,r,dist]); };
   for(const s of sources){ const k=key(s.c,s.r); if(!d.has(k)||s.d0<d.get(k)){ d.set(k,s.d0); push(s.c,s.r,s.d0); } }
@@ -1549,7 +1550,7 @@ function distMapMulti(cls,sources){
     for(let i=0;i<arr.length;i++){
       const [c,r,dist]=arr[i]; if(d.get(key(c,r))!==dist) continue;
       for(const [nc,nr] of neighbors(c,r)){
-        const tc=tileCost(cls,nc,nr); if(tc==null) continue;
+        const tc=tileCost(cls,nc,nr,team); if(tc==null) continue;
         const nk=key(nc,nr), nd=dist+tc;
         if(!d.has(nk)||nd<d.get(nk)){ d.set(nk,nd); push(nc,nr,nd); }
       }
@@ -1620,7 +1621,7 @@ async function aiAct(u){
   if(u.done) return;
   if(u.type.noattack) return aiShip(u);
   updateAIVision(u.team);
-  const info=reach(u), dm=distMapMulti(u.type.cls,aiSources(u.team));
+  const info=reach(u), dm=distMapMulti(u.type.cls,aiSources(u.team),u.team);
   if(await aiTryBoard(u,info,dm)) return;
   let best=null;
   for(const [k,e] of info){
@@ -1710,7 +1711,7 @@ function barbCandidates(){
   const out=[];
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
     const k=key(c,r); if(!groundReach.has(k)) continue;
-    const ch=tileCh(c,r); if(ch!=='.'&&ch!=='f') continue;
+    const ch=tileCh(c,r); if(ch!=='.'&&ch!=='f'&&ch!=='h') continue;
     if(unitAt(c,r)||explored.has(k)||visible.has(k)) continue;
     if([0,1,2,3].some(t=>t!==ME&&aiFog[t]&&aiFog[t].visible.has(k))) continue;
     if(KEEPS.some(([kc,kr])=>hexDist({c,r},{c:kc,r:kr})<6)) continue;
@@ -1726,7 +1727,7 @@ function spawnFrostGiants(){
   const want=MP?2:({small:1,normal:2,large:3}[mapSize]||2), have=units.filter(u=>u.key==='frostgiant').length;
   let spots=barbCandidates();
   if(spots.length<want){   // everything is explored: any open ground well away from keeps and from every unit
-    spots=[]; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const k=key(c,r); if(!groundReach.has(k)||unitAt(c,r)) continue; const ch=tileCh(c,r); if(ch!=='.'&&ch!=='f') continue;
+    spots=[]; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const k=key(c,r); if(!groundReach.has(k)||unitAt(c,r)) continue; const ch=tileCh(c,r); if(ch!=='.'&&ch!=='f'&&ch!=='h') continue;
       if(KEEPS.some(([kc,kr])=>hexDist({c,r},{c:kc,r:kr})<5)||units.some(u=>hexDist(u,{c,r})<4)) continue; spots.push({c,r}); } }
   let n=0;
   for(let i=0;i<want&&have+n<GIANT_MAX&&spots.length;i++){
@@ -1840,7 +1841,8 @@ function unitNotes(u){
   if(u.key==='valkyrie') ink('<b>Flies</b> over any terrain.','#2a5a8a');
   if(u.key==='ranger') ink('<b>Keen eyes:</b> sees 4 hexes.','#2a5a8a');
   if(u.team===1) ink(`<b>Spoils of War:</b> +${SPOILS} gold for each enemy it slays.`,'#8a6a00');
-  if(u.team===3&&T.cls!=='fly') ink('Emerald Court: sees +1 hex; +1 defence in forest.','#2f6b2a');
+  if(u.team===3&&T.cls!=='fly') ink('Emerald Court: sees +1 hex; +1 defence and no movement penalty in forest.','#2f6b2a');
+  if(tileCh(u.c,u.r)==='h'&&T.cls!=='fly') ink('<b>On hills:</b> +1 defence and +1 sight.','#6a5a2a');
   const tdef=terrainDef(u); if(tdef) ink(`Terrain/fort bonus: <b>+${tdef} defence</b> here.`);
   if(omenIs('fog')) ink('Fog Bank: vision reduced by 1.','#556');
   if(omenIs('storm')&&(T.rng[1]>1)) ink('Thunderstorm: ranged attacks lose 1 range.','#556');
