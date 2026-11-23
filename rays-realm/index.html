@@ -194,6 +194,18 @@
   .scene details{margin-top:22px;text-align:left;background:#000a;border-radius:8px;padding:8px 14px;font-size:14px;line-height:1.5}
   .scene summary{cursor:pointer;text-align:right;font-family:Cinzel,Georgia,serif;color:var(--gold)}
   .scene ul{margin:8px 0 4px;padding-left:20px}
+  #givebtn{position:fixed;top:6px;right:8px;z-index:7;padding:3px 9px;font:700 10px/1.2 system-ui,sans-serif;letter-spacing:.06em;color:#e7c9c4;background:#2a0f0cd0;border:1px solid #7a2a22;border-radius:5px;cursor:pointer;opacity:.7}
+  #givebtn:hover{opacity:1;background:#5a1a14}
+  #giveask{position:fixed;inset:0;z-index:12;background:#000b;display:flex;align-items:center;justify-content:center}
+  #giveask.hidden{display:none}
+  #giveask .gbox{background:linear-gradient(#3b281a,#2a1d14);border:3px solid #1a1109;border-radius:12px;padding:22px 26px;max-width:min(420px,90vw);text-align:center;color:#f3e6c4;box-shadow:0 10px 40px #000}
+  #giveask h3{margin:0 0 8px;font-family:Cinzel,Georgia,serif;font-size:26px;color:#e8c34a}
+  #giveask p{margin:0 0 16px;font-size:16px;line-height:1.4}
+  #giveask .grow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  #giveask #giveyes{background:linear-gradient(#c0392b,#8e2318);color:#fff}
+  #giveup{justify-content:center;padding:0;background:#000;cursor:pointer}
+  #giveup video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  #giveup .shade{background:radial-gradient(ellipse at center,#0000 55%,#0008 100%)}
   #defeat{justify-content:center;padding:0;background:#000;cursor:pointer}
   #defeat .shade{background:radial-gradient(ellipse at center,#0000 30%,#000a 100%)}
   #deftext{position:relative;font-family:Cinzel,Georgia,serif;font-weight:700;font-size:clamp(56px,15vw,190px);letter-spacing:.14em;margin-right:-.14em;color:#d3281f;text-shadow:0 0 28px #000,0 6px 26px #000,0 0 60px #7a0d08;animation:defIn 1.8s ease-out both;pointer-events:none}
@@ -227,6 +239,9 @@
 <div id="overlay" class="hidden"><div class="panel" id="panel"></div></div>
 <div id="victory" class="scene hidden"><video id="vicvid" src="assets/title.mp4" poster="assets/title.jpg" preload="auto" muted loop playsinline></video><div class="shade"></div>
   <div class="box"><h2>Realm Conquered!</h2><div class="tag">You have conquered the realm — it's Miller time!</div><button id="again2">Play Again</button><a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a></div></div>
+<button id="givebtn" style="display:none" title="Surrender this battle">I GIVE UP</button>
+<div id="giveask" class="hidden"><div class="gbox"><h3>Give up?</h3><p>Are you sure? Your army will surrender and the battle will be lost.</p><div class="grow"><button id="giveyes">Yes, I give up</button><button id="giveno" class="sec">Keep fighting</button></div></div></div>
+<div id="giveup" class="scene hidden"><video id="givevid" src="assets/giveup.mp4" preload="auto" playsinline></video><div class="shade"></div></div>
 <div id="defeat" class="scene hidden"><video id="defvid" src="assets/defeat.mp4" preload="auto" playsinline></video><div class="shade"></div><div id="deftext">DEFEAT</div></div>
 <div id="storyscreen" class="scene hidden"><video id="storyvid" src="assets/title.mp4" poster="assets/title.jpg" muted loop playsinline></video><div class="shade"></div>
   <div class="box"><div class="alabel">The Tale of the Realm</div><h2>War Comes</h2>
@@ -686,6 +701,7 @@ function chatSetup(){
 function chatVisible(){ const b=document.getElementById('chatbox'); if(b) b.style.display=(MP&&gameStarted)?'':'none'; }
 function mpOnMsg(m){
   if(!m||!MP) return;
+  if(m.t==='giveup'){ if(gameStarted&&!over){ over=true; log(`${FACTIONS[MP.foe].name} has surrendered!`,'sys'); showEnd(true); } return; }
   if(m.t==='chat'){ if(typeof m.text==='string'&&MP.foe!=null&&gameStarted){ const tx=m.text.slice(0,200); chatAdd({team:MP.foe,name:FACTIONS[MP.foe].short,text:tx}); if(isShout(tx)) shoutShow(tx.trim()); } return; }
   if(m.t==='hello'&&MP.role==='host'){
     if(gameStarted&&MP.match){ mpConn.send({t:'start',host:ME,guest:MP.foe,state:mpPack()}); log(`${FACTIONS[MP.foe].name} is connected.`,'sys'); banner('Opponent Connected'); return; }
@@ -1799,7 +1815,7 @@ function showTip(w){
 }
 function hideTip(){ document.getElementById('tip').style.display='none'; }
 function refreshUI(){
-  updateVision(); chatVisible();
+  updateVision(); chatVisible(); { const gb=document.getElementById('givebtn'); if(gb) gb.style.display=(gameStarted&&!over)?'':'none'; }
   const p=document.getElementById('turn');
   setHTML('turn',`<b>Turn ${turn}</b><span class="pill" style="background:${FACTIONS[side].color}">${side===ME?'Your move':FACTIONS[side].short+' moves'}</span><span>🪙 ${gold[ME]}</span>`);
   setHTML('factions',FACTIONS.slice(0,4).map((f,i)=>!activeArmies[i]?'':`<div class="frow ${side===i&&!over?'active':''} ${elim[i]?'out':''}"><span class="dot" style="background:${f.color}"></span><span>${f.name}</span>
@@ -1841,6 +1857,25 @@ function refreshUI(){
 function mineInfo(h){
   if(tileCh(h.c,h.r)!=='G') return '';
   const o=seenMine.get(key(h.c,h.r)); return ` — ${o==null?'unclaimed':'held by '+FACTIONS[o].short}`;
+}
+// ---- surrender: confirm, then Lord Ray overturns the war table, then the usual DEFEAT
+let giveTimer=null;
+function giveUpAsk(){ if(!gameStarted||over||busy||mpReplaying) return; document.getElementById('giveask').classList.remove('hidden'); }
+function giveUpNow(){
+  document.getElementById('giveask').classList.add('hidden');
+  if(!gameStarted||over) return;
+  over=true; clearSel(); recruitType=null; spawnSet=[]; refreshUI();
+  if(MP&&mpConn) mpConn.send({t:'giveup'});
+  stopAmbient(); stopMusic();
+  const g=document.getElementById('giveup'), v=document.getElementById('givevid'); let done=false;
+  const finish=()=>{ if(done) return; done=true; clearTimeout(giveTimer); v.onended=null; v.onerror=null; g.onclick=null; try{ v.pause(); }catch(e){} g.classList.add('hidden'); showEnd(false); };
+  g.classList.remove('hidden');
+  v.onended=finish; v.onerror=()=>{ clearTimeout(giveTimer); giveTimer=setTimeout(finish,800); };
+  g.onclick=finish;                                  // click to skip
+  giveTimer=setTimeout(finish,30000);                // failsafe
+  try{ v.currentTime=0; }catch(e){}
+  v.muted=muted; v.volume=1;
+  v.play().catch(()=>{ v.muted=true; return v.play(); }).catch(()=>{ clearTimeout(giveTimer); giveTimer=setTimeout(finish,1500); });
 }
 function showEnd(win,why){
   if(MP) mpClearSave(); else clearSave();   // a finished battle can't be continued
@@ -2234,6 +2269,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
     if((e.key==='s'||e.key==='S')&&!e.altKey&&gameStarted){ e.preventDefault(); saveGame(false); }   // S or Ctrl/Cmd+S
   });
   chatSetup();
+  document.getElementById('givebtn').onclick=giveUpAsk; document.getElementById('giveyes').onclick=giveUpNow; document.getElementById('giveno').onclick=()=>document.getElementById('giveask').classList.add('hidden');
   document.getElementById('zin').onclick=()=>zoomBy(1.25);
   document.getElementById('zout').onclick=()=>zoomBy(0.8);
   document.getElementById('zreset').onclick=()=>zoomBy(1/ZOOM);
