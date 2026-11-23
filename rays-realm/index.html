@@ -285,8 +285,8 @@
   <a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a>
   <div id="musicnote" style="display:none;margin-top:10px;font-size:13px;opacity:.85;text-shadow:0 2px 6px #000">♪ Click anywhere to start the music</div>
   <details><summary>How to play</summary><ul>
-    <li><b>Armies:</b> each army recruits one special unit and has its own bonus. Order of the Cross: the Paladin, and units next to a Paladin heal 2 health each turn. Dark Host: the Marsh Stalker (hidden unless an enemy is within 2 hexes) and 2 gold for every enemy unit destroyed. Golden Valkyries: the winged Valkyrie, mines that pay +1 gold, and Mercenaries for 2 gold. Emerald Court: the Elven Ranger (range 2–4), 1 extra hex of sight and 1 less damage in forest.</li>
-    <li><b>Omens:</b> from round 4 on, the sky or the land sometimes turns on everyone. Each omen is announced one round ahead (see the Omens panel). Fog Bank: everyone sees 1 hex less. Thunderstorm: ships cannot sail and ranged units lose 1 range. Hard Frost: rivers freeze for 2–3 rounds so units can walk across (ships are stuck), then the ice cracks: anyone still on it takes 4 damage and is thrown onto the nearest bank. Bountiful Harvest: mines pay double. Plague: the largest army loses 2 health on each unit that can move. Barbarian Surge: each barbarian tower musters 2 extra raiders, who march a round later.</li>
+    <li><b>Armies:</b> each army recruits one special unit and has its own bonus. Order of the Cross: the Paladin, and units next to a Paladin heal 2 health each turn. Dark Host: the Hydra (9 attack; replaces the Dragon) and 2 gold for every enemy unit destroyed. Golden Valkyries: the winged Valkyrie, mines that pay +1 gold, and Mercenaries for 2 gold. Emerald Court: the Elven Ranger (range 2–4), 1 extra hex of sight and 1 less damage in forest.</li>
+    <li><b>Omens:</b> from round 4 on, the sky or the land sometimes turns on everyone. Each omen is announced one round ahead (see the Omens panel). Fog Bank: everyone sees 1 hex less. Thunderstorm: ships cannot sail and ranged units lose 1 range. Hard Frost: rivers freeze for 2–3 rounds so units can walk across (ships are stuck), then the ice cracks: anyone still on it takes 4 damage and is thrown onto the nearest bank. Bountiful Harvest: mines pay double. Plague: the largest army loses 2 health on each unit that can move. Frost Giants Spotted: huge Frost Giants appear at random places and attack anyone; slay one for 15 gold.</li>
     <li>Each unit has <b>movement points</b> per turn and can spend them in several steps until you press End Turn. Attacking ends that unit's turn. Catapults can't fire after moving.</li>
     <li><b>Gold mines:</b> end a move on one to seize it. Each held mine pays +2 gold at the start of your turn.</li>
     <li><b>Income:</b> every army earns 2 gold a turn no matter what, plus 2 for each keep and 2 for each mine it holds.</li>
@@ -313,19 +313,19 @@ const SPR = {
   ship:{w:302,h:365,cx:151,bottom:364,bw:300}, catapult:{w:335,h:291,cx:151,bottom:290,bw:300},
   cavalry:{w:313,h:468,cx:162,bottom:466,bw:300}, dragon:{w:334,h:360,cx:151,bottom:358,bw:300},
   archer:{w:325,h:456,cx:151,bottom:454,bw:300}, scout:{w:302,h:418,cx:151,bottom:416,bw:300},
-  barbarcher:{w:302,h:446,cx:151,bottom:444,bw:300}, barbtower:{w:302,h:394,cx:151,bottom:393,bw:300}, barbrider:{w:302,h:443,cx:151,bottom:441,bw:300}, merc:{w:337,h:440,cx:186,bottom:438,bw:300}, archertower:{w:302,h:354,cx:151,bottom:353,bw:300},
-  paladin:{w:302,h:475,cx:149,bottom:474,bw:300}, stalker:{w:302,h:400,cx:151,bottom:399,bw:300}, valkyrie:{w:302,h:400,cx:151,bottom:399,bw:300}, ranger:{w:302,h:400,cx:151,bottom:399,bw:300}
+  barbarcher:{w:302,h:446,cx:151,bottom:444,bw:300}, frostgiant:{w:472,h:537,cx:233,bottom:569,bw:252}, barbtower:{w:302,h:394,cx:151,bottom:393,bw:300}, barbrider:{w:302,h:443,cx:151,bottom:441,bw:300}, merc:{w:337,h:440,cx:186,bottom:438,bw:300}, archertower:{w:302,h:354,cx:151,bottom:353,bw:300},
+  paladin:{w:302,h:475,cx:149,bottom:474,bw:300}, hydra:{w:334,h:360,cx:151,bottom:358,bw:300}, valkyrie:{w:302,h:400,cx:151,bottom:399,bw:300}, ranger:{w:302,h:400,cx:151,bottom:399,bw:300}
 };
 const IMG = {};
-const SPRM = {f0_merc:{w:335,h:438,cx:184,bottom:437,bw:300}, f1_merc:{w:336,h:438,cx:184,bottom:437,bw:300}, f2_merc:{w:332,h:441,cx:181,bottom:440,bw:300}, f3_merc:{w:333,h:437,cx:182,bottom:436,bw:300}, f1_archer:{w:323,h:451,cx:152,bottom:450,bw:300}, f1_archertower:{w:302,h:374,cx:149,bottom:373,bw:300}, f1_catapult:{w:340,h:304,cx:155,bottom:303,bw:300}, f1_cavalry:{w:339,h:467,cx:188,bottom:466,bw:300}, f1_dragon:{w:332,h:356,cx:149,bottom:355,bw:300}, f1_knight:{w:319,h:416,cx:167,bottom:415,bw:300}, f1_scout:{w:300,h:390,cx:149,bottom:389,bw:300}, f1_ship:{w:300,h:369,cx:149,bottom:368,bw:300}, f1_stalker:{w:329,h:366,cx:149,bottom:365,bw:300}, f1_wizard:{w:302,h:367,cx:149,bottom:366,bw:300}, f2_archer:{w:323,h:454,cx:150,bottom:453,bw:300}, f2_archertower:{w:301,h:416,cx:149,bottom:415,bw:300}, f2_catapult:{w:356,h:307,cx:162,bottom:306,bw:300}, f2_cavalry:{w:312,h:467,cx:160,bottom:466,bw:300}, f2_dragon:{w:332,h:358,cx:149,bottom:357,bw:300}, f2_knight:{w:337,h:410,cx:186,bottom:409,bw:300}, f2_scout:{w:300,h:415,cx:149,bottom:414,bw:300}, f2_ship:{w:300,h:361,cx:149,bottom:360,bw:300}, f2_valkyrie:{w:484,h:511,cx:241,bottom:510,bw:300}, f2_wizard:{w:300,h:357,cx:149,bottom:356,bw:300}, f3_archer:{w:327,h:455,cx:149,bottom:454,bw:300}, f3_archertower:{w:300,h:445,cx:149,bottom:444,bw:300}, f3_catapult:{w:325,h:313,cx:150,bottom:312,bw:300}, f3_cavalry:{w:312,h:466,cx:160,bottom:465,bw:300}, f3_dragon:{w:333,h:358,cx:150,bottom:357,bw:300}, f3_knight:{w:344,h:464,cx:190,bottom:463,bw:300}, f3_ranger:{w:313,h:445,cx:149,bottom:444,bw:300}, f3_scout:{w:300,h:410,cx:149,bottom:409,bw:300}, f3_ship:{w:300,h:367,cx:149,bottom:366,bw:300}, f3_wizard:{w:300,h:357,cx:149,bottom:356,bw:300}, f0_paladin:{w:302,h:475,cx:149,bottom:474,bw:300}};   // per-sprite metrics for the new army art (falls back to SPR by unit type)
-const SPECIAL = {paladin:0, stalker:1, valkyrie:2, ranger:3};   // army-only units: the sprite exists for that army alone
+const SPRM = {f4_frostgiant:{w:472,h:537,cx:233,bottom:569,bw:252}, f1_hydra:{w:362,h:386,cx:196,bottom:385,bw:300}, f0_merc:{w:335,h:438,cx:184,bottom:437,bw:300}, f1_merc:{w:336,h:438,cx:184,bottom:437,bw:300}, f2_merc:{w:332,h:441,cx:181,bottom:440,bw:300}, f3_merc:{w:333,h:437,cx:182,bottom:436,bw:300}, f1_archer:{w:323,h:451,cx:152,bottom:450,bw:300}, f1_archertower:{w:302,h:374,cx:149,bottom:373,bw:300}, f1_catapult:{w:340,h:304,cx:155,bottom:303,bw:300}, f1_cavalry:{w:339,h:467,cx:188,bottom:466,bw:300}, f1_dragon:{w:332,h:356,cx:149,bottom:355,bw:300}, f1_knight:{w:319,h:416,cx:167,bottom:415,bw:300}, f1_scout:{w:300,h:390,cx:149,bottom:389,bw:300}, f1_ship:{w:300,h:369,cx:149,bottom:368,bw:300}, f1_wizard:{w:302,h:367,cx:149,bottom:366,bw:300}, f2_archer:{w:323,h:454,cx:150,bottom:453,bw:300}, f2_archertower:{w:301,h:416,cx:149,bottom:415,bw:300}, f2_catapult:{w:356,h:307,cx:162,bottom:306,bw:300}, f2_cavalry:{w:312,h:467,cx:160,bottom:466,bw:300}, f2_dragon:{w:332,h:358,cx:149,bottom:357,bw:300}, f2_knight:{w:337,h:410,cx:186,bottom:409,bw:300}, f2_scout:{w:300,h:415,cx:149,bottom:414,bw:300}, f2_ship:{w:300,h:361,cx:149,bottom:360,bw:300}, f2_valkyrie:{w:484,h:511,cx:241,bottom:510,bw:300}, f2_wizard:{w:300,h:357,cx:149,bottom:356,bw:300}, f3_archer:{w:327,h:455,cx:149,bottom:454,bw:300}, f3_archertower:{w:300,h:445,cx:149,bottom:444,bw:300}, f3_catapult:{w:325,h:313,cx:150,bottom:312,bw:300}, f3_cavalry:{w:312,h:466,cx:160,bottom:465,bw:300}, f3_dragon:{w:333,h:358,cx:150,bottom:357,bw:300}, f3_knight:{w:344,h:464,cx:190,bottom:463,bw:300}, f3_ranger:{w:313,h:445,cx:149,bottom:444,bw:300}, f3_scout:{w:300,h:410,cx:149,bottom:409,bw:300}, f3_ship:{w:300,h:367,cx:149,bottom:366,bw:300}, f3_wizard:{w:300,h:357,cx:149,bottom:356,bw:300}, f0_paladin:{w:302,h:475,cx:149,bottom:474,bw:300}};   // per-sprite metrics for the new army art (falls back to SPR by unit type)
+const SPECIAL = {paladin:0, hydra:1, valkyrie:2, ranger:3};   // army-only units: the sprite exists for that army alone
 const spriteKey = (team,type) => 'f'+team+'_'+type;   // each army's mercenaries wear its colours; barbarians keep the plain one (f4_merc)
 const TILEIMG = {};
 const TILEFILE = {'~':'t_water','f':'t_forest','^':'t_crags','G':'tf_mine','K':'tf_keep','F':'tf_fort'};
 const tilesReady = Promise.all(Object.entries(TILEFILE).map(([ch,n]) => new Promise(res => {
   const i = new Image(); i.onload = () => { TILEIMG[ch]=i; res(); }; i.onerror = res; i.src = 'assets/'+n+'.png';
 })));
-const BARB_TYPES = ['barbarcher','barbrider','barbtower','merc'];   // Barbarians (team 4) only have their own sprite set
+const BARB_TYPES = ['barbarcher','barbrider','barbtower','frostgiant','merc'];   // Barbarians (team 4) only have their own sprite set
 const imgReady = Promise.all(Object.keys(SPR).flatMap(n => (n==='merc'?[0,1,2,3,4]:BARB_TYPES.includes(n)?[4]:SPECIAL[n]!=null?[SPECIAL[n]]:[0,1,2,3]).map(t => new Promise(res => {
   const i = new Image(); i.onload = i.onerror = res; i.src = 'assets/'+spriteKey(t,n)+'.png'; IMG[spriteKey(t,n)] = i;
 }))));
@@ -368,6 +368,8 @@ const TYPES = {
             desc:'A skull-banner watchtower where barbarians gather. Fires like an Archer Tower (range 1–4). Destroy it to stop the barbarians and claim a 10 gold bounty.'},
   barbarcher:{name:'Barbarian Archer', short:'Barbarian Archer', cost:0, hp:7, atk:5, def:0, mv:2, rng:[2,3], cls:'ground', barb:true,
             desc:'Wild bowman. Defends his tower and will not stray far from it.'},
+  frostgiant:{name:'Frost Giant', short:'Frost Giant', cost:0, hp:30, atk:9, def:3, mv:2, rng:[1,1], cls:'ground', barb:true, big:true,
+            desc:'A towering giant of the northern ice, summoned by the Frost Giants omen. 30 health, 9 attack and 3 defence, and it attacks anyone, any army. Slow, but it will walk the whole map. It retreats to the mountains after a few rounds. Slay it for a bounty of 15 gold.'},
   barbrider:{name:'Barbarian Rider', short:'Barbarian Rider', cost:0, hp:9, atk:5, def:1, mv:3, rng:[1,1], cls:'ground', charge:true, barb:true,
             desc:'Armoured raider on horseback, a little weaker than a Knight. Charges for +2 damage, but stays close to his tower.'},
   scout:   {name:'Scout', short:'Scout', cost:4, hp:8, atk:2, def:2, mv:3, rng:[1,1], cls:'ground', vision:4,
@@ -383,15 +385,15 @@ const TYPES = {
   // ---- army-only units (each army recruits exactly one)
   paladin: {name:'Paladin', short:'Paladin', cost:9, hp:16, atk:6, def:3, mv:2, rng:[1,1], cls:'ground', only:0,
             desc:'The Order\'s holy champion: 16 hit points and 3 defence. Healing Light: friendly units within 1 hex of a Paladin heal 2 health at the start of your turn.'},
-  stalker: {name:'Marsh Stalker', short:'Stalker', cost:6, hp:8, atk:6, def:1, mv:3, rng:[1,1], cls:'wade', only:1,
-            desc:'Swamp assassin of the Dark Host. Wades through water and forest at no extra cost, and stays hidden from enemies more than 2 hexes away.'},
+  hydra:   {name:'Hydra', short:'Hydra', cost:18, hp:22, atk:9, def:2, mv:5, rng:[1,2], cls:'fly', only:1,
+            desc:'The many-headed terror of the Dark Host, which has no Dragons. Flies over anything and its heads strike up to 2 hexes away. Hits harder than any dragon: 9 attack.'},
   valkyrie:{name:'Valkyrie', short:'Valkyrie', cost:8, hp:9, atk:6, def:2, mv:3, rng:[1,1], cls:'fly', only:2,
             desc:'A winged shield-maiden who flies over rivers, forests and crags. Fast and hard-hitting.'},
   ranger:  {name:'Elven Ranger', short:'Ranger', cost:6, hp:7, atk:5, def:0, mv:2, rng:[2,4], cls:'ground', vision:4, only:3,
             desc:'Elite Emerald Court sharpshooter. Longbow reaches 2–4 hexes and sees 4 hexes, but cannot fire at adjacent foes.'}
 };
 const SHOP_ORDER = Object.keys(TYPES).filter(k=>!TYPES[k].barb).sort((a,b)=>TYPES[a].cost-TYPES[b].cost);   // recruit menu, cheapest first
-const shopFor = team => SHOP_ORDER.filter(k=>TYPES[k].only==null||TYPES[k].only===team);   // army-only units show for that army alone
+const shopFor = team => SHOP_ORDER.filter(k=>(TYPES[k].only==null||TYPES[k].only===team)&&!(k==='dragon'&&team===1));   // the Dark Host fields the Hydra instead of the Dragon   // army-only units show for that army alone
 const PALADIN_HEAL = 2, SPOILS = 2;
 const MIN_COST = 3;   // no cap on army size: armies are limited only by gold and free hexes
 const MERC_ROUNDS = 5, MERC_MAX = 3;
@@ -430,7 +432,6 @@ function visTiles(src,out){
 function tileCost(cls,c,r){
   const t=tileCh(c,r);
   if(cls==='fly') return 1;
-  if(cls==='wade') return t==='^' ? null : 1;   // Marsh Stalkers wade through water and forest at normal cost
   if(cls==='water') return (t==='~'&&!omenIs('frost')&&!omenIs('storm')) ? 1 : null;   // frozen or storm-bound: ships cannot sail
   if(t==='~') return omenIs('frost') ? 1 : null;   // the frozen river can be walked
   if(t==='^') return null;
@@ -442,7 +443,7 @@ function tileCost(cls,c,r){
 const ENEMY_SETS={1:[2],2:[1,3],3:[1,2,3]};   // for the Order (army 0): one enemy sits in the far corner; two take the neighbouring corners
 const ARMY_INFO=[
  {unit:'Paladin (9 gold): 16 health, 3 defence. A holy champion who cannot be moved easily.', bonus:'Healing Light: friendly units within 1 hex of a Paladin heal 2 health at the start of each of your turns.', cmd:'Lord Ray, Head of the Order of the Cross', text:"The oldest banner in the realm. Lord Ray's knights march under the red cross, sworn to guard the crown and the common folk alike. Disciplined, well-armoured and proud, the Order fights shoulder to shoulder and has never yielded its keep. Where the Cross is raised, the realm still has a king worth defending."},
- {unit:'Marsh Stalker (6 gold): 3 moves; wades through water and forest at no extra cost, and stays hidden from enemies more than 2 hexes away.', bonus:'Spoils of War: gain 2 gold for every enemy unit you destroy.', cmd:'Warlord Szarok, Head of the Dark Host', text:"Scaled, patient and merciless, the Dark Host crept out of the southern marshes to claim the realm that once shunned them. Warlord Szarok wears the plate of fallen champions over his own armoured hide and wastes nothing: not an hour, not a soldier, not a grudge. Fear is the Host's first weapon. The sword is only the second."},
+ {unit:'Hydra (18 gold): replaces the Dragon. 22 health, 9 attack and 5 moves; flies over anything and its many heads strike up to 2 hexes away.', bonus:'Spoils of War: gain 2 gold for every enemy unit you destroy.', cmd:'Warlord Szarok, Head of the Dark Host', text:"Scaled, patient and merciless, the Dark Host crept out of the southern marshes to claim the realm that once shunned them. Warlord Szarok wears the plate of fallen champions over his own armoured hide and wastes nothing: not an hour, not a soldier, not a grudge. Fear is the Host's first weapon. The sword is only the second."},
  {unit:'Valkyrie (8 gold): a winged flyer with 3 moves that ignores rivers, forests and crags.', bonus:'Gold Hoard: your gold mines pay +1 gold and Mercenaries cost only 2.', cmd:'Empress Joy, Head of the Golden Valkyries', text:"Empress Joy leads the Golden Valkyries, shield-maidens forged in the northern passes and loyal to no throne but hers. They ride light, strike first and take their gold in battle. Where the Valkyries pass, mines change hands and keeps fall quiet. Join her, and glory is paid in advance."},
  {unit:'Elven Ranger (6 gold): longbow with range 2–4 and 4-hex sight.', bonus:'Forest Sight: your units see 1 hex farther and take 1 less damage while standing in forest.', cmd:'Lord Aelindor, Head of the Emerald Court', text:"Ancient, graceful and cold as the green deep forest, the Emerald Court has watched the human kingdoms rise and fall for a thousand years. Lord Aelindor wears armour of living emerald and fights with the calm of one who has already seen the ending. The Court does not seek war. It simply never loses one."}
 ];
@@ -543,7 +544,7 @@ function restoreState(d){
   resetAIFog();
   (d.aiFog||[]).forEach((F,t)=>{ if(F&&aiFog[t]){ aiFog[t].explored=new Set(F.explored); aiFog[t].seenMine=new Map(F.seenMine); aiFog[t].seenKeep=F.seenKeep; } });
   [0,1,2,3,4].forEach(updateAIVision);
-  omenNow=d.omenNow; omenNext=d.omenNext; omenLast=d.omenLast; refreshOmenPanel();
+  { const fix=o=>o&&o.type==='surge'?{...o,type:'giants'}:o; omenNow=fix(d.omenNow); omenNext=fix(d.omenNext); omenLast=d.omenLast==='surge'?'giants':d.omenLast; } refreshOmenPanel();
   updateVision();
 }
 function loadGame(d){
@@ -807,7 +808,7 @@ function mpGuestPick(hostArmy){
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 const ROSTERS = [
   ['knight','knight','cavalry','archer','archer','catapult','scout'],
-  ['knight','knight','archer','wizard','dragon','scout'],
+  ['knight','knight','archer','wizard','hydra','scout'],
   ['knight','knight','archer','cavalry','wizard','catapult','scout'],
   ['knight','knight','archer','archer','cavalry','wizard','scout']
 ];
@@ -1018,7 +1019,7 @@ const canStop = (u,e) => !unitAt(e.c,e.r) || (e.c===u.c && e.r===u.r);
 function targetsFrom(u,c,r){
   if(u.type.noattack) return [];
   if(u.team===ME) updateVision();
-  return units.filter(t => t.team!==u.team && !stalkerHidden(t,u.team) && (u.team===ME?visible.has(key(t.c,t.r)):aiCanSee(u.team,t.c,t.r)) && (d=>d>=u.type.rng[0]&&d<=rmax(u))(hexDist({c,r},t)));
+  return units.filter(t => t.team!==u.team && (u.team===ME?visible.has(key(t.c,t.r)):aiCanSee(u.team,t.c,t.r)) && (d=>d>=u.type.rng[0]&&d<=rmax(u))(hexDist({c,r},t)));
 }
 function calcDmg(a,d,charge){
   const atk=a.type.atk+(charge&&a.type.charge?2:0);
@@ -1144,7 +1145,7 @@ const OMENS = {
   frost:  {name:'Hard Frost',        icon:'omen_frost',   color:'#a6e0ff', rule:'The rivers freeze for 2–3 rounds: walk across the water! Ships are stuck. When it thaws, the ice cracks: anyone still on it takes 4 damage and is thrown onto the nearest bank.', flavor:'Snow on the wind. The river has gone silent and solid.'},
   harvest:{name:'Bountiful Harvest', icon:'omen_harvest', color:'#f2c14e', rule:'Gold mines pay double.', flavor:'The seams run rich. Every pickaxe strikes gold.'},
   plague: {name:'Plague',            icon:'omen_plague',  color:'#8fd36a', rule:'The largest army (counting units that can move) loses 2 health on each of them.', flavor:'A sickness crawls through the biggest camp.'},
-  surge:  {name:'Barbarian Surge',   icon:'omen_surge',   color:'#e8604a', rule:'Every barbarian tower musters 2 extra raiders; they march the round after.', flavor:'War horns in the hills. The horde is on the move.'}
+  giants: {name:'Frost Giants Spotted', icon:'omen_giants', color:'#9fd8ff', rule:'Frost Giants appear at random places on the map and attack anyone. Slay one for 15 gold.', flavor:'Ice cracks on the high peaks. Something enormous is walking.'}
 };
 let omenNow=null, omenNext=null, omenLast=null;
 const omenIs = t => !!omenNow && omenNow.type===t;
@@ -1154,8 +1155,8 @@ function rollOmen(forTurn){
   if(forTurn<OMEN_START) return null;
   const chance=Math.min(0.55,0.35+0.03*(forTurn-OMEN_START));   // starts at 35% and climbs to 55%
   if(Math.random()>chance) return null;
-  const early=forTurn<8;   // the swingy ones (plague, surge) are rare early on
-  const W={fog:3,harvest:3,storm:2,frost:2,plague:early?1:2,surge:early?1:2};
+  const early=forTurn<8;   // the swingy ones (plague, giants) are rare early on
+  const W={fog:3,harvest:3,storm:2,frost:2,plague:early?1:2,giants:early?1:2};
   const keys=Object.keys(OMENS).filter(k=>k!==omenLast&&!(omenNow&&omenNow.type===k));
   let x=Math.random()*keys.reduce((n,k)=>n+W[k],0), type=keys[0]; for(const k of keys){ x-=W[k]; if(x<=0){ type=k; break; } }
   return {type, turn:forTurn, len:type==='frost'?(Math.random()<0.5?2:3):1};
@@ -1163,7 +1164,7 @@ function rollOmen(forTurn){
 const omenLeft = () => omenNow ? omenNow.start+omenNow.len-turn : 0;   // rounds remaining including this one
 function thawIce(){
   let n=0; playOmenSample('ice_crack',0.7);
-  for(const u of [...units]){ if(u.type.cls==='fly'||u.type.cls==='wade'||tileCh(u.c,u.r)!=='~'||u.type.cls==='water') continue; u.hp=Math.max(1,u.hp-4); n++;
+  for(const u of [...units]){ if(u.type.cls==='fly'||tileCh(u.c,u.r)!=='~'||u.type.cls==='water') continue; u.hp=Math.max(1,u.hp-4); n++;
     const was=unitVisible(u), p0=center(u.c,u.r);
     // the survivors scramble onto the nearest free bank, so nobody is left standing in open water
     let best=null; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ if(unitAt(c,r)||tileCost('ground',c,r)==null||tileCh(c,r)==='~') continue; const ch=tileCh(c,r); if(ch==='K'||ch==='G') continue; const d=hexDist(u,{c,r}); if(!best||d<best.d) best={c,r,d}; }
@@ -1180,9 +1181,9 @@ function startOmen(o){
       for(const u of mobile(t)){ u.hp=Math.max(1,u.hp-2); u.cargo.forEach(c=>{ c.hp=Math.max(1,c.hp-2); }); if(unitVisible(u)){ const p=center(u.c,u.r); addText(p.x,p.y-S*1.2,'-2',def.color); } }
       log(`The plague strikes the ${FACTIONS[t].name}: every unit that can move loses 2 health.`,'sys'); }
   }
-  if(o.type==='surge'){
-    let n=0; for(const tw of units.filter(u=>u.key==='barbtower')) for(let i=0;i<2;i++){ const nu=spawnBarbUnit(tw,true); if(nu){ nu.hold=true; n++; } }
-    log(n?`${n} extra barbarian raiders gather at their towers. They muster this round and march next round.`:'The horn sounds, but no barbarian towers answer.','sys');
+  if(o.type==='giants'){
+    const n=spawnFrostGiants();
+    log(n?`${n} Frost Giant${n>1?'s have':' has'} come down from the mountains! They march next round, and attack anyone.`:'The ice groans, but no giant finds a way down.','sys');
   }
   showOmenSplash(o); omenSting(o.type); startAmbience(o.type);
 }
@@ -1248,7 +1249,7 @@ function thunder(){
 }
 function omenSting(type){
   if(muted) return;
-  if(type==='surge'&&playOmenSample('surge_horn',0.9)) return;
+  if(type==='giants'&&playOmenSample('surge_horn',0.9)) return;
   if(type==='frost'&&playOmenSample('ice_crack',0.6)) return;
   if(type==='harvest'&&playOmenSample('harvest_bed',0.55)) return;
   const seq={
@@ -1257,7 +1258,7 @@ function omenSting(type){
     frost:()=>{ [1568,2093,2637,3136].forEach((f,i)=>tone(f,0.9,'sine',0.045,0,i*0.13)); },
     harvest:()=>{ [523,659,784,1047].forEach((f,i)=>tone(f,0.7,'triangle',0.06,0,i*0.12)); },
     plague:()=>{ tone(98,1.4,'sawtooth',0.036,-30); tone(104,1.4,'sawtooth',0.03,-30,0.05); tone(147,1.2,'square',0.018,-40,0.4); },
-    surge:()=>{ tone(147,0.9,'sawtooth',0.09,-20); tone(110,1.2,'sawtooth',0.09,-30,0.7); tone(220,0.5,'square',0.04,-60,1.0); }
+    giants:()=>{ tone(147,0.9,'sawtooth',0.09,-20); tone(110,1.2,'sawtooth',0.09,-30,0.7); tone(220,0.5,'square',0.04,-60,1.0); }
   }; (seq[type]||(()=>{}))();
 }
 function stopAmbience(){
@@ -1267,7 +1268,7 @@ function stopAmbience(){
 function startAmbience(type){
   stopAmbience(); if(muted) return; const a=actx(), nb=noiseBuf(); if(!a||!nb) return;
   const w={type,nodes:[],gains:[],timer:null}; const t=a.currentTime;
-  const beds={storm:['storm_bed',0.5],frost:['frost_bed',0.55],fog:['fog_bed',0.3],harvest:['harvest_bed',0.2],plague:['plague_bed',0.24],surge:['surge_drums',0.6]};
+  const beds={storm:['storm_bed',0.5],frost:['frost_bed',0.55],fog:['fog_bed',0.3],harvest:['harvest_bed',0.2],plague:['plague_bed',0.24],giants:['surge_drums',0.6]};
   if(beds[type]&&bedSample(w,beds[type][0],beds[type][1])){ wxA=w; return; }   // recorded bed loaded: no synth needed
   const bed=(ftype,freq,q,vol,lfoHz=0,lfoDepth=0)=>{ const s=a.createBufferSource(); s.buffer=nb; s.loop=true; const f=a.createBiquadFilter(); f.type=ftype; f.frequency.value=freq; f.Q.value=q;
     const g=a.createGain(); g.gain.value=0.0001; g.gain.setTargetAtTime(vol,t,1.5); s.connect(f).connect(g).connect(a.destination); s.start(); w.nodes.push(s,f); w.gains.push(g);
@@ -1277,7 +1278,7 @@ function startAmbience(type){
   else if(type==='fog'){ bed('lowpass',300,0.6,0.021,0.08,90); }
   else if(type==='harvest'){ w.timer=setInterval(()=>{ if(muted) return; const n=[784,880,988,1175,1319][Math.floor(Math.random()*5)]; tone(n,0.9,'sine',0.018,0); },900); }
   else if(type==='plague'){ bed('lowpass',160,1.2,0.024,0.3,50); w.timer=setInterval(()=>{ if(!muted) tone(70+Math.random()*10,1.2,'sawtooth',0.007,-10); },2600); }
-  else if(type==='surge'){ w.timer=setInterval(()=>{ if(muted) return; tone(80,0.28,'sine',0.12,-45); tone(80,0.28,'sine',0.1,-45,0.45); },1500); }
+  else if(type==='giants'){ w.timer=setInterval(()=>{ if(muted) return; tone(80,0.28,'sine',0.12,-45); tone(80,0.28,'sine',0.1,-45,0.45); },1500); }
   wxA=w;
 }
 setInterval(()=>{ if(muted&&wxA) stopAmbience(); else if(!muted&&!wxA&&omenNow&&AC) startAmbience(omenNow.type); },1500);
@@ -1296,9 +1297,7 @@ const upos = u => u.anim ? u.anim : center(u.c,u.r);
 
 // ---- fog of war: your units, keeps and towers see 3 hexes; explored hexes stay revealed
 const isVis = (c,r) => visible.has(key(c,r));
-// Marsh Stalkers stay hidden unless an enemy unit or keep is within 2 hexes
-const stalkerHidden = (u,viewer) => u.key==='stalker' && u.team!==viewer && !units.some(x=>x.team===viewer&&hexDist(x,u)<=2) && !KEEPS.some((k,i)=>keepOwner[i]===viewer&&hexDist({c:k[0],r:k[1]},u)<=2);
-const unitVisible = u => u.team===ME || (isVis(u.c,u.r) && !stalkerHidden(u,ME));
+const unitVisible = u => u.team===ME || isVis(u.c,u.r);
 function visionSources(){
   return [...units.filter(u=>u.team===ME),
     ...KEEPS.filter((k,i)=>keepOwner[i]===ME).map(([c,r])=>({c,r})),
@@ -1345,7 +1344,7 @@ async function strike(a,d,amount,counter){
   a.fought=true; d.fought=true;
   if(!(unitVisible(a)||unitVisible(d))){
     d.hp=Math.max(0,d.hp-amount);
-    if(d.hp<=0){ if(towers.get(key(d.c,d.r))===d.team) towers.delete(key(d.c,d.r)); if(d.key==='barbtower'&&a.team<BARB_TEAM) gold[a.team]+=BARB_BOUNTY; if(a.team===1&&d.team!==1) gold[1]+=SPOILS; units=units.filter(x=>x!==d); if(sel===d) clearSel(); }
+    if(d.hp<=0){ if(towers.get(key(d.c,d.r))===d.team) towers.delete(key(d.c,d.r)); if(d.key==='barbtower'&&a.team<BARB_TEAM) gold[a.team]+=BARB_BOUNTY; giantBounty(a,d); if(a.team===1&&d.team!==1) gold[1]+=SPOILS; units=units.filter(x=>x!==d); if(sel===d) clearSel(); }
     return;
   }
   ensureInView(upos(d));
@@ -1371,6 +1370,7 @@ async function strike(a,d,amount,counter){
   await shake; d.off={x:0,y:0}; a.off={x:0,y:0};
   if(d.hp<=0){
     log(`${d.name} is destroyed!${d.cargo.length?' Its passengers are lost!':''}`,'sys'); sfx('die');
+    if(giantBounty(a,d)) addText(D.x,D.y-S*1.6,`+${GIANT_BOUNTY}🪙`,FACTIONS[a.team].color);
     if(d.key==='barbtower'&&a.team<BARB_TEAM){ gold[a.team]+=BARB_BOUNTY; addText(D.x,D.y-S*1.6,`+${BARB_BOUNTY}🪙`,FACTIONS[a.team].color); log(`${FACTIONS[a.team].name} destroys a Barbarian Tower and claims ${BARB_BOUNTY} gold!`,'sys'); }
     if(a.team===1&&d.team!==1){ gold[1]+=SPOILS; addText(D.x,D.y-S*1.3,`+${SPOILS}🪙`,FACTIONS[1].color); log(`Spoils of War: the Dark Host takes ${SPOILS} gold.`,'t1'); }
     await tween(450,t=>{ d.alpha=1-t; d.off={x:0,y:t*S*0.3}; });
@@ -1610,7 +1610,7 @@ async function aiTryBoard(u,info,dm){
 async function aiTower(t){
   if(gold[t]<TOWER_COST || [...towers.values()].filter(x=>x===t).length>=3) return;
   updateAIVision(t);
-  const foes=units.filter(f=>f.team!==t&&aiCanSee(t,f.c,f.r)&&!stalkerHidden(f,t)); if(!foes.length) return;
+  const foes=units.filter(f=>f.team!==t&&aiCanSee(t,f.c,f.r)); if(!foes.length) return;
   const cands=towerTiles(t).filter(({c,r})=>{ const o=unitAt(c,r); return o&&o.team===t&&!o.type.noattack; })
     .map(q=>({q,d:Math.min(...foes.map(f=>hexDist(q,f)))})).filter(x=>x.d<=5).sort((a,b)=>a.d-b.d);
   if(cands.length) buildTower(t,cands[0].q.c,cands[0].q.r);
@@ -1652,14 +1652,14 @@ async function aiAct(u){
 
 async function aiRecruit(t){
   updateAIVision(t);
-  const foes=()=>units.filter(f=>f.team!==t&&aiCanSee(t,f.c,f.r)&&!stalkerHidden(f,t));
+  const foes=()=>units.filter(f=>f.team!==t&&aiCanSee(t,f.c,f.r));
   while(!over){
     const opts=shopFor(t).filter(k=>!TYPES[k].merc && gold[t]>=costOf(k,t) && spawnTiles(t,k).length);
     if(!opts.length) break;
     let pick;
-    if(opts.includes('dragon') && Math.random()<0.6) pick='dragon';
+    if((opts.includes('dragon')||opts.includes('hydra')) && Math.random()<0.6) pick=opts.includes('hydra')?'hydra':'dragon';
     else {
-      const w={knight:3,archer:2,archertower:1,scout:1,cavalry:2,wizard:2,catapult:1,ship:1,dragon:0};
+      const w={knight:3,archer:2,archertower:1,scout:1,cavalry:2,wizard:2,catapult:1,ship:1,dragon:0,hydra:0};
       const bag=opts.flatMap(k=>Array(w[k]).fill(k)); if(!bag.length) break;
       pick=bag[Math.floor(Math.random()*bag.length)];
     }
@@ -1720,6 +1720,28 @@ function barbCandidates(){
   }
   return out;
 }
+// ---- Frost Giants omen: a few huge, tough neutral pieces appear at random spots, walk the map and attack anyone, then retreat
+const GIANT_ROUNDS = 8, GIANT_BOUNTY = 15, GIANT_MAX = 4;
+function spawnFrostGiants(){
+  const want=MP?2:({small:1,normal:2,large:3}[mapSize]||2), have=units.filter(u=>u.key==='frostgiant').length;
+  let spots=barbCandidates();
+  if(spots.length<want){   // everything is explored: any open ground well away from keeps and from every unit
+    spots=[]; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const k=key(c,r); if(!groundReach.has(k)||unitAt(c,r)) continue; const ch=tileCh(c,r); if(ch!=='.'&&ch!=='f') continue;
+      if(KEEPS.some(([kc,kr])=>hexDist({c,r},{c:kc,r:kr})<5)||units.some(u=>hexDist(u,{c,r})<4)) continue; spots.push({c,r}); } }
+  let n=0;
+  for(let i=0;i<want&&have+n<GIANT_MAX&&spots.length;i++){
+    const j=Math.floor(Math.random()*spots.length), p=spots.splice(j,1)[0];
+    spots=spots.filter(q=>hexDist(q,p)>=4);
+    const u=makeUnit('frostgiant',BARB_TEAM,p.c,p.r); u.done=true; u.moved=true; u.mp=0; u.hold=true; u.melt=GIANT_ROUNDS; units.push(u); mpRec({k:'spawn',u:packUnit(u)});
+    if(isVis(p.c,p.r)){ const q=center(p.c,p.r); effects.push({ring:true,x:q.x,y:q.y-S*0.3,t0:performance.now(),life:800,color:'#9fd8ff'}); }
+    n++;
+  }
+  return n;
+}
+function giantBounty(a,d){
+  if(d.key!=='frostgiant'||a.team>=BARB_TEAM) return false;
+  gold[a.team]+=GIANT_BOUNTY; log(`${FACTIONS[a.team].name} brings down a Frost Giant and claims ${GIANT_BOUNTY} gold!`,'sys'); return true;
+}
 const barbUnitCount = tw => units.filter(u=>u.team===BARB_TEAM&&u.home===tw.id).length;
 function spawnBarbUnit(tw,force){
   if(!force&&barbUnitCount(tw)>=BARB_MAX_UNITS) return null;
@@ -1740,13 +1762,35 @@ async function barbTurn(){
   const towersB=mine().filter(u=>u.key==='barbtower');
   if(towersB.length<(MP?9:6)+(mapSize==='large'?3:0)&&Math.random()<(MP?0.25:0.12)*(mapSize==='large'?1.5:1)) spawnBarbTower();               // a new tower rises somewhere undiscovered
   for(const tw of towersB) if(units.includes(tw)&&Math.random()<0.5) spawnBarbUnit(tw);   // 50%: one more recruit
+  for(const g of mine().filter(x=>x.key==='frostgiant')){ if(--g.melt<=0){ units=units.filter(x=>x!==g); if(isVis(g.c,g.r)) log('A Frost Giant trudges back into the mountains.','sys'); } }
   updateAIVision(BARB_TEAM);
   for(const u of [...mine()]){ if(over) break; if(!units.includes(u)) continue; if(u.hold){ u.hold=false; u.done=true; continue; } u.steps=0; await barbAct(u); }   // surge raiders muster for a round first
+}
+async function giantAct(u){   // no tower to guard: hits whatever it can reach, otherwise marches on the nearest enemy
+  const info=reach(u); let best=null;
+  for(const [k,e] of info){
+    if(!canStop(u,e)) continue;
+    const ghost={...u,c:e.c,r:e.r};
+    for(const t of targetsFrom(ghost,e.c,e.r)){
+      const dmg=calcDmg(ghost,t,0), kill=dmg>=t.hp, ctr=kill?0:counterInfo(ghost,t,dmg), sc=dmg+(kill?6:0)-ctr*0.8;
+      if(!best||sc>best.sc) best={sc,e,t};
+    }
+  }
+  if(best){
+    if(best.e.c!==u.c||best.e.r!==u.r){ const path=pathTo(info,best.e.c,best.e.r); await moveUnit(u,path); u.steps=path.length-1; }
+    if(units.includes(best.t)){ u.moved=true; await performAttack(u,best.t); }
+    return;
+  }
+  const foes=units.filter(x=>x.team<BARB_TEAM&&!x.aboard); if(!foes.length) return;
+  const goal=foes.reduce((a,b)=>hexDist(u,b)<hexDist(u,a)?b:a);
+  let b=null; for(const [k,e] of info){ if(!canStop(u,e)) continue; const d=hexDist(e,goal); if(!b||d<b.d) b={e,d}; }
+  if(b&&(b.e.c!==u.c||b.e.r!==u.r)){ const path=pathTo(info,b.e.c,b.e.r); await moveUnit(u,path); }
 }
 async function barbAct(u){
   if(u.done) return;
   updateAIVision(BARB_TEAM);
   if(u.type.mv===0){ await aiAttackFrom(u); return; }                       // the tower just fires at anyone in range
+  if(u.key==='frostgiant'){ await giantAct(u); return; }
   const tw=units.find(x=>x.id===u.home), home=tw?{c:tw.c,r:tw.r}:{c:u.hc,r:u.hr};
   const info=reach(u); let best=null;
   for(const [k,e] of info){
@@ -1791,7 +1835,8 @@ function unitNotes(u){
     else if(u.key!=='paladin'&&units.some(x=>x.team===u.team&&x.key==='paladin')) ink(`Paladin aura: +${PALADIN_HEAL} HP/turn if within 1 hex of a Paladin.`,'#6b5a2a');
   }
   if(u.key==='paladin') ink(`<b>Aura:</b> allies within 1 hex heal ${PALADIN_HEAL} HP at the start of each turn.`,'#8a6a00');
-  if(u.key==='stalker') ink('<b>Stealth:</b> hidden from enemies more than 2 hexes away.','#2f6b2a');
+  if(u.key==='frostgiant') ink(`<b>Frost Giant:</b> attacks anyone. Retreats to the mountains in ${Math.max(0,u.melt||0)} round${(u.melt||0)===1?'':'s'}. Slay it for ${GIANT_BOUNTY} gold.`,'#2a6a9a');
+  if(u.key==='hydra') ink('<b>Many heads:</b> 9 attack, and strikes targets up to 2 hexes away.','#6a3fa6');
   if(u.key==='valkyrie') ink('<b>Flies</b> over any terrain.','#2a5a8a');
   if(u.key==='ranger') ink('<b>Keen eyes:</b> sees 4 hexes.','#2a5a8a');
   if(u.team===1) ink(`<b>Spoils of War:</b> +${SPOILS} gold for each enemy it slays.`,'#8a6a00');
@@ -2140,7 +2185,7 @@ function drawUnit(u){
   const m=SPRM[u.sprite]||SPR[u.key], img=IMG[u.sprite], p=upos(u), k=(BASE_W*S)/m.bw;
   const dx=p.x+u.off.x-m.cx*k, dy=p.y+u.off.y-(m.bottom-BASE_CY*m.bw/300)*k;
   const tired=u.done&&u.team===ME&&side===ME;
-  if(u.alpha>0.5){ hexPath(p.x+u.off.x,p.y+u.off.y,S*(BASE_W/2+0.03)); ctx.strokeStyle=FACTIONS[u.team].color; ctx.lineWidth=Math.max(2,S*0.07); ctx.globalAlpha=tired?0.4:0.95; ctx.stroke(); ctx.globalAlpha=1; }
+  if(u.alpha>0.5&&!u.type.big){ hexPath(p.x+u.off.x,p.y+u.off.y,S*(BASE_W/2+0.03)); ctx.strokeStyle=FACTIONS[u.team].color; ctx.lineWidth=Math.max(2,S*0.07); ctx.globalAlpha=tired?0.4:0.95; ctx.stroke(); ctx.globalAlpha=1; }
   ctx.save();
   ctx.globalAlpha=u.alpha*(tired?0.55:1);
   ctx.imageSmoothingQuality='high';
@@ -2185,7 +2230,7 @@ function drawWeather(w,h,now){
   if(!omenNow&&WX.level<0.01){ WX.level=0; WX.type=null; WX.parts.length=0; WX.ptype=null; return; }
   const type=WX.type; if(!type) return; const L=WX.level, area=w*h;
   if(WX.ptype!==type){ WX.ptype=type; WX.parts=[]; WX.flash=0; WX.nextBolt=now+2500;
-    const div={frost:6500,storm:2600,harvest:9000,surge:4500}[type], n=div?Math.min(1500,Math.round(area/div)):0;
+    const div={frost:6500,storm:2600,harvest:9000,giants:4500}[type], n=div?Math.min(1500,Math.round(area/div)):0;
     for(let i=0;i<n;i++) WX.parts.push({x:Math.random()*w,y:Math.random()*h,v:Math.random(),ph:Math.random()*6.28}); }
   ctx.save();
   if(type==='frost'){
@@ -2228,11 +2273,11 @@ function drawWeather(w,h,now){
       ctx.fillStyle=`rgba(255,226,120,${0.8*tw*L})`; ctx.beginPath(); ctx.arc(p.x,p.y,1+p.v*1.8,0,7); ctx.fill(); }
     for(const m of MINES){ if(!explored.has(key(m.c,m.r))) continue; const {x,y}=center(m.c,m.r), k=0.6+0.4*Math.sin(now/380+m.c);
       const g=ctx.createRadialGradient(x,y,0,x,y,S*1.1); g.addColorStop(0,`rgba(255,215,90,${0.55*k*L})`); g.addColorStop(1,'rgba(255,215,90,0)'); ctx.fillStyle=g; ctx.fillRect(x-S*1.2,y-S*1.2,S*2.4,S*2.4); }
-  } else if(type==='surge'){
-    const k=0.6+0.4*Math.sin(now/420); const g=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*0.3,w/2,h/2,Math.max(w,h)*0.75); g.addColorStop(0,'rgba(120,0,0,0)'); g.addColorStop(1,`rgba(170,12,12,${0.75*k*L})`); ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
-    for(const p of WX.parts){ p.y-=(28+p.v*60)*dt; p.x+=Math.sin(now/700+p.ph)*16*dt; if(p.y<-6){ p.y=h+6; p.x=Math.random()*w; } const tw=0.4+0.6*Math.abs(Math.sin(now/260+p.ph));
-      ctx.fillStyle=p.v>0.5?`rgba(255,160,60,${0.95*tw*L})`:`rgba(255,80,45,${0.95*tw*L})`; ctx.beginPath(); ctx.arc(p.x,p.y,1.4+p.v*2.4,0,7); ctx.fill(); }
-    for(const u of units){ if(u.key!=='barbtower'||!unitVisible(u)) continue; const {x,y}=center(u.c,u.r); const gg=ctx.createRadialGradient(x,y,0,x,y,S*1.3); gg.addColorStop(0,`rgba(255,60,30,${0.5*k*L})`); gg.addColorStop(1,'rgba(255,60,30,0)'); ctx.fillStyle=gg; ctx.fillRect(x-S*1.4,y-S*1.4,S*2.8,S*2.8); }
+  } else if(type==='giants'){
+    const k=0.6+0.4*Math.sin(now/420); const g=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*0.3,w/2,h/2,Math.max(w,h)*0.75); g.addColorStop(0,'rgba(20,60,120,0)'); g.addColorStop(1,`rgba(40,110,200,${0.55*k*L})`); ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+    for(const p of WX.parts){ p.y+=(20+p.v*50)*dt; p.x+=Math.sin(now/700+p.ph)*16*dt; if(p.y>h+6){ p.y=-6; p.x=Math.random()*w; } const tw=0.5+0.5*Math.abs(Math.sin(now/300+p.ph));
+      ctx.fillStyle=p.v>0.5?`rgba(235,248,255,${0.9*tw*L})`:`rgba(160,215,255,${0.9*tw*L})`; ctx.beginPath(); ctx.arc(p.x,p.y,1.2+p.v*2.2,0,7); ctx.fill(); }
+    for(const u of units){ if(u.key!=='frostgiant'||!unitVisible(u)) continue; const {x,y}=center(u.c,u.r); const gg=ctx.createRadialGradient(x,y,0,x,y,S*2.2); gg.addColorStop(0,`rgba(130,200,255,${0.45*k*L})`); gg.addColorStop(1,'rgba(130,200,255,0)'); ctx.fillStyle=gg; ctx.fillRect(x-S*2.3,y-S*2.3,S*4.6,S*4.6); }
   }
   ctx.restore();
 }
