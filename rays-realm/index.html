@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ray's Realm</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Pinyon+Script&display=swap" rel="stylesheet">
 <style>
   :root{
     --wood:#2a1d14; --parch:#e8d9b5; --parch2:#cdb98a; --ink:#2b1d10;
@@ -194,6 +194,24 @@
   .scene details{margin-top:22px;text-align:left;background:#000a;border-radius:8px;padding:8px 14px;font-size:14px;line-height:1.5}
   .scene summary{cursor:pointer;text-align:right;font-family:Cinzel,Georgia,serif;color:var(--gold)}
   .scene ul{margin:8px 0 4px;padding-left:20px}
+  /* quote scrolls: loading screen + victory */
+  .qscroll{position:relative;width:min(92vw,880px);aspect-ratio:3/2;background:center/100% 100% no-repeat;container-type:inline-size;border-radius:6px;box-shadow:0 10px 50px #000}
+  .qscroll .qvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;pointer-events:none}
+  .qscroll.novid{background-image:url(assets/scroll.jpg)}
+  .qscroll.novid .qvid{display:none}
+  .qscroll .qin{opacity:0;transition:opacity 1s ease .1s}
+  .qscroll.open .qin,.qscroll.novid .qin{opacity:1}
+  .qscroll .qin{position:absolute;left:25%;right:25%;top:29%;bottom:29%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#3a2713;font-family:Cinzel,Georgia,serif}
+  .qscroll .qt{font-family:'Pinyon Script','Snell Roundhand','Apple Chancery',cursive;font-style:normal;font-weight:400;font-size:clamp(13px,4.5cqw,38px);line-height:1.22}
+  .qscroll .qb{margin-top:1.1em;font-size:clamp(9px,2.3cqw,20px);letter-spacing:.08em;color:#6b4a22}
+  #quotescene{z-index:40;background:#0a0705 radial-gradient(ellipse at center,#2a1d10 0%,#0a0705 75%);flex-direction:column;justify-content:center;align-items:center;padding:0;cursor:pointer;text-align:center}
+  #quotescene .qhint{margin-top:18px;color:#c9b27a;font-family:Cinzel,Georgia,serif;letter-spacing:.2em;font-size:13px;text-transform:uppercase;opacity:.75}
+  #quotescene .qscroll,#victory .qscroll{animation:qfade 1.2s ease-out}
+  @keyframes qfade{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+  #victory .qscroll{width:min(94vw,500px);margin:-40px 0 -32px auto;box-shadow:none;border-radius:0;-webkit-mask-image:radial-gradient(ellipse 60% 56% at 50% 50%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 60% 56% at 50% 50%,#000 62%,transparent 100%)}
+  #victory .qscroll .qt{font-size:clamp(13px,5.1cqw,30px);line-height:1.15}
+  #victory .qscroll .qb{font-size:clamp(10px,3cqw,17px)}
+  @media(max-height:700px){#victory .qscroll{width:min(88vw,330px);margin:-24px 0 -20px auto}}
   #givebtn{position:fixed;top:8px;left:8px;z-index:7;padding:8px 15px;font:700 14px/1.2 system-ui,sans-serif;letter-spacing:.06em;color:#e7c9c4;background:#2a0f0cd0;border:1px solid #7a2a22;border-radius:5px;cursor:pointer;opacity:.7}
   #givebtn:hover{opacity:1;background:#5a1a14}
   #giveask{position:fixed;inset:0;z-index:12;background:#000b;display:flex;align-items:center;justify-content:center}
@@ -238,7 +256,8 @@
 <div id="tip"></div>
 <div id="overlay" class="hidden"><div class="panel" id="panel"></div></div>
 <div id="victory" class="scene hidden"><video id="vicvid" src="assets/title.mp4" poster="assets/title.jpg" preload="auto" muted loop playsinline></video><div class="shade"></div>
-  <div class="box"><h2>Realm Conquered!</h2><div class="tag">You have conquered the realm — it's Miller time!</div><button id="again2">Play Again</button><a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a></div></div>
+  <div class="box"><h2>Realm Conquered!</h2><div class="tag">You have conquered the realm — it's Miller time!</div><div class="qscroll"><video class="qvid" src="assets/scroll-unroll.mp4" muted playsinline preload="auto"></video><div class="qin"><div class="qt" id="qvt"></div><div class="qb" id="qvb"></div></div></div><button id="again2">Play Again</button><a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a></div></div>
+<div id="quotescene" class="scene hidden"><div class="qscroll"><video class="qvid" src="assets/scroll-unroll.mp4" muted playsinline preload="auto"></video><div class="qin"><div class="qt" id="qlt"></div><div class="qb" id="qlb"></div></div></div><div class="qhint" id="qhint">Preparing the realm&hellip;</div></div>
 <button id="givebtn" style="display:none" title="Surrender this battle">I GIVE UP</button>
 <div id="giveask" class="hidden"><div class="gbox"><h3>Give up?</h3><p>Are you sure? Your army will surrender and the battle will be lost.</p><div class="grow"><button id="giveyes">Yes, I give up</button><button id="giveno" class="sec">Keep fighting</button></div></div></div>
 <div id="giveup" class="scene hidden"><video id="givevid" src="assets/giveup.mp4" preload="auto" playsinline></video><div class="shade"></div></div>
@@ -366,7 +385,7 @@ const TYPES = {
             desc:'The Order\'s holy champion: 16 hit points and 3 defence. Healing Light: friendly units within 1 hex of a Paladin heal 2 health at the start of your turn.'},
   stalker: {name:'Marsh Stalker', short:'Stalker', cost:6, hp:8, atk:6, def:1, mv:3, rng:[1,1], cls:'wade', only:1,
             desc:'Swamp assassin of the Dark Host. Wades through water and forest at no extra cost, and stays hidden from enemies more than 2 hexes away.'},
-  valkyrie:{name:'Valkyrie', short:'Valkyrie', cost:8, hp:9, atk:8, def:2, mv:4, rng:[1,1], cls:'fly', only:2,
+  valkyrie:{name:'Valkyrie', short:'Valkyrie', cost:8, hp:9, atk:6, def:2, mv:3, rng:[1,1], cls:'fly', only:2,
             desc:'A winged shield-maiden who flies over rivers, forests and crags. Fast and hard-hitting.'},
   ranger:  {name:'Elven Ranger', short:'Ranger', cost:6, hp:7, atk:5, def:0, mv:2, rng:[2,4], cls:'ground', vision:4, only:3,
             desc:'Elite Emerald Court sharpshooter. Longbow reaches 2–4 hexes and sees 4 hexes, but cannot fire at adjacent foes.'}
@@ -424,7 +443,7 @@ const ENEMY_SETS={1:[2],2:[1,3],3:[1,2,3]};   // for the Order (army 0): one ene
 const ARMY_INFO=[
  {unit:'Paladin (9 gold): 16 health, 3 defence. A holy champion who cannot be moved easily.', bonus:'Healing Light: friendly units within 1 hex of a Paladin heal 2 health at the start of each of your turns.', cmd:'Lord Ray, Head of the Order of the Cross', text:"The oldest banner in the realm. Lord Ray's knights march under the red cross, sworn to guard the crown and the common folk alike. Disciplined, well-armoured and proud, the Order fights shoulder to shoulder and has never yielded its keep. Where the Cross is raised, the realm still has a king worth defending."},
  {unit:'Marsh Stalker (6 gold): 3 moves; wades through water and forest at no extra cost, and stays hidden from enemies more than 2 hexes away.', bonus:'Spoils of War: gain 2 gold for every enemy unit you destroy.', cmd:'Warlord Szarok, Head of the Dark Host', text:"Scaled, patient and merciless, the Dark Host crept out of the southern marshes to claim the realm that once shunned them. Warlord Szarok wears the plate of fallen champions over his own armoured hide and wastes nothing: not an hour, not a soldier, not a grudge. Fear is the Host's first weapon. The sword is only the second."},
- {unit:'Valkyrie (8 gold): a winged flyer with 4 moves that ignores rivers, forests and crags.', bonus:'Gold Hoard: your gold mines pay +1 gold and Mercenaries cost only 2.', cmd:'Empress Joy, Head of the Golden Valkyries', text:"Empress Joy leads the Golden Valkyries, shield-maidens forged in the northern passes and loyal to no throne but hers. They ride light, strike first and take their gold in battle. Where the Valkyries pass, mines change hands and keeps fall quiet. Join her, and glory is paid in advance."},
+ {unit:'Valkyrie (8 gold): a winged flyer with 3 moves that ignores rivers, forests and crags.', bonus:'Gold Hoard: your gold mines pay +1 gold and Mercenaries cost only 2.', cmd:'Empress Joy, Head of the Golden Valkyries', text:"Empress Joy leads the Golden Valkyries, shield-maidens forged in the northern passes and loyal to no throne but hers. They ride light, strike first and take their gold in battle. Where the Valkyries pass, mines change hands and keeps fall quiet. Join her, and glory is paid in advance."},
  {unit:'Elven Ranger (6 gold): longbow with range 2–4 and 4-hex sight.', bonus:'Forest Sight: your units see 1 hex farther and take 1 less damage while standing in forest.', cmd:'Lord Aelindor, Head of the Emerald Court', text:"Ancient, graceful and cold as the green deep forest, the Emerald Court has watched the human kingdoms rise and fall for a thousand years. Lord Aelindor wears armour of living emerald and fights with the calm of one who has already seen the ending. The Court does not seek war. It simply never loses one."}
 ];
 let myArmy=0; try{ const a=+localStorage.getItem('raysRealm.myArmy'); if(a>=0&&a<4) myArmy=a; }catch(e){}   // the army you pick on the title screen for a game against the computer
@@ -435,6 +454,7 @@ try{ const n=+localStorage.getItem('raysRealm.enemies'); if(ENEMY_SETS[n]) enemy
 const setArmies = n => { enemyCount=ENEMY_SETS[n]?n:3; activeArmies=[0,1,2,3].map(t=>t===ME||enemiesOf(enemyCount,ME).includes(t)); };
 const enemyWord = () => ['','the enemy keep','both enemy keeps','all three enemy keeps'][enemyCount];
 let ME=myArmy, MP=null, lastPay=[0,0,0,0];   // lastPay: gold each army collected at the start of its latest turn   // ME: the army this computer plays; MP: online head-to-head session (null in a normal game)
+let inspected=null;   // enemy/other unit you clicked on, shown in the info card until you click elsewhere
 let units=[], turn=1, side=0, sel=null, hover=null, busy=false, over=false;
 let moveInfo=null, targets=[], recruitType=null, spawnSet=[], boardShips=[], undoSnap=null;
 let gold=[0,0,0,0], elim=[false,false,false,false], mineOwner=new Map(), keepOwner=[0,1,2,3];
@@ -1232,11 +1252,11 @@ function omenSting(type){
   if(type==='frost'&&playOmenSample('ice_crack',0.6)) return;
   if(type==='harvest'&&playOmenSample('harvest_bed',0.55)) return;
   const seq={
-    fog:()=>{ tone(110,1.6,'sine',0.08,-20); tone(165,1.6,'sine',0.05,-30,0.1); },
+    fog:()=>{ tone(110,1.6,'sine',0.048,-20); tone(165,1.6,'sine',0.03,-30,0.1); },
     storm:()=>{ thunder(); },
     frost:()=>{ [1568,2093,2637,3136].forEach((f,i)=>tone(f,0.9,'sine',0.045,0,i*0.13)); },
     harvest:()=>{ [523,659,784,1047].forEach((f,i)=>tone(f,0.7,'triangle',0.06,0,i*0.12)); },
-    plague:()=>{ tone(98,1.4,'sawtooth',0.06,-30); tone(104,1.4,'sawtooth',0.05,-30,0.05); tone(147,1.2,'square',0.03,-40,0.4); },
+    plague:()=>{ tone(98,1.4,'sawtooth',0.036,-30); tone(104,1.4,'sawtooth',0.03,-30,0.05); tone(147,1.2,'square',0.018,-40,0.4); },
     surge:()=>{ tone(147,0.9,'sawtooth',0.09,-20); tone(110,1.2,'sawtooth',0.09,-30,0.7); tone(220,0.5,'square',0.04,-60,1.0); }
   }; (seq[type]||(()=>{}))();
 }
@@ -1247,16 +1267,16 @@ function stopAmbience(){
 function startAmbience(type){
   stopAmbience(); if(muted) return; const a=actx(), nb=noiseBuf(); if(!a||!nb) return;
   const w={type,nodes:[],gains:[],timer:null}; const t=a.currentTime;
-  const beds={storm:['storm_bed',0.5],frost:['frost_bed',0.55],fog:['fog_bed',0.5],harvest:['harvest_bed',0.2],plague:['plague_bed',0.4],surge:['surge_drums',0.6]};
+  const beds={storm:['storm_bed',0.5],frost:['frost_bed',0.55],fog:['fog_bed',0.3],harvest:['harvest_bed',0.2],plague:['plague_bed',0.24],surge:['surge_drums',0.6]};
   if(beds[type]&&bedSample(w,beds[type][0],beds[type][1])){ wxA=w; return; }   // recorded bed loaded: no synth needed
   const bed=(ftype,freq,q,vol,lfoHz=0,lfoDepth=0)=>{ const s=a.createBufferSource(); s.buffer=nb; s.loop=true; const f=a.createBiquadFilter(); f.type=ftype; f.frequency.value=freq; f.Q.value=q;
     const g=a.createGain(); g.gain.value=0.0001; g.gain.setTargetAtTime(vol,t,1.5); s.connect(f).connect(g).connect(a.destination); s.start(); w.nodes.push(s,f); w.gains.push(g);
     if(lfoHz){ const o=a.createOscillator(), og=a.createGain(); o.frequency.value=lfoHz; og.gain.value=lfoDepth; o.connect(og).connect(f.frequency); o.start(); w.nodes.push(o,og); } };
   if(type==='storm'){ bed('bandpass',1800,0.5,0.045); bed('lowpass',220,0.7,0.03,0.12,60); }
   else if(type==='frost'){ bed('lowpass',520,0.8,0.05,0.18,260); bed('highpass',3200,0.7,0.006); }
-  else if(type==='fog'){ bed('lowpass',300,0.6,0.035,0.08,90); }
+  else if(type==='fog'){ bed('lowpass',300,0.6,0.021,0.08,90); }
   else if(type==='harvest'){ w.timer=setInterval(()=>{ if(muted) return; const n=[784,880,988,1175,1319][Math.floor(Math.random()*5)]; tone(n,0.9,'sine',0.018,0); },900); }
-  else if(type==='plague'){ bed('lowpass',160,1.2,0.04,0.3,50); w.timer=setInterval(()=>{ if(!muted) tone(70+Math.random()*10,1.2,'sawtooth',0.012,-10); },2600); }
+  else if(type==='plague'){ bed('lowpass',160,1.2,0.024,0.3,50); w.timer=setInterval(()=>{ if(!muted) tone(70+Math.random()*10,1.2,'sawtooth',0.007,-10); },2600); }
   else if(type==='surge'){ w.timer=setInterval(()=>{ if(muted) return; tone(80,0.28,'sine',0.12,-45); tone(80,0.28,'sine',0.1,-45,0.45); },1500); }
   wxA=w;
 }
@@ -1825,8 +1845,10 @@ function refreshUI(){
   setHTML('turn',`<b>Turn ${turn}</b><span class="pill" style="background:${FACTIONS[side].color}">${side===ME?'Your move':FACTIONS[side].short+' moves'}</span><span>🪙 ${gold[ME]}</span>`);
   setHTML('factions',FACTIONS.slice(0,4).map((f,i)=>!activeArmies[i]?'':`<div class="frow ${side===i&&!over?'active':''} ${elim[i]?'out':''}"><span class="dot" style="background:${f.color}"></span><span>${f.name}</span>
     <span class="n">⚔ ${i===ME?alive(ME).length:'?'}</span><span class="n">⛏ ${i===ME?minesOf(ME):MINES.filter(m=>seenMine.get(key(m.c,m.r))===i).length}</span><span class="n">🏰 ${i===ME?keepOwner.filter(o=>o===ME).length:seenKeep.filter(o=>o===i).length}</span><span class="n">🪙 ${i===ME?`${gold[ME]} <small>(+${income(ME)})</small>`:'?'}</span></div>`).join(''));
-  const hu=hover&&unitAt(hover.c,hover.r), shown=(hu&&unitVisible(hu)?hu:null)||sel;
-  setHTML('card', shown ? cardHTML(shown,previewFor(shown))
+  const hu=hover&&unitAt(hover.c,hover.r), hvis=hu&&unitVisible(hu)?hu:null;
+  const ins=inspected&&units.includes(inspected)&&unitVisible(inspected)?inspected:null, shown=sel||ins;
+  const hp=hvis&&sel&&previewFor(hvis);   // hovering a target while a unit is selected still previews the attack
+  setHTML('card', shown ? cardHTML(shown,hp?`<b>${hvis.name}:</b> ${hp}`:'')
     : hover&&!explored.has(key(hover.c,hover.r)) ? '<div class="empty"><b>Unexplored</b><br>Send units this way to reveal the map.</div>'
     : hover ? `<div class="empty"><b>${TERR[tileCh(hover.c,hover.r)].name}</b>${mineInfo(hover)}<br>${TERR[tileCh(hover.c,hover.r)].note||'Open ground.'}${seenTower.has(key(hover.c,hover.r))?`<br>🏯 ${FACTIONS[seenTower.get(key(hover.c,hover.r))].short} fort: +2 defence for its owner; recruits 2 units per turn nearby${towerSpent(key(hover.c,hover.r))?' (used this turn)':''}.`:''}</div>`
     : '<div class="empty">Select one of your units, or hover anything for details.</div>');
@@ -1882,11 +1904,55 @@ function giveUpNow(){
   v.muted=muted; v.volume=1;
   v.play().catch(()=>{ v.muted=true; return v.play(); }).catch(()=>{ clearTimeout(giveTimer); giveTimer=setTimeout(finish,1500); });
 }
+// ---- quotes on parchment scrolls (loading screen + victory)
+const LOAD_QUOTES=[
+  ['The supreme art of war is to subdue the enemy without fighting.','Sun Tzu'],
+  ['Know the enemy and know yourself; in a hundred battles you will never be in peril.','Sun Tzu'],
+  ['Let him who desires peace prepare for war.','Vegetius'],
+  ['The bravest are surely those who have the clearest vision of what is before them, glory and danger alike, and yet notwithstanding go out to meet it.','Thucydides'],
+  ['Come and take them.','King Leonidas of Sparta'],
+  ['Discipline is the soul of an army. It makes small numbers formidable, procures success to the weak, and esteem to all.','George Washington'],
+  ['The impediment to action advances action. What stands in the way becomes the way.','Marcus Aurelius'],
+  ['Difficulties strengthen the mind, as labor does the body.','Seneca'],
+  ['Difficulties show men what they are.','Epictetus'],
+  ['He who conquers others is strong; he who conquers himself is mighty.','Lao Tzu']];
+const WIN_QUOTES=[
+  ['The harder the conflict, the more glorious the triumph.','Thomas Paine'],
+  ['I came, I saw, I conquered.','Julius Caesar'],
+  ['Fortune favors the bold.','Virgil'],
+  ['He will win who knows when to fight and when not to fight.','Sun Tzu'],
+  ['What we obtain too cheap, we esteem too lightly; it is dearness only that gives everything its value.','Thomas Paine'],
+  ['The secret of happiness is freedom, and the secret of freedom, courage.','Thucydides'],
+  ['I have not yet begun to fight!','John Paul Jones']];
+let lastQ=-1;
+function pickQuote(list){ let i; do{ i=Math.floor(Math.random()*list.length); }while(list.length>1&&i===lastQ); lastQ=i; return list[i]; }
+function setQuote(tid,bid,q){ document.getElementById(tid).textContent='\u201C'+q[0]+'\u201D'; document.getElementById(bid).textContent='\u2014 '+q[1]; }
+// plays the unrolling animation on a .qscroll, then fades the quote in; falls back to the still scroll if the video can't play
+function playScroll(sc,cb){
+  const v=sc.querySelector('.qvid'); let done=false;
+  const show=()=>{ if(done) return; done=true; clearTimeout(fs); sc.classList.add('open'); if(cb) cb(); };
+  const bad=()=>{ sc.classList.add('novid'); show(); };
+  sc.classList.remove('open','novid');
+  const fs=setTimeout(()=>{ if(!done) bad(); },14000);   // failsafe: never leave the quote hidden
+  if(!v||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){ bad(); return {skip:()=>{}}; }
+  v.onended=show; v.onerror=bad;
+  try{ v.currentTime=0; v.playbackRate=1.3; const p=v.play(); if(p&&p.catch) p.catch(bad); }catch(e){ bad(); }
+  return {skip:()=>{ try{ v.currentTime=v.duration||5; v.pause(); }catch(e){} show(); }};
+}
+// loading screen: unrolling scroll + quote, then click/key (or a few seconds) to start
+function showLoadingQuote(done){
+  const sc=document.getElementById('quotescene'), qs=sc.querySelector('.qscroll'), hint=document.getElementById('qhint'); let fin=false, ready=false, tm, h;
+  setQuote('qlt','qlb',pickQuote(LOAD_QUOTES)); hint.textContent='Preparing the realm\u2026'; sc.classList.remove('hidden');
+  const go=()=>{ if(fin) return; if(!ready){ h&&h.skip(); return; } fin=true; clearTimeout(tm); sc.classList.add('hidden'); sc.onclick=null; window.removeEventListener('keydown',key,true); try{ qs.querySelector('.qvid').pause(); }catch(e){} done(); };
+  const key=e=>{ if(e.key===' '||e.key==='Enter'||e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); go(); } };
+  window.addEventListener('keydown',key,true); sc.onclick=go;
+  h=playScroll(qs,()=>{ ready=true; hint.textContent='Click to begin'; tm=setTimeout(go,4500); });
+}
 function showEnd(win,why){
   if(MP) mpClearSave(); else clearSave();   // a finished battle can't be continued
   if(win){
     const v=document.getElementById('victory'), vid=document.getElementById('vicvid');
-    v.classList.remove('hidden'); try{ vid.currentTime=0; vid.play().catch(()=>{}); }catch(e){}
+    setQuote('qvt','qvb',pickQuote(WIN_QUOTES)); playScroll(document.querySelector('#victory .qscroll')); v.classList.remove('hidden'); try{ vid.currentTime=0; vid.play().catch(()=>{}); }catch(e){}
     document.getElementById('again2').onclick=()=>{ v.classList.add('hidden'); vid.pause(); stopMusic(); if(MP){ mpClose(); goHome(); return; } ME=myArmy; newGame(); playAmbient(); };
     stopAmbient(); playMusic(true); return;
   }
@@ -1966,7 +2032,7 @@ function showIntro(){
     document.getElementById('armygo').textContent='Lead the '+F.name;
     tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.t===t)); };
   tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>{ showArmy(+b.dataset.t); sfx('step'); });
-    document.getElementById('armygo').onclick=()=>{ try{ localStorage.setItem('raysRealm.myArmy',myArmy); }catch(e){} as.classList.add('hidden'); mpClose(); ME=myArmy; newGame(); enter(); };
+    document.getElementById('armygo').onclick=()=>{ try{ localStorage.setItem('raysRealm.myArmy',myArmy); }catch(e){} as.classList.add('hidden'); mpClose(); ME=myArmy; showLoadingQuote(()=>{ newGame(); enter(); }); };
 const st=document.getElementById('storyscreen'), sv=document.getElementById('storyvid');
   const openStory=()=>{ st.classList.remove('hidden'); st.classList.toggle('skip',storySeen); storySeen=true;
     try{ sv.currentTime=0; sv.play().catch(()=>{}); }catch(e){} };
@@ -2257,14 +2323,14 @@ window.addEventListener('DOMContentLoaded',async()=>{
       if(d0.moved){ sc.scrollLeft=d0.sl-dx; sc.scrollTop=d0.st-dy; } });
     window.addEventListener('pointerup',()=>{ if(d0&&d0.moved){ window.__dragged=true; setTimeout(()=>window.__dragged=false,0); } d0=null; });
   }
-  canvasEl.addEventListener('click',e=>{ if(mpReplaying){ mpFast=true; return; } if(window.__dragged) return; const {x,y}=evPos(e); const p=pick(x,y); if(p.cell) lastCell={c:p.cell.c,r:p.cell.r}; if(p.cell) onTile(p.cell.c,p.cell.r,p.unit); else if(!busy){ if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); } });
-  canvasEl.addEventListener('contextmenu',e=>{ e.preventDefault(); if(busy) return; if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); });
+  canvasEl.addEventListener('click',e=>{ if(mpReplaying){ mpFast=true; return; } if(window.__dragged) return; const {x,y}=evPos(e); const p=pick(x,y); inspected=(p.unit&&unitVisible(p.unit))?p.unit:null; refreshUI(); if(p.cell) lastCell={c:p.cell.c,r:p.cell.r}; if(p.cell) onTile(p.cell.c,p.cell.r,p.unit); else if(!busy){ if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); } });
+  canvasEl.addEventListener('contextmenu',e=>{ e.preventDefault(); inspected=null; if(busy) return; if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); });
   window.addEventListener('keydown',e=>{
     if(mpReplaying){ if(e.key===' '||e.key==='Escape'||e.key==='Enter'){ e.preventDefault(); mpFast=true; } return; }
     if(/^[0-9]$/.test(e.key)) cheatBuf=(cheatBuf+e.key).slice(-4);
     else if(e.key==='Enter'&&cheatBuf==='5252'){ e.preventDefault(); cheatBuf=''; secretDragon(); return; }   // ssh. don't tell the barbarians
     else if(e.key!=='Shift') cheatBuf='';
-    if(e.key==='Escape'&&!busy){ if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); }
+    if(e.key==='Escape'&&!busy){ inspected=null; if(sel) clearSel(); recruitType=null; spawnSet=[]; refreshUI(); }
     if((e.key===' '||e.key==='w')&&sel&&!busy){ e.preventDefault(); finishUnit(sel); }
     if((e.key==='u'||e.key==='U'||((e.ctrlKey||e.metaKey)&&e.key==='z'))&&!busy){ e.preventDefault(); undoLast(); }
     if((e.key==='+'||e.key==='=')&&!e.ctrlKey&&!e.metaKey){ e.preventDefault(); zoomBy(1.25); }
