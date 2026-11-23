@@ -1946,7 +1946,7 @@ function showLoadingQuote(done){
   const go=()=>{ if(fin) return; if(!ready){ h&&h.skip(); return; } fin=true; clearTimeout(tm); sc.classList.add('hidden'); sc.onclick=null; window.removeEventListener('keydown',key,true); try{ qs.querySelector('.qvid').pause(); }catch(e){} done(); };
   const key=e=>{ if(e.key===' '||e.key==='Enter'||e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); go(); } };
   window.addEventListener('keydown',key,true); sc.onclick=go;
-  h=playScroll(qs,()=>{ ready=true; hint.textContent='Click to begin'; tm=setTimeout(go,4500); });
+  h=playScroll(qs,()=>{ ready=true; hint.textContent='Click to begin'; });
 }
 function showEnd(win,why){
   if(MP) mpClearSave(); else clearSave();   // a finished battle can't be continued
