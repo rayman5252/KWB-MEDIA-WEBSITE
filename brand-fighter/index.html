@@ -305,17 +305,17 @@
   // All sprites are pre-cut to transparent PNGs (runtime chroma keying was eating colors that sat near the key color).
   // chromaKeyToAlpha is kept for any future sprite that still ships on a flat background; just give its entry a `key`.
   var ASSET_SOURCES = {
-    bg: { src: 'assets/bg-synthwave.png' },
+    bg: { src: 'assets/bg-synthwave.webp' },
     // Hero art is pre-cut to transparent PNGs. Runtime keying removed the hero's red gloves, tie and skin shading.
-    hero: { src: 'assets/hero.png' },
-    heroPunch: { src: 'assets/hero-punch.png' },
-    heroKick: { src: 'assets/hero-kick.png' },
-    heroGun: { src: 'assets/hero-gun.png' },   // hidden pistol pose (press G)
-    VIDEO: { src: 'assets/enemy-video.png' },
-    SLOGAN: { src: 'assets/enemy-slogan.png' },
-    TREND: { src: 'assets/enemy-trend.png' },
-    TREND_GIRL: { src: 'assets/enemy-trend-girl.png' }, // already cut out to transparent, no chroma key needed
-    BOSS: { src: 'assets/boss-slop.png' }
+    hero: { src: 'assets/hero.webp' },
+    heroPunch: { src: 'assets/hero-punch.webp' },
+    heroKick: { src: 'assets/hero-kick.webp' },
+    heroGun: { src: 'assets/hero-gun.webp' },   // hidden pistol pose (press G)
+    VIDEO: { src: 'assets/enemy-video.webp' },
+    SLOGAN: { src: 'assets/enemy-slogan.webp' },
+    TREND: { src: 'assets/enemy-trend.webp' },
+    TREND_GIRL: { src: 'assets/enemy-trend-girl.webp' }, // already cut out to transparent, no chroma key needed
+    BOSS: { src: 'assets/boss-slop.webp' }
   };
   var ASSETS = {};
   var ENEMY_SPRITES = {};
@@ -1213,7 +1213,7 @@
   }
 
   // ---- Hidden pistol (press G to draw / holster; PUNCH key fires while it's out) ----
-  // The hero-gun.png pose (848x1264, same canvas as the other hero art) has the pistol's muzzle at this pixel.
+  // The hero-gun.webp pose (848x1264, same canvas as the other hero art) has the pistol's muzzle at this pixel.
   var GUN_MUZZLE = { px:824, py:293 };
   var HERO_ART_W = 848, HERO_ART_H = 1264;
   function gunMuzzlePos(){

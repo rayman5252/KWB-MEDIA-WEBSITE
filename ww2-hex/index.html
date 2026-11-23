@@ -866,7 +866,7 @@ let zoom=1, DPR=Math.min(2,window.devicePixelRatio||1), VW=0, VH=0; const cam={x
 let sel=null, selGroup=[], selCount=0, selInfo=null, selTargetUnits=[], selTargetZones=new Set(), selZone=null, shopType=null, placeSpots=[], hover=null, inspect=null, dirty=true;
 let terrainCanvas=null, ovCanvas=null, ovCtx=null, ovImg=null, ovDirty=true, MASKS={};
 const IMG={};
-function img(nat,type){ const k=NAT[nat].id+'_'+type; if(!IMG[k]){ const i=new Image(); i.onload=()=>{dirty=true;}; i.src='assets/u_'+k+'.png'; IMG[k]=i; } return IMG[k]; }
+function img(nat,type){ const k=NAT[nat].id+'_'+type; if(!IMG[k]){ const i=new Image(); i.onload=()=>{dirty=true;}; i.src='assets/u_'+k+'.webp'; IMG[k]=i; } return IMG[k]; }
 function log(msg,cls){ const li=document.createElement('li'); if(cls) li.className=cls; li.textContent=msg; const L=$('log'); L.appendChild(li); while(L.children.length>140) L.removeChild(L.firstChild); L.scrollTop=L.scrollHeight; }
 function banner(t){ const b=$('banner'); b.textContent=t; b.classList.remove('show'); void b.offsetWidth; b.classList.add('show'); }
 const explored=z=>expl[teamOf(me)].has(z);
@@ -1073,7 +1073,7 @@ function refreshUI(){
   if(subj&&subj.hp>0){
     const u=subj, air=u.type.dom==='air', stat=(l,v)=>'<div>'+l+'<b>'+v+'</b></div>';
     const canCount=u===sel&&selGroup.length>1&&!sel.done&&turnNat===me;
-    card.innerHTML='<div class="top"><img src="assets/u_'+NAT[u.nat].id+'_'+u.type.key+'.png" alt=""><div><h2>'+u.type.name+'</h2><div class="sub">'+NAT[u.nat].name+' · '+Z[u.z].name+(u.aboard?' · aboard':'')+'</div></div></div>'
+    card.innerHTML='<div class="top"><img src="assets/u_'+NAT[u.nat].id+'_'+u.type.key+'.webp" alt=""><div><h2>'+u.type.name+'</h2><div class="sub">'+NAT[u.nat].name+' · '+Z[u.z].name+(u.aboard?' · aboard':'')+'</div></div></div>'
       +'<div class="stats">'+stat('HP',u.hp+'/'+u.type.hp)+stat('MOVE',(u.nat===me?(Math.round(u.mp*10)/10)+'/':'')+u.type.mv)+stat('ATK',u.type.atk)+stat('DEF',u.type.def)+stat(air?'FUEL':'RNG',air?(u.nat===me?u.fuel:u.type.fuel):u.type.range)+'</div>'
       +(canCount?'<div class="cnt"><span>Commanding</span><button id="cm" class="sec">&minus;</button><b>'+selCount+'</b><span>of '+selGroup.length+'</span><button id="cp" class="sec">+</button><button id="call" class="sec">All</button></div>':'')
       +'<p>'+u.type.desc+'</p>'+(u.nat===me&&u.type.cap?'<p>Cargo: '+u.cargo.length+'/'+u.type.cap+'</p>':'')
@@ -1340,7 +1340,7 @@ async function startGame(n,seed){
 (function boot(){
   const pk=$('picker');
   NAT.forEach((n,i)=>{ const d=document.createElement('div'); d.className='ncard'; d.tabIndex=0;
-    d.innerHTML='<div class="team">'+TEAMS[n.team].name+'</div><h3>'+n.name+'</h3><div class="art"><img src="assets/u_'+n.id+'_infantry.png" alt=""><img src="assets/u_'+n.id+'_armor.png" alt=""><img src="assets/u_'+n.id+'_battleship.png" alt=""></div><p>'+n.blurb+'</p><div class="go"><button>Command '+n.short+'</button></div>';
+    d.innerHTML='<div class="team">'+TEAMS[n.team].name+'</div><h3>'+n.name+'</h3><div class="art"><img src="assets/u_'+n.id+'_infantry.webp" alt=""><img src="assets/u_'+n.id+'_armor.webp" alt=""><img src="assets/u_'+n.id+'_battleship.webp" alt=""></div><p>'+n.blurb+'</p><div class="go"><button>Command '+n.short+'</button></div>';
     const go=()=>startGame(i,parseInt(new URLSearchParams(location.search).get('seed'))||0); d.onclick=go; d.onkeydown=e=>{ if(e.key==='Enter'||e.key===' ') go(); }; pk.appendChild(d); });
   const syncMenu=()=>{ document.querySelectorAll('.mapbtn[data-map]').forEach(x=>x.classList.toggle('on',x.dataset.map===mapMode)); document.querySelectorAll('.mapbtn[data-kind]').forEach(x=>x.classList.toggle('on',x.dataset.kind===customKind)); $('customsel').classList.toggle('hidden',mapMode!=='custom'); };
   document.querySelectorAll('.mapbtn[data-map]').forEach(b=>{ b.onclick=()=>{ mapMode=b.dataset.map; syncMenu(); try{ localStorage.setItem('lfMap',mapMode); }catch(e){} }; });

@@ -1,3 +1,12 @@
 # Keep the blog tooling and the raw photo library off the live website.
 tools
 BLOG PHOTOS
+
+# Full-size PNG originals of the game art; the games load the WebP copies.
+art-source
+
+# Images no page uses (kept in GitHub, left out of every deployment).
+images/signal-room-9-logo.png
+images/kwb-logo-live.png
+images/event-control-desk.jpg
+images/blog-video-marketing-2020.jpg

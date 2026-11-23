@@ -323,11 +323,11 @@ const spriteKey = (team,type) => 'f'+team+'_'+type;   // each army's mercenaries
 const TILEIMG = {};
 const TILEFILE = {'~':'t_water','f':'t_forest','h':'t_hills','^':'t_crags','G':'tf_mine','K':'tf_keep','F':'tf_fort'};
 const tilesReady = Promise.all(Object.entries(TILEFILE).map(([ch,n]) => new Promise(res => {
-  const i = new Image(); i.onload = () => { TILEIMG[ch]=i; res(); }; i.onerror = res; i.src = 'assets/'+n+'.png';
+  const i = new Image(); i.onload = () => { TILEIMG[ch]=i; res(); }; i.onerror = res; i.src = 'assets/'+n+'.webp';
 })));
 const BARB_TYPES = ['barbarcher','barbrider','barbtower','frostgiant','merc'];   // Barbarians (team 4) only have their own sprite set
 const imgReady = Promise.all(Object.keys(SPR).flatMap(n => (n==='merc'?[0,1,2,3,4]:BARB_TYPES.includes(n)?[4]:SPECIAL[n]!=null?[SPECIAL[n]]:[0,1,2,3]).map(t => new Promise(res => {
-  const i = new Image(); i.onload = i.onerror = res; i.src = 'assets/'+spriteKey(t,n)+'.png'; IMG[spriteKey(t,n)] = i;
+  const i = new Image(); i.onload = i.onerror = res; i.src = 'assets/'+spriteKey(t,n)+'.webp'; IMG[spriteKey(t,n)] = i;
 }))));
 
 const FACTIONS = [
@@ -1213,12 +1213,12 @@ function refreshOmenPanel(){
   const row=(cls,lab,o)=>{ const d=OMENS[o.type]; let extra='';
     if(cls==='now'&&omenNow&&omenNow.len>1){ const k=turn-omenNow.start+1; extra=`<div class="lab">Round ${k} of ${omenNow.len}</div>`+(omenNow.type==='frost'&&omenLeft()===1?'<div class="warn">⚠ The ice thaws at the start of next round. Get off the river!</div>':''); }
     const note=(cls==='next'&&o.cont)?' (continues)':'';
-    return `<div class="row ${cls}" style="--oc:${d.color}" title="${d.rule}"><img src="assets/${d.icon}.png" alt=""><div><div class="lab">${lab}</div><b>${d.name}${note}</b>${extra}<div>${d.rule}</div></div></div>`; };
+    return `<div class="row ${cls}" style="--oc:${d.color}" title="${d.rule}"><img src="assets/${d.icon}.webp" alt=""><div><div class="lab">${lab}</div><b>${d.name}${note}</b>${extra}<div>${d.rule}</div></div></div>`; };
   el.innerHTML=`<h3>Omens</h3>${omenNow?row('now','Now',omenNow):`<div class="row"><div class="clear">${turn<OMEN_START-1?`The skies are quiet. Omens begin in round ${OMEN_START}.`:'The skies are quiet this round.'}</div></div>`}${omenNext?row('next','Next round',omenNext):'<div class="row"><div class="lab">Next round</div>&nbsp;<div class="clear">Nothing foreseen.</div></div>'}`;
 }
 function showOmenSplash(o){
   const d=OMENS[o.type], el=document.getElementById('omenSplash'); if(!el) return;
-  el.style.setProperty('--oc',d.color); el.innerHTML=`<img src="assets/${d.icon}.png" alt=""><h2>${d.name}</h2><p>${d.rule}</p><p class="fl">${d.flavor}</p>`;
+  el.style.setProperty('--oc',d.color); el.innerHTML=`<img src="assets/${d.icon}.webp" alt=""><h2>${d.name}</h2><p>${d.rule}</p><p class="fl">${d.flavor}</p>`;
   el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
 }
 
@@ -1853,7 +1853,7 @@ function unitNotes(u){
 function cardHTML(u,preview){
   const T=u.type, mx=rmax(u), rng=(T.rng[0]===mx?T.rng[0]:T.rng[0]+'–'+mx)+(mx<T.rng[1]?' ⛈':''), tdef=terrainDef(u);
   const pct=Math.max(0,Math.min(100,Math.round(100*u.hp/T.hp))), hc=pct>60?'#4c9a3c':pct>30?'#d1a52a':'#b8362b';
-  return `<div class="hero"><img src="assets/${u.sprite}.png" alt=""><div class="who"><h2>${u.name}</h2>
+  return `<div class="hero"><img src="assets/${u.sprite}.webp" alt=""><div class="who"><h2>${u.name}</h2>
     <div class="sub" style="color:${FACTION_INK[u.team]}">${FACTIONS[u.team].name}</div>
     <div class="sub">${TERR[tileCh(u.c,u.r)].name}${towers.get(key(u.c,u.r))===u.team?' + Fort':''}${tdef?` (+${tdef} def)`:''}</div></div></div>
     <div class="hpbar"><i style="width:${pct}%;background:${hc}"></i><span>${u.hp} / ${T.hp} HP</span></div>
@@ -1868,11 +1868,11 @@ function previewFor(t){
 }
 function setHTML(id,html){ const el=document.getElementById(id); if(el.dataset.html!==html){ el.dataset.html=html; el.innerHTML=html; } return el; }
 function tipHTML(k){
-  if(k==='tower') return `<div class="top"><img src="assets/tf_fort.png" alt="" style="width:60px;height:auto"><div><h4>Fort</h4><div class="cost">${TOWER_COST} gold</div></div></div>
+  if(k==='tower') return `<div class="top"><img src="assets/tf_fort.webp" alt="" style="width:60px;height:auto"><div><h4>Fort</h4><div class="cost">${TOWER_COST} gold</div></div></div>
     <p style="margin:6px 0 0">Build it on a grass hex near your units. <b>+2 defence</b> to your unit standing there, and it recruits <b>2 units per turn</b> on adjacent hexes (ships too, if water is adjacent). Collapses if that unit is slain; enemies can raze it.</p>`;
   const T=TYPES[k], rng=T.rng[0]===T.rng[1]?T.rng[0]:T.rng[0]+'–'+T.rng[1];
   const why = gold[ME]<costOf(k) ? `Need ${costOf(k)-gold[ME]} more gold.` : !spawnTiles(ME,k).length ? (k==='archertower'?'No open space next to your units.':T.cls==='water'?'No open water near your keeps or forts.':'No open space near your keeps or forts.') : '';
-  return `<div class="top"><img src="assets/${spriteKey(ME,k)}.png" alt=""><div><h4>${T.name}</h4><div class="cost">${costOf(k)} gold${T.cap?' · carries '+T.cap:''}</div></div></div>
+  return `<div class="top"><img src="assets/${spriteKey(ME,k)}.webp" alt=""><div><h4>${T.name}</h4><div class="cost">${costOf(k)} gold${T.cap?' · carries '+T.cap:''}</div></div></div>
     <div class="stats"><div><b>${T.hp}</b>HP</div><div><b>${T.noattack?'—':T.atk}</b>ATK</div><div><b>${T.def}</b>DEF</div><div><b>${T.mv}</b>MOVE</div><div><b>${T.noattack?'—':rng}</b>RANGE</div></div>
     <div>${T.desc}</div>${why?`<div class="warn">${why}</div>`:''}`;
 }
