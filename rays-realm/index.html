@@ -295,7 +295,7 @@
     <li><b>Barbarians:</b> skull-banner towers hide in undiscovered land. Their riders and archers only defend their home, but they hit hard. Destroy a tower for a 10 gold bounty.</li>
     <li><b>Recruit</b> from the sidebar: new units appear near your keep and rest until next turn. Each keep you hold lets you recruit up to 4 units per turn, and each fort can also recruit two more units beside it. Ships spawn on the river.</li>
     <li><b>Mercenaries</b> cost 3 gold and match a Foot Soldier. They are hired on the spot: place one on any hex you can see, not just near a keep. A contract lasts 5 rounds (a badge shows the rounds left), or until he is killed. Three at a time at most, and they don't use up your keep recruits.</li>
-    <li><b>Ships</b> are unarmed transports. Walk a land unit onto a ship (max 2) to board: that ends its turn and the ship's. Next turn the ship sails 3 hexes and passengers may land on any adjacent shore.</li>
+    <li><b>Ships</b> are unarmed transports that carry 2 land units. Walk a unit onto a ship to board, sail up to 3 hexes, then select the ship and press Unload to land passengers on any adjacent shore, all in the same turn. Boarding uses up the unit's walking, and landing ends its turn (no attack after landing).</li>
     <li>Forests: +1 defence, cost 2 to enter (free for the Emerald Court). Hills: +1 defence and +1 sight for a foot unit standing on them (flyers get neither). Crags and river block foot soldiers; cross at the fords.</li>
     <li><b>Forts:</b> pay 25 gold to build one on any grass hex near your units. It gives +2 defence to your unit standing there, +2 supply, and lets you recruit two units per turn on adjacent hexes (even a ship, if water is adjacent). It collapses if that unit is slain, and is razed if an enemy steps on it. Keeps give +2 and recruit without limit; each fort recruits two units per turn.</li>
     <li><b>Fog of war:</b> every army, yours and theirs, sees only 3 hexes around its units, keeps and forts (scouts and archer towers see 4). Explored ground stays revealed, but enemies in the dark are hidden.</li>
@@ -395,7 +395,7 @@ const TYPES = {
   catapult:{name:'Catapult', short:'Catapult', cost:8, hp:8, atk:8, def:0, mv:2, rng:[2,3], cls:'ground', stat:true,
             desc:'Devastating siege fire at range 2–3, but it cannot move and fire in the same turn.'},
   ship:    {name:'Ship', short:'Ship', cost:6, hp:10, atk:0, def:1, mv:3, rng:[0,0], cls:'water', noattack:true, cap:2,
-            desc:'Unarmed. Carries 2 land units: boarding ends their turn and the ship\'s. Sails 3 hexes; passengers may land on an adjacent shore.'},
+            desc:'Unarmed. Carries 2 land units. Board, sail 3 hexes and land on an adjacent shore all in one turn; landing ends that unit\'s turn.'},
   wizard:  {name:'Wizard', short:'Wizard', cost:8, hp:8, atk:6, def:0, mv:2, rng:[1,3], cls:'ground', pierce:true,
             desc:'Arcane bolt ignores armour and terrain. Range 1–3. Fragile.'},
   dragon:  {name:'Dragon', short:'Dragon', cost:18, hp:22, atk:7, def:2, mv:5, rng:[1,2], cls:'fly',
@@ -1464,7 +1464,7 @@ function secretDragon(){
 // ---------------------------------------------------------------- player input
 function clearSel(){ sel=null; moveInfo=null; targets=[]; boardShips=[]; }
 const canStrike = u => !u.type.noattack && !(u.type.stat&&u.moved) && targetsFrom(u,u.c,u.r).length>0;
-const actionable = u => (!u.done && (u.mp>0 || canStrike(u))) || u.cargo.some(c=>!c.done);
+const actionable = u => (!u.done && (u.mp>0 || canStrike(u))) || (u.cargo.some(c=>!c.done) && landTiles(u).length>0);
 const selectable = u => u.team===ME && actionable(u);
 const landTiles = sh => neighbors(sh.c,sh.r).filter(([c,r])=>tileCost('ground',c,r)!=null && !unitAt(c,r));
 function boardSpot(u,s){
@@ -1515,8 +1515,8 @@ async function onTile(c,r,pickedUnit){
       clearSel(); refreshUI();
       if(path.length>1) await moveUnit(m,path);
       units=units.filter(x=>x!==m); m.aboard=ship; m.c=ship.c; m.r=ship.r; ship.cargo.push(m);
-      m.done=true; m.moved=true; ship.done=true; ship.moved=true;
-      log(`${m.name} boards the ${ship.name}.`,'t0'); sfx('step');
+      m.mp=0; m.moved=true;   // the passenger's walking is over, but it can still land this turn; the ship keeps its move
+      log(`${m.name} boards the ${ship.name}. Sail, then land it this turn if you like.`,'t0'); sfx('step');
       busy=false; refreshUI(); maybeAutoEnd(); return;
     }
     if(sel.aboard && u===sel.aboard){ clearSel(); refreshUI(); return; }
@@ -1536,7 +1536,8 @@ async function onTile(c,r,pickedUnit){
         if(path.length>1&&inZoc(m)){ m.mp=0; log(`${m.name} is engaged by the enemy and halts.`,'t'+ME); }   // zone of control: stepping next to an enemy ends the move
         m.cargo.forEach(x=>{x.c=m.c;x.r=m.r;});
         busy=false;
-        if(actionable(m)) select(m); else finishUnit(m);
+        if(wasAboard) finishUnit(m);   // landing from a ship ends that unit's turn
+        else if(actionable(m)) select(m); else finishUnit(m);
         return;
       }
     }
@@ -1626,7 +1627,7 @@ async function aiShip(u){
     const [c,r]=spots[0];
     u.cargo=u.cargo.filter(x=>x!==cu); units.push(cu); cu.aboard=null; cu.c=u.c; cu.r=u.r;
     if(isVis(u.c,u.r)) log(`${cu.name} disembarks.`,'t'+cu.team);
-    await moveUnit(cu,[{c:u.c,r:u.r},{c,r}]); cu.moved=true; cu.steps=1; await aiAttackFrom(cu);
+    await moveUnit(cu,[{c:u.c,r:u.r},{c,r}]); cu.moved=true; cu.steps=1; cu.mp=0; cu.done=true;   // landing ends its turn
     if(over) return;
   }
 }
@@ -1642,8 +1643,9 @@ async function aiTryBoard(u,info,dm){
     if(!spot) continue;
     const path=pathTo(info,spot.c,spot.r); if(path.length>1) await moveUnit(u,path);
     units=units.filter(x=>x!==u); u.aboard=sh; u.c=sh.c; u.r=sh.r; sh.cargo.push(u);
-    u.done=true; u.moved=true; sh.done=true; sh.moved=true;
+    u.mp=0; u.moved=true;
     if(isVis(sh.c,sh.r)){ log(`${u.name} boards the ${sh.name}.`,'t'+u.team); sfx('step'); await sleep(120); }
+    await aiShip(sh); sh.done=true;   // same rules as the player: the ship sails and lands its passengers this turn
     return true;
   }
   return false;
@@ -1965,9 +1967,9 @@ function refreshUI(){
   else if(recruitType==='archertower') h='Click a green grass hex next to any of your units (or near a keep or fort) to build an Archer Tower. Grass only. It rests until next turn.';
   else if(recruitType==='merc') h='Click any green hex you can see to hire a Mercenary there. He rests until next turn and serves for 5 rounds (3 at most).';
   else if(recruitType) h=`Click a green hex near a keep (or next to an unused fort) to place a ${TYPES[recruitType].short}. Recruits rest until next turn.`;
-  else if(sel&&sel.aboard) h='Click a highlighted shore hex to disembark. Landing uses its move; it may still attack.';
+  else if(sel&&sel.aboard) h='Click a highlighted shore hex to disembark. Landing ends this unit\'s turn.';
   else if(sel&&sel.type.noattack) h=`Blue hex = sail (${sel.mp} movement left). Passengers unload onto adjacent land.`;
-  else if(sel&&boardShips.length) h=`Blue hex = move (${sel.mp} left). Click a green-ringed ship to board it (ends this unit's turn).`;
+  else if(sel&&boardShips.length) h=`Blue hex = move (${sel.mp} left). Click a green-ringed ship to board it; the ship can still sail and land it this turn.`;
   else if(sel&&sel.mp>0) h=(sel.type.stat?'Moving means it cannot fire this turn. ':'')+`Blue hex = move (${sel.mp} movement left). ${targets.length?'Red-ringed enemy = attack.':''}`;
   else if(sel) h='No movement left. Choose a red-ringed enemy to attack, or press Wait.';
   else if(alive(ME).length&&alive(ME).every(u=>!actionable(u))) h='All units have acted. Recruit more, or end your turn.';
