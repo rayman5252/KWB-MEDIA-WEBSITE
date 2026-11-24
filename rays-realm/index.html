@@ -286,16 +286,18 @@
   <div id="musicnote" style="display:none;margin-top:10px;font-size:13px;opacity:.85;text-shadow:0 2px 6px #000">♪ Click anywhere to start the music</div>
   <details><summary>How to play</summary><ul>
     <li><b>Armies:</b> each army recruits one special unit and has its own bonus. Order of the Cross: the Paladin, and units next to a Paladin heal 3 health each turn. Dark Host: the Hydra (9 attack; replaces the Dragon) and 2 gold for every enemy unit destroyed. Golden Valkyries: the winged Valkyrie, mines that pay +1 gold, and Mercenaries for 2 gold. Emerald Court: the Elven Ranger (range 2–4), 1 extra hex of sight and 1 less damage in forest.</li>
-    <li><b>Omens:</b> from round 4 on, the sky or the land sometimes turns on everyone. Each omen is announced one round ahead (see the Omens panel). Fog Bank: everyone sees 1 hex less. Thunderstorm: ships cannot sail and ranged units lose 1 range. Hard Frost: rivers freeze for 2–3 rounds so units can walk across (ships are stuck), then the ice cracks: anyone still on it takes 4 damage and is thrown onto the nearest bank. Bountiful Harvest: mines pay double. Plague: the largest army loses 2 health on each unit that can move. Frost Giants Spotted: huge Frost Giants appear at random places and attack anyone; slay one for 15 gold.</li>
+    <li><b>Omens:</b> from round 4 on, the sky or the land sometimes turns on everyone. Each omen is announced one round ahead (see the Omens panel). Fog Bank: everyone sees 1 hex less. Thunderstorm: ships cannot sail and ranged units lose 1 range. Hard Frost: rivers freeze for 2–3 rounds so units can walk across (ships are stuck), then the ice cracks: anyone still on it takes 4 damage and is thrown onto the nearest bank. Bountiful Harvest: mines pay double. Plague: the largest army loses 2 health on each unit that can move. Frost Giants Spotted: huge Frost Giants appear at random places, march on the nearest army and attack anyone, then retreat to the mountains after 6 rounds; slay one for 15 gold.</li>
     <li>Each unit has <b>movement points</b> per turn and can spend them in several steps until you press End Turn. Attacking ends that unit's turn. Catapults can't fire after moving.</li>
     <li><b>Gold mines:</b> end a move on one to seize it. Each held mine pays +2 gold at the start of your turn.</li>
+    <li><b>Supply (army size):</b> your army can only field as many units as your land can feed: 6, plus 4 for each keep, 1 for each gold mine and 2 for each fort you hold. Every unit counts, including passengers, archer towers and mercenaries. The ⚔ counter shows units fielded / supply. At the cap you can't recruit until you take more land or lose units, so grabbing mines and keeps (and razing the enemy's) matters more than a big pile of gold.</li>
+    <li><b>Zone of control:</b> a foot or mounted unit that steps next to an enemy it can see must stop there for the turn. Hold a line and the enemy can't just walk past it. Flyers, ships and Scouts ignore zones of control, and a unit that starts its turn engaged may still step away.</li>
     <li><b>Income:</b> every army earns 2 gold a turn no matter what, plus 2 for each keep and 2 for each mine it holds.</li>
     <li><b>Barbarians:</b> skull-banner towers hide in undiscovered land. Their riders and archers only defend their home, but they hit hard. Destroy a tower for a 10 gold bounty.</li>
     <li><b>Recruit</b> from the sidebar: new units appear near your keep and rest until next turn. Each keep you hold lets you recruit up to 4 units per turn, and each fort can also recruit two more units beside it. Ships spawn on the river.</li>
     <li><b>Mercenaries</b> cost 3 gold and match a Foot Soldier. They are hired on the spot: place one on any hex you can see, not just near a keep. A contract lasts 5 rounds (a badge shows the rounds left), or until he is killed. Three at a time at most, and they don't use up your keep recruits.</li>
     <li><b>Ships</b> are unarmed transports. Walk a land unit onto a ship (max 2) to board: that ends its turn and the ship's. Next turn the ship sails 3 hexes and passengers may land on any adjacent shore.</li>
     <li>Forests: +1 defence, cost 2 to enter (free for the Emerald Court). Hills: +1 defence and +1 sight for a foot unit standing on them (flyers get neither). Crags and river block foot soldiers; cross at the fords.</li>
-    <li><b>Forts:</b> pay 30 gold to build one on any grass hex near your units. It gives +2 defence to your unit standing there, and lets you recruit two units per turn on adjacent hexes (even a ship, if water is adjacent). It collapses if that unit is slain, and is razed if an enemy steps on it. Keeps give +2 and recruit without limit; each fort recruits two units per turn.</li>
+    <li><b>Forts:</b> pay 25 gold to build one on any grass hex near your units. It gives +2 defence to your unit standing there, +2 supply, and lets you recruit two units per turn on adjacent hexes (even a ship, if water is adjacent). It collapses if that unit is slain, and is razed if an enemy steps on it. Keeps give +2 and recruit without limit; each fort recruits two units per turn.</li>
     <li><b>Fog of war:</b> every army, yours and theirs, sees only 3 hexes around its units, keeps and forts (scouts and archer towers see 4). Explored ground stays revealed, but enemies in the dark are hidden.</li>
     <li><b>Healing:</b> wounded units that stay out of battle recover 5% of their health each turn, or 10% if they end within 2 hexes of a keep or fort you hold.</li>
     <li>Defenders counter-attack if the attacker is within their range.</li>
@@ -325,6 +327,22 @@ const TILEFILE = {'~':'t_water','f':'t_forest','h':'t_hills','^':'t_crags','G':'
 const tilesReady = Promise.all(Object.entries(TILEFILE).map(([ch,n]) => new Promise(res => {
   const i = new Image(); i.onload = () => { TILEIMG[ch]=i; res(); }; i.onerror = res; i.src = 'assets/'+n+'.webp';
 })));
+// 3D forts and home keeps, one of each per army (f0_fort … f3_keep). Abandoned or unseen keeps keep the painted tile.
+const STRUCT_IMG = {}, STRUCT_DIM = {};
+for(let t=0;t<4;t++) for(const n of ['fort','keep']){ const i=new Image(); i.src='assets/f'+t+'_'+n+'.webp'; STRUCT_IMG['f'+t+'_'+n]=i; }
+const STRUCT_W = {fort:1.9, keep:2.0}, STRUCT_DROP = 0.66;   // sprite width in hex radii, and how far below the hex centre its base sits
+function structDim(k){   // darkened copy for forts/keeps you have seen but can't currently see (canvas filters aren't reliable in every browser)
+  if(STRUCT_DIM[k]) return STRUCT_DIM[k];
+  const i=STRUCT_IMG[k], c=document.createElement('canvas'); c.width=i.naturalWidth; c.height=i.naturalHeight;
+  const g=c.getContext('2d'); g.drawImage(i,0,0); g.globalCompositeOperation='source-atop'; g.fillStyle='rgba(8,12,24,0.5)'; g.fillRect(0,0,c.width,c.height);
+  return STRUCT_DIM[k]=c;
+}
+function drawStruct(s){
+  const i=STRUCT_IMG[s.img]; if(!i||!i.complete||!i.naturalWidth) return false;
+  const {x,y}=center(s.c,s.r), w=S*STRUCT_W[s.kind], h=w*i.naturalHeight/i.naturalWidth;
+  ctx.imageSmoothingQuality='high'; ctx.drawImage(s.dim?structDim(s.img):i, x-w/2, y+S*STRUCT_DROP-h, w, h);
+  return true;
+}
 const BARB_TYPES = ['barbarcher','barbrider','barbtower','frostgiant','merc'];   // Barbarians (team 4) only have their own sprite set
 const imgReady = Promise.all(Object.keys(SPR).flatMap(n => (n==='merc'?[0,1,2,3,4]:BARB_TYPES.includes(n)?[4]:SPECIAL[n]!=null?[SPECIAL[n]]:[0,1,2,3]).map(t => new Promise(res => {
   const i = new Image(); i.onload = i.onerror = res; i.src = 'assets/'+spriteKey(t,n)+'.webp'; IMG[spriteKey(t,n)] = i;
@@ -369,11 +387,11 @@ const TYPES = {
   barbarcher:{name:'Barbarian Archer', short:'Barbarian Archer', cost:0, hp:7, atk:5, def:0, mv:2, rng:[2,3], cls:'ground', barb:true,
             desc:'Wild bowman. Defends his tower and will not stray far from it.'},
   frostgiant:{name:'Frost Giant', short:'Frost Giant', cost:0, hp:30, atk:9, def:3, mv:2, rng:[1,1], cls:'ground', barb:true, big:true,
-            desc:'A towering giant of the northern ice, summoned by the Frost Giants omen. 30 health, 9 attack and 3 defence, and it attacks anyone, any army. Slow, but it will walk the whole map. It retreats to the mountains after a few rounds. Slay it for a bounty of 15 gold.'},
+            desc:'A towering giant of the northern ice, summoned by the Frost Giants omen. 30 health, 9 attack and 3 defence, and it attacks anyone, any army. Slow, but it will walk the whole map. It retreats to the mountains after 6 rounds. Slay it for a bounty of 15 gold.'},
   barbrider:{name:'Barbarian Rider', short:'Barbarian Rider', cost:0, hp:9, atk:5, def:1, mv:3, rng:[1,1], cls:'ground', charge:true, barb:true,
             desc:'Armoured raider on horseback, a little weaker than a Knight. Charges for +2 damage, but stays close to his tower.'},
   scout:   {name:'Scout', short:'Scout', cost:4, hp:8, atk:2, def:2, mv:3, rng:[1,1], cls:'ground', vision:4,
-            desc:'Light rider with sharp eyes: sees 4 hexes instead of 3. Weak in a fight, so scout ahead and stay out of trouble.'},
+            desc:'Light rider with sharp eyes: sees 4 hexes instead of 3, and slips past enemy zones of control. Weak in a fight, so scout ahead and stay out of trouble.'},
   catapult:{name:'Catapult', short:'Catapult', cost:8, hp:8, atk:8, def:0, mv:2, rng:[2,3], cls:'ground', stat:true,
             desc:'Devastating siege fire at range 2–3, but it cannot move and fire in the same turn.'},
   ship:    {name:'Ship', short:'Ship', cost:6, hp:10, atk:0, def:1, mv:3, rng:[0,0], cls:'water', noattack:true, cap:2,
@@ -401,6 +419,12 @@ const KEEP_RECRUITS = 4;   // units an army may recruit per turn for each keep i
 let recruitsUsed = [0,0,0,0];
 const recruitQuota = t => KEEP_RECRUITS*keepsOf(t);
 const recruitsLeft = t => Math.max(0,recruitQuota(t)-recruitsUsed[t]);
+// Supply: an army can only field as many units as its land can feed. Every unit counts (passengers, towers and mercenaries too).
+const SUPPLY_BASE = 6, SUPPLY_PER_KEEP = 4, SUPPLY_PER_MINE = 1, SUPPLY_PER_FORT = 2;
+const fortsOf = t => { let n=0; for(const tm of towers.values()) if(tm===t) n++; return n; };
+const supplyCap = t => SUPPLY_BASE + SUPPLY_PER_KEEP*keepsOf(t) + SUPPLY_PER_MINE*minesOf(t) + SUPPLY_PER_FORT*fortsOf(t);
+const supplyUsed = t => units.reduce((n,u)=>n+(u.team===t?1:0)+u.cargo.filter(c=>c.team===t).length,0);
+const supplyLeft = t => Math.max(0,supplyCap(t)-supplyUsed(t));
 
 
 
@@ -469,7 +493,7 @@ function makeUnit(type,team,c,r){
 }
 const unitAt = (c,r) => units.find(u => u.c===c && u.r===r);
 const alive = team => units.filter(u => u.team===team);
-const TOWER_COST = 30;
+const TOWER_COST = 25;
 let towers = new Map(), towerUsed = new Set();
 const TOWER_RECRUITS = 2;   // units a fort can recruit each turn. towerUsed holds the key for the 1st use and key+'#1' for the 2nd, so saves and undo keep working
 const towerUseId = (k,i) => i ? k+'#'+i : k;
@@ -998,13 +1022,27 @@ function sfx(k){
 }
 
 // ---------------------------------------------------------------- rules
+// Zone of control: a ground unit that steps next to an enemy it can see must stop there.
+// Flyers, ships and Scouts slip past; ships on the river exert no control over the land.
+function zocSet(u){
+  if(u.type.cls!=='ground'||u.key==='scout'||u.type.mv===0) return null;
+  const z=new Set();
+  for(const e of units){
+    if(e.team===u.team||e.type.cls==='water') continue;
+    if(!(u.team===ME?isVis(e.c,e.r):aiCanSee(u.team,e.c,e.r))) continue;
+    for(const [c,r] of neighbors(e.c,e.r)) z.add(key(c,r));
+  }
+  return z;
+}
+const inZoc = u => { const z=zocSet(u); return !!z&&z.has(key(u.c,u.r)); };
 function reach(u){
-  const res=new Map(), k0=key(u.c,u.r);
+  const res=new Map(), k0=key(u.c,u.r), zoc=zocSet(u);
   res.set(k0,{c:u.c,r:u.r,cost:0,steps:0,prev:null});
   const open=[k0];
   while(open.length){
     open.sort((a,b)=>res.get(a).cost-res.get(b).cost);
     const cur=res.get(open.shift());
+    if(zoc&&cur.prev!==null&&zoc.has(key(cur.c,cur.r))) continue;   // engaged: can stop here but not walk on
     for(const [nc,nr] of neighbors(cur.c,cur.r)){
       const tc=tileCost(u.type.cls,nc,nr,u.team); if(tc==null) continue;
       const occ=unitAt(nc,nr); if(occ && occ.team!==u.team) continue;
@@ -1038,6 +1076,7 @@ function counterInfo(a,d,dmgToD){
 // economy
 const mercCount = team => [...units,...units.flatMap(u=>u.cargo)].filter(u=>u.team===team&&u.key==='merc').length;
 function spawnTiles(team,type){
+  if(team<4&&supplyLeft(team)<=0) return [];   // army at its supply cap: take more land (keeps, mines, forts) to field more
   if(type==='merc'){   // hired locally: any free, visible hex you could walk onto (not a keep or mine)
     if(mercCount(team)>=MERC_MAX) return [];
     const out=[]; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ if(unitAt(c,r)||tileCost('ground',c,r)==null) continue; const ch=tileCh(c,r); if(ch==='K'||ch==='G') continue; if(team===ME&&!isVis(c,r)) continue; out.push({c,r,tower:null}); }
@@ -1146,7 +1185,7 @@ const OMENS = {
   frost:  {name:'Hard Frost',        icon:'omen_frost',   color:'#a6e0ff', rule:'The rivers freeze for 2–3 rounds: walk across the water! Ships are stuck. When it thaws, the ice cracks: anyone still on it takes 4 damage and is thrown onto the nearest bank.', flavor:'Snow on the wind. The river has gone silent and solid.'},
   harvest:{name:'Bountiful Harvest', icon:'omen_harvest', color:'#f2c14e', rule:'Gold mines pay double.', flavor:'The seams run rich. Every pickaxe strikes gold.'},
   plague: {name:'Plague',            icon:'omen_plague',  color:'#8fd36a', rule:'The largest army (counting units that can move) loses 2 health on each of them.', flavor:'A sickness crawls through the biggest camp.'},
-  giants: {name:'Frost Giants Spotted', icon:'omen_giants', color:'#9fd8ff', rule:'Frost Giants appear at random places on the map and attack anyone. Slay one for 15 gold.', flavor:'Ice cracks on the high peaks. Something enormous is walking.'}
+  giants: {name:'Frost Giants Spotted', icon:'omen_giants', color:'#9fd8ff', rule:'Frost Giants appear at random places on the map and attack anyone, then retreat to the mountains after 6 rounds. Slay one for 15 gold.', flavor:'Ice cracks on the high peaks. Something enormous is walking.'}
 };
 let omenNow=null, omenNext=null, omenLast=null;
 const omenIs = t => !!omenNow && omenNow.type===t;
@@ -1494,6 +1533,7 @@ async function onTile(c,r,pickedUnit){
         if(m.aboard){ const sh=m.aboard; sh.cargo=sh.cargo.filter(x=>x!==m); units.push(m); m.aboard=null; log(`${m.name} disembarks.`,'t0'); }
         moveInfo=null; targets=[]; boardShips=[]; await moveUnit(m,path);
         m.moved=true; m.steps+=path.length-1; m.mp=wasAboard?0:Math.max(0,m.mp-e.cost);
+        if(path.length>1&&inZoc(m)){ m.mp=0; log(`${m.name} is engaged by the enemy and halts.`,'t'+ME); }   // zone of control: stepping next to an enemy ends the move
         m.cargo.forEach(x=>{x.c=m.c;x.r=m.r;});
         busy=false;
         if(actionable(m)) select(m); else finishUnit(m);
@@ -1661,7 +1701,9 @@ async function aiRecruit(t){
     if((opts.includes('dragon')||opts.includes('hydra')) && Math.random()<0.6) pick=opts.includes('hydra')?'hydra':'dragon';
     else {
       const w={knight:3,archer:2,archertower:1,scout:1,cavalry:2,wizard:2,catapult:1,ship:1,dragon:0,hydra:0};
-      const bag=opts.flatMap(k=>Array(w[k]).fill(k)); if(!bag.length) break;
+      // near the supply cap every slot counts: lean toward the strongest units it can afford, skip scouts and ships
+      const tight=supplyLeft(t)<=3, wt=k=>tight?(k==='scout'||k==='ship'?0:Math.ceil(costOf(k,t)/3)):(w[k]||0);
+      const bag=opts.flatMap(k=>Array(wt(k)).fill(k)); if(!bag.length) break;
       pick=bag[Math.floor(Math.random()*bag.length)];
     }
     const tiles=spawnTiles(t,pick), f=foes();
@@ -1722,7 +1764,7 @@ function barbCandidates(){
   return out;
 }
 // ---- Frost Giants omen: a few huge, tough neutral pieces appear at random spots, walk the map and attack anyone, then retreat
-const GIANT_ROUNDS = 8, GIANT_BOUNTY = 15, GIANT_MAX = 4;
+const GIANT_ROUNDS = 6, GIANT_BOUNTY = 15, GIANT_MAX = 4;   // giants stay 6 rounds (counted from the round they appear), then leave
 function spawnFrostGiants(){
   const want=MP?2:({small:1,normal:2,large:3}[mapSize]||2), have=units.filter(u=>u.key==='frostgiant').length;
   let spots=barbCandidates();
@@ -1763,7 +1805,9 @@ async function barbTurn(){
   const towersB=mine().filter(u=>u.key==='barbtower');
   if(towersB.length<(MP?9:6)+(mapSize==='large'?3:0)&&Math.random()<(MP?0.25:0.12)*(mapSize==='large'?1.5:1)) spawnBarbTower();               // a new tower rises somewhere undiscovered
   for(const tw of towersB) if(units.includes(tw)&&Math.random()<0.5) spawnBarbUnit(tw);   // 50%: one more recruit
-  for(const g of mine().filter(x=>x.key==='frostgiant')){ if(--g.melt<=0){ units=units.filter(x=>x!==g); if(isVis(g.c,g.r)) log('A Frost Giant trudges back into the mountains.','sys'); } }
+  { let gone=0; for(const g of mine().filter(x=>x.key==='frostgiant')){ if(!(g.melt>0)) g.melt=1;   // a giant from an old save with no timer still leaves
+      if(--g.melt<=0){ units=units.filter(x=>x!==g); gone++; if(isVis(g.c,g.r)){ const q=center(g.c,g.r); effects.push({ring:true,x:q.x,y:q.y-S*0.3,t0:performance.now(),life:900,color:'#9fd8ff'}); } } }
+    if(gone) log(`${gone>1?gone+' Frost Giants trudge':'A Frost Giant trudges'} back into the mountains.`,'sys'); }
   updateAIVision(BARB_TEAM);
   for(const u of [...mine()]){ if(over) break; if(!units.includes(u)) continue; if(u.hold){ u.hold=false; u.done=true; continue; } u.steps=0; await barbAct(u); }   // surge raiders muster for a round first
 }
@@ -1782,10 +1826,14 @@ async function giantAct(u){   // no tower to guard: hits whatever it can reach, 
     if(units.includes(best.t)){ u.moved=true; await performAttack(u,best.t); }
     return;
   }
+  // march on the nearest enemy BY ROAD (walking distance around rivers and crags), not as the crow flies, so giants never get stuck at a riverbank
   const foes=units.filter(x=>x.team<BARB_TEAM&&!x.aboard); if(!foes.length) return;
-  const goal=foes.reduce((a,b)=>hexDist(u,b)<hexDist(u,a)?b:a);
-  let b=null; for(const [k,e] of info){ if(!canStop(u,e)) continue; const d=hexDist(e,goal); if(!b||d<b.d) b={e,d}; }
-  if(b&&(b.e.c!==u.c||b.e.r!==u.r)){ const path=pathTo(info,b.e.c,b.e.r); await moveUnit(u,path); }
+  const dm=distMapMulti('ground',foes.map(f=>({c:f.c,r:f.r,d0:0})),u.team), here=dm.get(key(u.c,u.r));
+  let b=null;
+  for(const [k,e] of info){ if(!canStop(u,e)) continue;
+    const d=dm.has(k)?dm.get(k):999+Math.min(...foes.map(f=>hexDist(e,f)));   // no walking route at all (enemy on an island): fall back to straight-line distance
+    if(!b||d<b.d) b={e,d}; }
+  if(b&&(b.e.c!==u.c||b.e.r!==u.r)&&(here==null||b.d<=here)){ const path=pathTo(info,b.e.c,b.e.r); await moveUnit(u,path); }
 }
 async function barbAct(u){
   if(u.done) return;
@@ -1825,6 +1873,8 @@ function banner(txt){
 function unitNotes(u){
   const T=u.type, n=[], pos={c:u.c,r:u.r}, ink=(t,c)=>n.push(`<li style="color:${c||'inherit'}">${t}</li>`);
   if(u.aboard) ink('Aboard a ship.');
+  if(u.team===ME&&!u.aboard&&inZoc(u)) ink('<b>Engaged:</b> enemies next to it. It can step away, but must stop if it moves next to another enemy.','#9a4a2a');
+  if(u.key==='scout') ink('Slips past enemy zones of control.');
   if(u.hp<T.hp&&!u.aboard){
     let heal=0, why=[];
     if(!u.fought){
@@ -1836,7 +1886,7 @@ function unitNotes(u){
     else if(u.key!=='paladin'&&units.some(x=>x.team===u.team&&x.key==='paladin')) ink(`Paladin aura: +${PALADIN_HEAL} HP/turn if within 1 hex of a Paladin.`,'#6b5a2a');
   }
   if(u.key==='paladin') ink(`<b>Aura:</b> allies within 1 hex heal ${PALADIN_HEAL} HP at the start of each turn.`,'#8a6a00');
-  if(u.key==='frostgiant') ink(`<b>Frost Giant:</b> attacks anyone. Retreats to the mountains in ${Math.max(0,u.melt||0)} round${(u.melt||0)===1?'':'s'}. Slay it for ${GIANT_BOUNTY} gold.`,'#2a6a9a');
+  if(u.key==='frostgiant') ink(`<b>Frost Giant:</b> attacks anyone. Retreats to the mountains ${(u.melt||0)<=1?'at the end of this round':`in ${u.melt} rounds`}. Slay it for ${GIANT_BOUNTY} gold.`,'#2a6a9a');
   if(u.key==='hydra') ink('<b>Many heads:</b> 9 attack, and strikes targets up to 2 hexes away.','#6a3fa6');
   if(u.key==='valkyrie') ink('<b>Flies</b> over any terrain.','#2a5a8a');
   if(u.key==='ranger') ink('<b>Keen eyes:</b> sees 4 hexes.','#2a5a8a');
@@ -1868,8 +1918,8 @@ function previewFor(t){
 }
 function setHTML(id,html){ const el=document.getElementById(id); if(el.dataset.html!==html){ el.dataset.html=html; el.innerHTML=html; } return el; }
 function tipHTML(k){
-  if(k==='tower') return `<div class="top"><img src="assets/tf_fort.webp" alt="" style="width:60px;height:auto"><div><h4>Fort</h4><div class="cost">${TOWER_COST} gold</div></div></div>
-    <p style="margin:6px 0 0">Build it on a grass hex near your units. <b>+2 defence</b> to your unit standing there, and it recruits <b>2 units per turn</b> on adjacent hexes (ships too, if water is adjacent). Collapses if that unit is slain; enemies can raze it.</p>`;
+  if(k==='tower') return `<div class="top"><img src="assets/f${ME}_fort.webp" alt="" style="width:60px;height:auto"><div><h4>Fort</h4><div class="cost">${TOWER_COST} gold</div></div></div>
+    <p style="margin:6px 0 0">Build it on a grass hex near your units. <b>+2 defence</b> to your unit standing there, <b>+${SUPPLY_PER_FORT} supply</b> (army size), and it recruits <b>2 units per turn</b> on adjacent hexes (ships too, if water is adjacent). Collapses if that unit is slain; enemies can raze it.</p>`;
   const T=TYPES[k], rng=T.rng[0]===T.rng[1]?T.rng[0]:T.rng[0]+'–'+T.rng[1];
   const why = gold[ME]<costOf(k) ? `Need ${costOf(k)-gold[ME]} more gold.` : !spawnTiles(ME,k).length ? (k==='archertower'?'No open space next to your units.':T.cls==='water'?'No open water near your keeps or forts.':'No open space near your keeps or forts.') : '';
   return `<div class="top"><img src="assets/${spriteKey(ME,k)}.webp" alt=""><div><h4>${T.name}</h4><div class="cost">${costOf(k)} gold${T.cap?' · carries '+T.cap:''}</div></div></div>
@@ -1889,20 +1939,20 @@ function hideTip(){ document.getElementById('tip').style.display='none'; }
 function refreshUI(){
   updateVision(); chatVisible(); { const gb=document.getElementById('givebtn'); if(gb) gb.style.display=(gameStarted&&!over)?'':'none'; }
   const p=document.getElementById('turn');
-  setHTML('turn',`<b>Turn ${turn}</b><span class="pill" style="background:${FACTIONS[side].color}">${side===ME?'Your move':FACTIONS[side].short+' moves'}</span><span>🪙 ${gold[ME]}</span>`);
+  setHTML('turn',`<b>Turn ${turn}</b><span class="pill" style="background:${FACTIONS[side].color}">${side===ME?'Your move':FACTIONS[side].short+' moves'}</span><span title="Supply: units fielded / how many your keeps, mines and forts can feed">⚔ ${supplyUsed(ME)}/${supplyCap(ME)}</span><span>🪙 ${gold[ME]}</span>`);
   setHTML('factions',FACTIONS.slice(0,4).map((f,i)=>!activeArmies[i]?'':`<div class="frow ${side===i&&!over?'active':''} ${elim[i]?'out':''}"><span class="dot" style="background:${f.color}"></span><span>${f.name}</span>
-    <span class="n">⚔ ${i===ME?alive(ME).length:'?'}</span><span class="n">⛏ ${i===ME?minesOf(ME):MINES.filter(m=>seenMine.get(key(m.c,m.r))===i).length}</span><span class="n">🏰 ${i===ME?keepOwner.filter(o=>o===ME).length:seenKeep.filter(o=>o===i).length}</span><span class="n">🪙 ${i===ME?`${gold[ME]} <small>(+${income(ME)})</small>`:'?'}</span></div>`).join(''));
+    <span class="n">⚔ ${i===ME?`${supplyUsed(ME)}/${supplyCap(ME)}`:'?'}</span><span class="n">⛏ ${i===ME?minesOf(ME):MINES.filter(m=>seenMine.get(key(m.c,m.r))===i).length}</span><span class="n">🏰 ${i===ME?keepOwner.filter(o=>o===ME).length:seenKeep.filter(o=>o===i).length}</span><span class="n">🪙 ${i===ME?`${gold[ME]} <small>(+${income(ME)})</small>`:'?'}</span></div>`).join(''));
   const hu=hover&&unitAt(hover.c,hover.r), hvis=hu&&unitVisible(hu)?hu:null;
   const ins=inspected&&units.includes(inspected)&&unitVisible(inspected)?inspected:null, shown=sel||ins;
   const hp=hvis&&sel&&previewFor(hvis);   // hovering a target while a unit is selected still previews the attack
   setHTML('card', shown ? cardHTML(shown,hp?`<b>${hvis.name}:</b> ${hp}`:'')
     : hover&&!explored.has(key(hover.c,hover.r)) ? '<div class="empty"><b>Unexplored</b><br>Send units this way to reveal the map.</div>'
-    : hover ? `<div class="empty"><b>${TERR[tileCh(hover.c,hover.r)].name}</b>${mineInfo(hover)}<br>${TERR[tileCh(hover.c,hover.r)].note||'Open ground.'}${seenTower.has(key(hover.c,hover.r))?`<br>🏯 ${FACTIONS[seenTower.get(key(hover.c,hover.r))].short} fort: +2 defence for its owner; recruits 2 units per turn nearby${towerSpent(key(hover.c,hover.r))?' (used this turn)':''}.`:''}</div>`
+    : hover ? `<div class="empty"><b>${TERR[tileCh(hover.c,hover.r)].name}</b>${mineInfo(hover)}<br>${TERR[tileCh(hover.c,hover.r)].note||'Open ground.'}${seenTower.has(key(hover.c,hover.r))?`<br>🏯 ${FACTIONS[seenTower.get(key(hover.c,hover.r))].short} fort: +2 defence and +${SUPPLY_PER_FORT} supply for its owner; recruits 2 units per turn nearby${towerSpent(key(hover.c,hover.r))?' (used this turn)':''}.`:''}</div>`
     : '<div class="empty">Select one of your units, or hover anything for details.</div>');
   // shop
-  const shop=setHTML('shop',`<h3><span>Recruit at your keeps · ${recruitsLeft(ME)} left this turn</span><span>🪙 ${gold[ME]}</span></h3><div class="grid">${shopFor(ME).map(k=>{
+  const shop=setHTML('shop',`<h3><span>${supplyLeft(ME)<=0?`<b style="color:#ffb070">Army at full supply (${supplyCap(ME)})</b>`:`Recruit at your keeps · ${Math.min(recruitsLeft(ME),supplyLeft(ME))} left this turn`}</span><span>🪙 ${gold[ME]}</span></h3><div class="grid">${shopFor(ME).map(k=>{
     const T=TYPES[k], ok=gold[ME]>=costOf(k)&&side===ME&&!busy&&!over&&spawnTiles(ME,k).length>0;
-    return `<div class="sw" data-k="${k}"><button class="sec ${recruitType===k?'on':''}" data-k="${k}" ${ok||recruitType===k?'':'disabled'}><span>${T.short}</span><span>${costOf(k)}🪙</span></button></div>`;}).join('')}<div class="sw" data-k="tower" style="grid-column:1/3"><button class="sec ${recruitType==='tower'?'on':''}" data-k="tower" ${(gold[ME]>=TOWER_COST&&side===ME&&!busy&&!over&&towerTiles(ME).length)||recruitType==='tower'?'':'disabled'}><span>Fort (+2 def, 2 recruits/turn)</span><span>${TOWER_COST}🪙</span></button></div></div>`);
+    return `<div class="sw" data-k="${k}"><button class="sec ${recruitType===k?'on':''}" data-k="${k}" ${ok||recruitType===k?'':'disabled'}><span>${T.short}</span><span>${costOf(k)}🪙</span></button></div>`;}).join('')}<div class="sw" data-k="tower" style="grid-column:1/3"><button class="sec ${recruitType==='tower'?'on':''}" data-k="tower" ${(gold[ME]>=TOWER_COST&&side===ME&&!busy&&!over&&towerTiles(ME).length)||recruitType==='tower'?'':'disabled'}><span>Fort (+2 def, +${SUPPLY_PER_FORT} supply, 2 recruits)</span><span>${TOWER_COST}🪙</span></button></div></div>`);
   shop.querySelectorAll('button').forEach(b=>b.onclick=()=>chooseRecruit(b.dataset.k));
   shop.querySelectorAll('.sw').forEach(w=>{ w.onmouseenter=()=>showTip(w); w.onmouseleave=hideTip; });
   const cp=sel&&sel.cargo.length&&side===ME&&!busy?sel:null;
@@ -1911,7 +1961,7 @@ function refreshUI(){
   let h='Click one of your units to begin.';
   if(over) h='The battle is over.';
   else if(side!==ME) h=`${FACTIONS[side].name} is moving…`;
-  else if(recruitType==='tower') h='Click a green grass hex to build a fort: +2 defence for your unit there, and one recruit per turn on adjacent hexes. It collapses if that unit dies; enemies can raze it.';
+  else if(recruitType==='tower') h=`Click a green grass hex to build a fort: +2 defence for your unit there, +${SUPPLY_PER_FORT} supply, and two recruits per turn on adjacent hexes. It collapses if that unit dies; enemies can raze it.`;
   else if(recruitType==='archertower') h='Click a green grass hex next to any of your units (or near a keep or fort) to build an Archer Tower. Grass only. It rests until next turn.';
   else if(recruitType==='merc') h='Click any green hex you can see to hire a Mercenary there. He rests until next turn and serves for 5 rounds (3 at most).';
   else if(recruitType) h=`Click a green hex near a keep (or next to an unused fort) to place a ${TYPES[recruitType].short}. Recruits rest until next turn.`;
@@ -2293,10 +2343,17 @@ function draw(){
   for(const m of MINES){ const o=seenMine.get(key(m.c,m.r)); if(o==null) continue; const {x,y}=center(m.c,m.r); hexPath(x,y,S*0.9); ctx.strokeStyle=FACTIONS[o].color; ctx.lineWidth=3; ctx.globalAlpha=.85; ctx.stroke(); ctx.globalAlpha=1; }
   KEEPS.forEach(([c,r],i)=>{ if(seenKeep[i]==null) return; const {x,y}=center(c,r); hexPath(x,y,S*0.9); ctx.strokeStyle=FACTIONS[seenKeep[i]].color; ctx.lineWidth=3; ctx.stroke(); });
   // forts: your own and any you have seen
+  // (the 3D fort and keep sprites themselves are drawn with the units below, so they layer correctly)
+  const structs=[];
   for(const [k,team] of seenTower){ const [c,r]=k.split(',').map(Number), {x,y}=center(c,r);
-    ctx.save(); hexPath(x,y,S); ctx.clip(); ctx.translate(x,y); ctx.scale(1,TILT); if(TILEIMG.F) ctx.drawImage(TILEIMG.F,-S,-SQ*S*0.5,2*S,SQ*S); ctx.restore();
-    if(towerSpent(k)){ hexPath(x,y,S); ctx.fillStyle='rgba(0,0,0,0.32)'; ctx.fill(); }
-    hexPath(x,y,S*0.9); ctx.strokeStyle=FACTIONS[team].color; ctx.lineWidth=3; ctx.stroke(); }
+    if(!STRUCT_IMG['f'+team+'_fort']||!STRUCT_IMG['f'+team+'_fort'].naturalWidth){   // art not loaded yet: fall back to the flat tile
+      ctx.save(); hexPath(x,y,S); ctx.clip(); ctx.translate(x,y); ctx.scale(1,TILT); if(TILEIMG.F) ctx.drawImage(TILEIMG.F,-S,-SQ*S*0.5,2*S,SQ*S); ctx.restore(); }
+    hexPath(x,y,S*0.9); ctx.strokeStyle=FACTIONS[team].color; ctx.lineWidth=3; ctx.stroke();
+    structs.push({c,r,y,kind:'fort',img:'f'+team+'_fort',dim:!isVis(c,r)||(team===ME&&towerSpent(k))}); }
+  KEEPS.forEach(([c,r],i)=>{ const o=seenKeep[i]; if(o==null||o>3||!STRUCT_IMG['f'+o+'_keep'].naturalWidth) return; const {x,y}=center(c,r);
+    hexPath(x,y,S); const gr=ctx.createLinearGradient(x,y-TILT*S,x,y+TILT*S); gr.addColorStop(0,'#8f8a78'); gr.addColorStop(1,'#615c4f'); ctx.fillStyle=gr; ctx.fill();   // cover the painted tile: the 3D keep stands here now
+    hexPath(x,y,S*0.9); ctx.strokeStyle=FACTIONS[o].color; ctx.lineWidth=3; ctx.stroke();
+    structs.push({c,r,y,kind:'keep',img:'f'+o+'_keep',dim:!isVis(c,r)}); });
   drawIce(now);
   // fog of war
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const k=key(c,r); if(visible.has(k)) continue; const {x,y}=center(c,r);
@@ -2307,8 +2364,9 @@ function draw(){
   }
   for(const t of spawnSet){ const {x,y}=center(t.c,t.r); hexPath(x,y,S*0.94); ctx.fillStyle=`rgba(90,220,90,${0.28+0.1*pulse})`; ctx.fill(); ctx.strokeStyle='#a6f59a'; ctx.lineWidth=2; ctx.stroke(); }
   if(hover&&!busy){ const {x,y}=center(hover.c,hover.r); hexPath(x,y,S*0.97); ctx.strokeStyle='#ffffffaa'; ctx.lineWidth=2; ctx.stroke(); }
-  const order=[...units].sort((a,b)=>upos(a).y-upos(b).y);
-  for(const u of order) if(unitVisible(u)) drawUnit(u);
+  // units, forts and keeps back to front; a unit standing in a fort or keep draws in front of it
+  const order=[...structs.map(s=>({y:s.y-0.01,s})),...units.filter(unitVisible).map(u=>({y:upos(u).y,u}))].sort((a,b)=>a.y-b.y);
+  for(const o of order) o.s ? drawStruct(o.s) : drawUnit(o.u);
   // mine coin markers drawn above units
   for(const m of MINES){ if(!explored.has(key(m.c,m.r))) continue; const o=seenMine.get(key(m.c,m.r)), {x,y}=center(m.c,m.r), cy=y-S*0.72;
     ctx.beginPath(); ctx.arc(x,cy,S*0.2,0,7); ctx.fillStyle=o==null?'#8d8a83':FACTIONS[o].color; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='#1b120a'; ctx.stroke();
