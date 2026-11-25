@@ -167,6 +167,8 @@
       <h2>PHONE STEERING</h2>
       <div class="seg"><button class="btn small steerOpt" data-steer="tilt" type="button">TILT</button><button class="btn small steerOpt" data-steer="buttons" type="button">BUTTONS</button></div>
       <div style="margin-top:10px"><button class="btn small gold" id="tiltEnable" type="button">Tap to enable tilt steering</button></div>
+      <label>Driver assist (keeps you on the road)</label>
+      <div class="seg"><button class="btn small assistOpt" data-assist="0" type="button">OFF</button><button class="btn small assistOpt" data-assist="1" type="button">LIGHT</button><button class="btn small assistOpt" data-assist="2" type="button">STRONG</button></div>
       <label>Sensitivity</label>
       <input type="range" class="tiltSens" min="12" max="45" step="1" value="25" style="width:100%">
       <div class="hint tiltStatus" style="margin-top:6px"></div>
@@ -209,6 +211,8 @@
     <button class="btn gold" id="resumeBtn" type="button">RESUME</button>
     <div class="seg" style="margin-top:8px"><button class="btn small steerOpt" data-steer="tilt" type="button">TILT</button><button class="btn small steerOpt" data-steer="buttons" type="button">BUTTONS</button></div>
     <div><button class="btn small" id="recalBtn" type="button">RECALIBRATE TILT</button></div>
+    <label>Driver assist (keeps you on the road)</label>
+    <div class="seg"><button class="btn small assistOpt" data-assist="0" type="button">OFF</button><button class="btn small assistOpt" data-assist="1" type="button">LIGHT</button><button class="btn small assistOpt" data-assist="2" type="button">STRONG</button></div>
     <label>Sensitivity</label>
     <input type="range" class="tiltSens" min="12" max="45" step="1" value="25" style="width:100%">
     <div class="hint tiltStatus" style="margin-top:6px"></div>
@@ -409,10 +413,10 @@ const touch = { L:false, R:false, B:false, I:false };
 
 /* ---------------- TILT STEERING (phones only) ---------------- */
 const isPhone = isTouch && matchMedia('(pointer:coarse)').matches && Math.min(screen.width, screen.height) < 820 && 'DeviceOrientationEvent' in window;
-const TILT = { pref:'tilt', sens:25, sensorOK:false, denied:false, listening:false, raw:null, center:null, sm:0, DEAD:3 };
-try { const t = JSON.parse(localStorage.getItem('skullcove_tilt') || 'null'); if (t){ if (t.pref === 'tilt' || t.pref === 'buttons') TILT.pref = t.pref; if (t.sens >= 12 && t.sens <= 45) TILT.sens = t.sens; } } catch(e) {}
+const TILT = { pref:'tilt', sens:25, assist:1, sensorOK:false, denied:false, listening:false, raw:null, center:null, sm:0, DEAD:3 };
+try { const t = JSON.parse(localStorage.getItem('skullcove_tilt') || 'null'); if (t){ if (t.pref === 'tilt' || t.pref === 'buttons') TILT.pref = t.pref; if (t.sens >= 12 && t.sens <= 45) TILT.sens = t.sens; if (t.assist === 0 || t.assist === 1 || t.assist === 2) TILT.assist = t.assist; } } catch(e) {}
 function tiltActive(){ return isPhone && TILT.pref === 'tilt' && TILT.sensorOK && !TILT.denied; }
-function saveTilt(){ try { localStorage.setItem('skullcove_tilt', JSON.stringify({ pref:TILT.pref, sens:TILT.sens })); } catch(e) {} }
+function saveTilt(){ try { localStorage.setItem('skullcove_tilt', JSON.stringify({ pref:TILT.pref, sens:TILT.sens, assist:TILT.assist })); } catch(e) {} }
 function tiltAngle(e){ // signed left/right tilt in degrees, right side down = positive
   const a = ((screen.orientation && screen.orientation.angle != null) ? screen.orientation.angle : (window.orientation || 0) + 360) % 360;
   if (a === 90) return e.beta;
@@ -451,6 +455,7 @@ function syncTiltUI(){
   const needsTap = typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function' && !TILT.sensorOK && !TILT.denied;
   document.querySelectorAll('.steerOpt').forEach(b => b.classList.toggle('on', b.dataset.steer === TILT.pref));
   document.querySelectorAll('.tiltSens').forEach(r => r.value = TILT.sens);
+  document.querySelectorAll('.assistOpt').forEach(b => b.classList.toggle('on', +b.dataset.assist === TILT.assist));
   const en = $('tiltEnable'); if (en) en.classList.toggle('hidden', !needsTap || TILT.pref !== 'tilt');
   let msg = '';
   if (TILT.pref === 'buttons') msg = 'Steering with the on-screen arrow buttons.';
@@ -462,6 +467,7 @@ function syncTiltUI(){
   $('touch').classList.toggle('tilt', tiltActive());
 }
 document.querySelectorAll('.steerOpt').forEach(b => b.onclick = () => { TILT.pref = b.dataset.steer; saveTilt(); if (TILT.pref === 'tilt'){ requestTilt(); tiltCalibrate(); } syncTiltUI(); });
+document.querySelectorAll('.assistOpt').forEach(b => b.onclick = () => { TILT.assist = +b.dataset.assist; saveTilt(); syncTiltUI(); });
 document.querySelectorAll('.tiltSens').forEach(r => r.oninput = () => { TILT.sens = +r.value; saveTilt(); syncTiltUI(); });
 if (isPhone){
   document.body.classList.add('phone');
@@ -1085,9 +1091,22 @@ function updateKart(k, dt){
   else if (k.human){
     const L = keys.ArrowLeft || keys.KeyA || touch.L, R = keys.ArrowRight || keys.KeyD || touch.R;
     steer = (R?1:0) - (L?1:0);
-    if (tiltActive()) steer = Math.max(-1, Math.min(1, steer + tiltSteer(dt)));
+    k._cornerEase = false;
+    if (tiltActive()){
+      steer = Math.max(-1, Math.min(1, steer + tiltSteer(dt)));
+      if (TILT.assist && !k.onSC && k.spin <= 0){ // driver assist: soft pull to the road line, slow for hard corners
+        const g = TILT.assist === 2 ? 1 : 0.6, p0 = S[k.idx], lat = (k.x - p0.x) * p0.nx + (k.y - p0.y) * p0.ny;
+        const tp = S[(k.idx + 14) % N];
+        let want = Math.atan2(tp.y - k.y, tp.x - k.x) - k.a; want = Math.atan2(Math.sin(want), Math.cos(want));
+        const edge = Math.max(0, Math.min(1, (Math.abs(lat) / HW - 0.5) / 0.7)), idle = 1 - Math.min(1, Math.abs(steer) * 3);
+        steer = Math.max(-1, Math.min(1, steer + Math.max(-1, Math.min(1, want * 2.6)) * g * (0.25 * idle + 0.9 * edge)));
+        let da = S[(k.idx + 45) % N].a - S[k.idx].a; da = Math.abs(Math.atan2(Math.sin(da), Math.cos(da)));
+        k._cornerEase = da > (TILT.assist === 2 ? 0.9 : 1.2) && k.v > MAXV * 0.7;
+      }
+    }
     const up = keys.ArrowUp || keys.KeyW || (isTouch && !touch.B), down = keys.ArrowDown || keys.KeyS || touch.B;
     gas = up ? 1 : 0; brake = down;
+    if (k._cornerEase && tiltActive()) gas = 0;
     fire = keys.Space || touch.I;
     if (fire && !k._fireHeld && k.item){ useItem(k); }
     k._fireHeld = fire;
@@ -1105,6 +1124,7 @@ function updateKart(k, dt){
   else if (nl.d < HW) terrain = 'road';
   else if (nl.d < HW + z.shoulder) terrain = 'rough';
   else terrain = z.edge;
+  if (terrain === 'water' && !k.onSC && k.human && tiltActive() && TILT.assist) terrain = 'wall'; // invisible rail
   if (terrain === 'road' && !k.onSC) k.lastRoadIdx = nl.i;
 
   // --- speed model
