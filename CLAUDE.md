@@ -30,6 +30,11 @@ Ray Wolters' ("Big Ray") business site for KWB Media LLC: video production, soci
 ## Client names
 Special Olympics and United Way can be named as clients. Do **not** name Electric Boat / General Dynamics or Mitsubishi anywhere on the site.
 
+## Standing order: keep this file current (Ray asked for this permanently)
+- Whenever you commit work in this repo, update the "Current state / where we left off" section below **in the same commit**: what changed, what's half-done, what's next. Don't wait to be asked.
+- If anything above goes stale (new page, new game, hosting change, new gotcha), fix it in that commit too.
+- Keep the "where we left off" section to the last few sessions; trim older lines so the file stays short.
+- Ray works on two computers. At the start of a session, `git pull` before touching anything; push when done.
+
 ## Current state / where we left off
-Update this section at the end of each work session so the other computer picks up in the right place.
 - Last work (Nov 24): Ray's Realm — Scriptorium and research, mana crystal mines, Wizard spells, Dirigible, 3D gold mine, Hydra/hills/Paladin tweaks.
