@@ -135,7 +135,7 @@
     <div id="shop"></div>
     <div id="cargo"></div>
     <div id="hint"></div>
-    <div class="btns"><button id="buy" class="sec" title="Open the production menu at your next city (B)">Buy</button><button id="next" class="sec" title="Select the next unit that can still act (N)">Next Unit</button><button id="hold" class="sec" title="Finish this unit's turn (H)">Hold</button><button id="end">End Turn</button><button id="mute" class="sec" title="Sound on/off" style="flex:none">&#9834;</button></div>
+    <div class="btns"><button id="buy" class="sec" title="Open the production menu at your next factory (B)">Buy</button><button id="next" class="sec" title="Select the next unit that can still act (N)">Next Unit</button><button id="hold" class="sec" title="Finish this unit's turn (H)">Hold</button><button id="end">End Turn</button><button id="mute" class="sec" title="Sound on/off" style="flex:none">&#9834;</button></div>
     <ul id="log"></ul>
   </aside>
 </div>
@@ -163,7 +163,8 @@
       <li><b>Goal:</b> capture the capital of every enemy nation. Your allies are AI commanders. Lose your own capital and you are out.</li>
       <li><b>Turns:</b> the nation you command moves first each round, then the others follow in the order USA, UK, USSR, Germany/Italy, Japan. Click a unit stack to select it, then drag it onto a white-outlined territory to move, or onto a red-hatched one to attack. While you drag, the piece you picked up turns grey where it started and an arrow shows where it is headed: white to move, red to attack, grey if it can&rsquo;t go there. A click never moves anything; Esc or right-click cancels a drag. Use the + and &minus; buttons to move only part of a stack. End Turn when done.</li>
       <li><b>The map:</b> the world is divided into territories and sea zones. It wraps: sail or fly off the right edge and you come out on the left. Drag the map to pan, scroll or pinch to zoom, arrow keys to scroll.</li>
-      <li><b>Production:</b> click one of your territories, or press the Buy button, to buy units with Industry Points (IP). Richer territories build more units per turn, capitals build the most. Ships appear in a sea zone next to a coastal territory. Every territory you hold pays its IP value each turn, so capture more of them.</li>
+      <li><b>Production:</b> units can only be produced at a factory. Every capital starts with one, and each nation has a second in another major territory. Click a factory, or press the Buy button, to buy units with Industry Points (IP). Ships appear in a sea zone next to the factory&rsquo;s coast. Every territory you hold pays its IP value each turn, so capture more of them.</li>
+      <li><b>New factories:</b> click any territory you own that has none and buy one for 15 IP. It makes up to 2 units a turn, starting on your next turn. Capture an enemy territory and its factory is yours from your next turn.</li>
       <li><b>Land:</b> infantry are cheap and take territory. Armor hits hard and moves two territories. Units in forests, mountains, rich territories and capitals defend better. Move into an empty enemy or neutral territory to take it.</li>
       <li><b>Sea:</b> transports carry 3 land units (drag a land unit into the sea zone holding your transport, then sail and unload onto an adjacent coast). Battleships hit up to 2 zones away. Submarines are hidden until something gets next to them and are deadly to ships.</li>
       <li><b>Air:</b> aircraft take off from your territories and carriers, and must land again within 2 turns (bombers) or 1 turn after the sortie (fighters) or they crash. Fighters hunt aircraft, bombers smash ground and ships.</li>
@@ -247,8 +248,7 @@ let units=[], nextId=1, nations=[], me=0, turnNat=0, firstNat=0, round=1, gameOv
 let vis=[new Set(),new Set()], expl=[new Set(),new Set()], known=[[],[]];
 function setWorld(w){
   WORLD=w; Z=w.Z; NZ=w.NZ; DIST=w.dist; ZID=w.zid; LAND=w.land; GW=w.W; GH=w.H; WW=GW*SC; WH=GH*SC; _within=[]; ovDirty=true; buildGeometry(w);
-  for(const z of Z){ z.built=0; z.prod=0; z.px=z.ax*SC+SC/2; z.py=z.ay*SC+SC/2;
-    if(z.kind==='land'){ const v=z.val; let c=v>=7?3:v>=4?2:v>=2?1:0; if(z.cap>=0) c++; z.prod=c; } }
+  for(const z of Z){ z.built=0; z.prod=0; z.fresh=false; z.px=z.ax*SC+SC/2; z.py=z.ay*SC+SC/2; }   // prod = factory output per turn, 0 = no factory
 }
 const isSea=z=>Z[z].kind==='sea', isLand=z=>Z[z].kind==='land';
 const D=(a,b)=>DIST[a*NZ+b];
@@ -286,6 +286,27 @@ function spawnRandom(){
       else makeUnit(t,n,spread[(i++)%spread.length]); } }
   }
 }
+
+// ================================================================ factories
+// Troops can only be produced where there is a factory. Capitals and one other major territory start with one;
+// more can be bought, but they make fewer units and nothing until the following turn.
+const FACTORY_COST=15, NEW_FACTORY_LIMIT=2;
+const SECOND_FACTORY=['Western USA','India','Caucasus','Southern Europe','Manchuria'];   // 1940 map, by nation
+const startOutput=z=>{ const v=Z[z].val; return Math.max(NEW_FACTORY_LIMIT,(v>=7?3:v>=4?2:v>=2?1:0)+(Z[z].cap>=0?1:0)); };
+function spawnFactories(){
+  for(let n=0;n<5;n++){
+    const cap=capitalZone(n); if(!cap||cap.owner!==n) continue; cap.prod=startOutput(cap.id);
+    let second=mapMode==='default'?Z[WORLD.byName[SECOND_FACTORY[n]]]:null;
+    if(!second||second.owner!==n||second===cap){   // other maps: the richest remaining territory, on the coast if the capital is not
+      const worth=z=>z.val+(z.coastal?(cap.coastal?0.5:20):0);
+      second=Z.filter(z=>z.kind==='land'&&z.owner===n&&z!==cap).sort((a,b)=>worth(b)-worth(a))[0]; }
+    if(second) second.prod=startOutput(second.id);
+  }
+}
+// a factory that changes hands stands idle until its new owner's next turn
+function idleFactory(q){ if(q.prod){ q.built=q.prod; q.fresh=true; } }
+const canBuyFactory=(nat,z)=>{ const q=Z[z]; return q.kind==='land'&&q.owner===nat&&!q.prod&&nations[nat].ip>=FACTORY_COST; };
+function buyFactory(nat,z){ if(!canBuyFactory(nat,z)) return false; const q=Z[z]; nations[nat].ip-=FACTORY_COST; q.prod=NEW_FACTORY_LIMIT; idleFactory(q); dirty=true; return true; }
 
 // ================================================================ vision
 function computeVision(team){
@@ -433,8 +454,8 @@ function bestTarget(a,list){ let b=null,bs=-1e9; for(const t of list){ const s=a
 function captureZone(u){
   const q=Z[u.z]; if(q.kind!=='land'||u.type.dom!=='land'||u.aboard) return false;
   if(q.owner===u.nat||friendlyZone(u.nat,u.z)) return false;
-  const old=q.owner; q.owner=u.nat; ovDirty=true;
-  log(NAT[u.nat].short+' takes '+q.name+(old>=0?' from '+NAT[old].short:'')+'.', teamOf(u.nat)===teamOf(me)?'good':'bad');
+  const old=q.owner; q.owner=u.nat; ovDirty=true; idleFactory(q);
+  log(NAT[u.nat].short+' takes '+q.name+(q.prod?' and its factory':'')+(old>=0?' from '+NAT[old].short:'')+'.', teamOf(u.nat)===teamOf(me)?'good':'bad');
   sfx('capture'); addText(u.z,'+'+q.val+' IP','#f2d46b');
   for(const a of airList(u.z)) if(isEnemyNat(u.nat,a.nat)) killUnit(a,u);      // aircraft caught on the ground
   if(q.cap>=0&&q.cap!==u.nat&&nations[q.cap].alive) defeatNation(q.cap,u.nat);
@@ -443,7 +464,7 @@ function captureZone(u){
 function defeatNation(x,by){
   nations[x].alive=false;
   for(const u of units){ if(u.nat===x&&u.hp>0){ u.hp=0; u.dead=true; } }
-  for(const z of Z){ if(z.kind==='land'&&z.owner===x) z.owner=by; }
+  for(const z of Z){ if(z.kind==='land'&&z.owner===x){ z.owner=by; idleFactory(z); } }
   ovDirty=true;
   log(NAT[x].name.toUpperCase()+' HAS FALLEN!','sys'); banner(NAT[x].short+' capital captured!'); sfx('fall');
   checkEnd();
@@ -568,7 +589,7 @@ async function startTurn(n){
   if(gameOver) return;
   turnNat=n;
   units=units.filter(u=>u.hp>0);
-  Z.forEach(z=>{ if(z.owner===n) z.built=0; });
+  Z.forEach(z=>{ if(z.owner===n){ z.built=0; z.fresh=false; } });
   const inc=income(n); nations[n].ip+=inc;
   resetUnitsFor(n);
   updateVision(); refreshUI();
@@ -745,12 +766,25 @@ function buildLandingField(n,M){
 }
 
 // ---- production
+// where the AI would put a new factory: safe, worth holding, near the front, on the coast if it needs ships
+function aiFactorySite(n,lf,needPort){
+  let best=null, bs=-1e9;
+  const foes=units.filter(u=>u.hp>0&&!u.aboard&&u.type.dom==='land'&&isEnemyNat(n,u.nat)&&seenBy(u,teamOf(n)));
+  for(const z of Z){ if(!canBuyFactory(n,z.id)||(needPort&&!z.coastal)||foes.some(u=>D(u.z,z.id)<=1)) continue;   // not next to enemy troops
+    const f=lf.get(z.id), s=(f===undefined?-8:-1.6*f)+z.val*0.8+(z.coastal?1.5:0)-threatAt(n,z.id)*0.05; if(s>bs){ bs=s; best=z.id; } }
+  return best;
+}
 function aiBuy(n,lf){
   const mine=units.filter(u=>u.nat===n&&u.hp>0);
-  if(mine.length>=48) return;
+  const owned=()=>Z.filter(z=>z.kind==='land'&&z.owner===n&&z.prod>0);
   const cnt=t=>mine.filter(u=>u.type.key===t).length;
   const strand=mine.filter(u=>u.type.dom==='land'&&(u.aboard||!lf.has(u.z))).length;
-  const sites=Z.filter(z=>z.kind==='land'&&z.owner===n&&z.prod>0).sort((a,b)=>(b.cap>=0)-(a.cap>=0)||b.val-a.val);
+  const build=needPort=>{ const z=aiFactorySite(n,lf,needPort); return z!==null&&buyFactory(n,z); };
+  // buy before the troops: a port when troops are stuck with none, or a forward factory when every one is far behind the front
+  if(strand>=3&&!owned().some(z=>z.coastal)) build(true);
+  else if(nations[n].ip>=FACTORY_COST+14&&owned().length<4&&Math.min(...owned().map(z=>lf.has(z.id)?lf.get(z.id):99))>=3) build(false);
+  if(mine.length>=48) return;
+  const sites=owned().sort((a,b)=>(b.cap>=0)-(a.cap>=0)||b.val-a.val);
   for(const cy of sites){
     let guard=0;
     while(cy.built<cy.prod&&guard++<5){
@@ -771,6 +805,8 @@ function aiBuy(n,lf){
       const u=buyUnit(n,pick,cy.id,spots[Math.floor(Math.random()*spots.length)]); mine.push(u);
     }
   }
+  // money the factories could not absorb goes into more capacity
+  if(nations[n].ip>=FACTORY_COST+8&&owned().length<5&&owned().every(z=>z.built>=z.prod)) build(false);
 }
 
 async function aiTurn(n){
@@ -871,7 +907,8 @@ let sel=null, selGroup=[], selCount=0, selInfo=null, selTargetUnits=[], selTarge
 let terrainCanvas=null, ovDirty=true;
 let ZRINGS=[], ZPATH=[], EDGES=null, ZTINT=[];   // smooth vector outlines of every zone and border (world pixels)
 const IMG={};
-function img(nat,type){ const k=NAT[nat].id+'_'+type; if(!IMG[k]){ const i=new Image(); i.onload=()=>{dirty=true;}; i.src='assets/u_'+k+'.webp'; IMG[k]=i; } return IMG[k]; }
+const FACTORY={key:'factory',name:'Factory',dom:'building'};
+function img(nat,type){ const k=NAT[nat].id+'_'+type; if(!IMG[k]){ const i=new Image(); i.onload=()=>{dirty=true;}; i.src=type==='factory'?'assets/factory.webp':'assets/u_'+k+'.webp'; IMG[k]=i; } return IMG[k]; }
 // The sprites' hex bases are repainted in the nation's colour (made once per sprite; the art files are untouched).
 // The base's side wall is the band just above the bottom outline of the picture.
 const ART={};
@@ -931,7 +968,7 @@ function nextUnit(){
   if(turnNat!==me||gameOver) return;
   const list=units.filter(u=>u.nat===me&&u.hp>0&&!u.aboard&&canAct(u)).concat(units.filter(u=>u.nat===me&&u.hp>0&&u.aboard&&canAct(u)));
   const leaders=[]; for(const u of list) if(!leaders.some(l=>sameState(l,u))) leaders.push(u);
-  if(!leaders.length){ clearSel(); $('hint').textContent='All units have acted. Buy units in your territories, or End Turn.'; return; }
+  if(!leaders.length){ clearSel(); $('hint').textContent='All units have acted. Buy units at your factories, or End Turn.'; return; }
   let i=0; if(sel){ const cur=leaders.findIndex(l=>sameState(l,sel)||l===sel); i=cur>=0?cur+1:0; } if(i>=leaders.length) i=0;
   selectUnit(leaders[i]); centerOn(leaders[i].z);
 }
@@ -972,7 +1009,7 @@ function zoneAtClient(cx,cy){
 function ownStack(z){
   const here=units.filter(u=>u.nat===me&&u.hp>0&&u.z===z).sort((a,b)=>{ const r=u=>u.aboard?2:(u.type.dom==='air'?0:1); return r(a)-r(b); });
   const out=[]; for(const u of here) if(!out.some(e=>e.u&&sameState(e.u,u))) out.push({u});
-  if(Z[z].kind==='land'&&Z[z].owner===me&&Z[z].prod>0) out.push({zone:z});
+  if(Z[z].kind==='land'&&Z[z].owner===me) out.push({zone:z});
   return out;
 }
 async function doGroupMove(z){
@@ -993,8 +1030,8 @@ async function doGroupAttack(z){
 }
 // A click only ever selects (or places a new ship). Moving and attacking are done by dragging a unit.
 function clickAt(cx,cy){
-  const mine=turnNat===me&&!busy&&!gameOver, hit=mine?iconAt(cx,cy,ownGroup):null;
-  const ally=mine&&!hit&&!shopType?iconAt(cx,cy,gp=>gp.nat!==me&&!isEnemyNat(me,gp.nat)):null;
+  const mine=turnNat===me&&!busy&&!gameOver, hit=mine?iconAt(cx,cy,ownPiece):null;
+  const ally=mine&&!hit&&!shopType?iconAt(cx,cy,allyGroup):null;
   clickZone(zoneAtClient(cx,cy),hit);
   if(ally) $('hint').textContent='That is a '+NAT[ally.list[0].nat].short+' unit. Your allies are run by the computer; your own pieces carry your colour.';
 }
@@ -1002,6 +1039,7 @@ function clickZone(z,hit){
   if(busy||gameOver||z===null) return;
   if(turnNat===me){
     if(selZone!==null&&shopType&&placeSpots.includes(z)){ doBuy(z); return; }
+    if(hit&&hit.factory){ selectZone(hit.z); return; }                                           // clicking a factory opens production
     if(hit){ if(!holdsSelection(hit.list)){ selectUnit(pickUnit(hit.list)); return; } z=hit.z; }   // clicking a piece picks that piece
     const st=ownStack(z);
     if(st.length){   // clicking the same spot again cycles through the stack, cargo and city
@@ -1020,8 +1058,12 @@ function clickZone(z,hit){
   dirty=true; refreshUI();
 }
 // ---- picking and dragging pieces
-const ownGroup=gp=>gp.nat===me, foeGroup=gp=>isEnemyNat(me,gp.nat);
+const isFactory=gp=>gp.zone!==undefined;
+const ownGroup=gp=>gp.nat===me&&!isFactory(gp), foeGroup=gp=>isEnemyNat(me,gp.nat)&&!isFactory(gp);
+const ownPiece=gp=>gp.nat===me, allyGroup=gp=>gp.nat!==me&&!isEnemyNat(me,gp.nat)&&!isFactory(gp);
 const holdsSelection=list=>!!sel&&list.some(u=>u===sel||selGroup.includes(u));
+// a drag picks up the piece nearest the pointer; starting on a factory pans the map
+const grabAt=(cx,cy)=>{ const h=iconAt(cx,cy,ownPiece); return h&&!h.factory?h:null; };
 const pickUnit=list=>list.find(u=>u===sel)||list.find(canAct)||list[0];
 const insideBoard=(cx,cy)=>{ const r=cv.getBoundingClientRect(); return cx>=r.left&&cx<r.right&&cy>=r.top&&cy<r.bottom; };
 // the unit stack drawn under the pointer, if any (touch targets stay finger-sized when zoomed out)
@@ -1030,9 +1072,9 @@ function iconAt(cx,cy,want){
   const r=cv.getBoundingClientRect(), wx=(cx-r.left)/zoom+cam.x, wy=(cy-r.top)/zoom+cam.y;
   const half=Math.max(24,16/zoom), top=Math.max(24,16/zoom), bottom=Math.max(22,14/zoom); let best=null;
   for(const [z,gs] of unitGroups().groups) gs.forEach((gp,i)=>{ if(!want(gp)) return;
-    const p=groupSlot(z,i,gs.length), air=gp.type.dom==='air', dx=(((wx-p.x-(air?5:0))%WW)+WW*1.5)%WW-WW/2, dy=wy-p.y+(air?7:0);
+    const p=slotOf(z,gs,i), air=gp.type.dom==='air', dx=(((wx-p.x-(air?5:0))%WW)+WW*1.5)%WW-WW/2, dy=wy-p.y+(air?7:0);
     const im=img(gp.nat,gp.type.key), rise=im.naturalWidth?(air?IW*0.85:IW)*im.naturalHeight/im.naturalWidth-14:0;
-    if(Math.abs(dx)<=half&&dy>=-Math.max(top,rise)&&dy<=bottom){ const d=dx*dx+dy*dy; if(!best||d<best.d) best={d,z,list:gp.list,x:p.x,y:p.y}; } });
+    if(Math.abs(dx)<=half&&dy>=-Math.max(top,rise)&&dy<=bottom){ const d=dx*dx+dy*dy; if(!best||d<best.d) best={d,z,list:gp.list,x:p.x,y:p.y,factory:isFactory(gp)}; } });
   return best;
 }
 let udrag=null;   // the unit being dragged
@@ -1070,7 +1112,7 @@ function moveDrag(){
 function cancelDrag(){ if(!udrag) return; udrag=null; drag=null; hover=null; $('tip').style.display='none'; cv.style.cursor=''; dirty=true; }
 // pointing finger over anything you can pick, open hand over the map
 function setCursor(cx,cy){
-  const pick=turnNat===me&&!busy&&!gameOver&&(iconAt(cx,cy,ownGroup)||(shopType&&insideBoard(cx,cy)&&placeSpots.includes(zoneAtClient(cx,cy))));
+  const pick=turnNat===me&&!busy&&!gameOver&&(iconAt(cx,cy,ownPiece)||(shopType&&insideBoard(cx,cy)&&placeSpots.includes(zoneAtClient(cx,cy))));
   cv.style.cursor=pick?'pointer':'';
 }
 function releaseBoard(){ cancelDrag(); drag=null; pinch=null; ptrs.clear(); cv.style.cursor=''; }   // forget a grab whose release never arrived
@@ -1097,6 +1139,10 @@ function doBuy(z){
   const u=buyUnit(me,t,pz,z); sfx('buy'); log('Produced '+u.type.name+' in '+Z[pz].name+'.','good');
   shopType=null; placeSpots=[]; refreshUI(); dirty=true;
 }
+function doBuyFactory(){
+  const z=selZone; if(turnNat!==me||busy||gameOver||z===null||!buyFactory(me,z)) return;
+  sfx('buy'); log('Built a factory in '+Z[z].name+'. It starts producing next turn.','good'); shopType=null; placeSpots=[]; refreshUI();
+}
 function pickShop(t){
   if(turnNat!==me||selZone===null||busy) return; const pz=selZone; if(!canBuild(me,t,pz)) return;
   const spots=placeTiles(me,t,pz,false);
@@ -1108,7 +1154,7 @@ const ptrs=new Map(); let drag=null, pinch=null;
 cv.addEventListener('pointerdown',e=>{
   ac(); camAnim=null; ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{ cv.setPointerCapture(e.pointerId); }catch(_){}
   if(e.button===2) return;
-  if(ptrs.size===1) drag={x0:e.clientX,y0:e.clientY,cx:cam.x,cy:cam.y,moved:false,grab:turnNat===me&&!busy&&!gameOver?iconAt(e.clientX,e.clientY,ownGroup):null};
+  if(ptrs.size===1) drag={x0:e.clientX,y0:e.clientY,cx:cam.x,cy:cam.y,moved:false,grab:turnNat===me&&!busy&&!gameOver?grabAt(e.clientX,e.clientY):null};
   else if(ptrs.size===2){ cancelDrag(); drag=null; const [a,b]=[...ptrs.values()]; pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,z:zoom}; }
 });
 cv.addEventListener('pointermove',e=>{
@@ -1148,7 +1194,7 @@ function hoverAt(ev,at){
   else {
     const Q=Z[z], vs=unitsAt(z).filter(u=>seenBy(u,teamOf(me)));
     html='<h4>'+zoneTitle(z)+'</h4>';
-    if(Q.kind==='land'){ const o=known[teamOf(me)][z]; html+='Owner: '+(o>=0?NAT[o].name:'Neutral')+' · worth '+Q.val+' IP'+(Q.prod?' · builds '+Q.prod+'/turn':'')+'<br>'; }
+    if(Q.kind==='land'){ const o=known[teamOf(me)][z]; html+='Owner: '+(o>=0?NAT[o].name:'Neutral')+' · worth '+Q.val+' IP'+(Q.prod&&(visibleToMe(z)||isTeamZone(z,teamOf(me)))?' · factory builds '+Q.prod+'/turn':'')+'<br>'; }
     const groups=new Map(); for(const u of vs){ const k=u.nat+'|'+u.type.key; if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(u); }
     for(const [,list] of groups){ const u=list[0], hp=list.reduce((s,x)=>s+x.hp,0), mx=list.length*u.type.hp;
       html+='<b style="color:'+(teamOf(u.nat)===teamOf(me)?'#2a6b1f':'#a3352c')+'">'+NAT[u.nat].short+' '+u.type.name+(list.length>1?' ×'+list.length:'')+'</b> HP '+hp+'/'+mx+'<br>'; }
@@ -1215,7 +1261,9 @@ function refreshUI(){
         b.textContent=e.u?e.u.type.name.replace('Armored Division','Armor').replace('Fighter Squadron','Fighter').replace('Bomber Wing','Bomber').replace('Troop ','').replace('Aircraft ','')+(here>1?' ×'+here:'')+((e.u===u||selGroup.includes(e.u))?' ●':''):'Territory'+(selZone===e.zone?' ●':'');
         b.onclick=()=>{ e.u?selectUnit(e.u):selectZone(e.zone); }; d.appendChild(b); }); }
   } else if(selZone!==null){
-    const q=Z[selZone]; card.innerHTML='<div class="top"><div><h2>'+q.name+'</h2><div class="sub">'+(q.cap>=0?'Capital of '+NAT[q.cap].name:'Territory')+' · '+(q.owner>=0?NAT[q.owner].name:'Neutral')+'</div></div></div><div class="stats" style="grid-template-columns:repeat(3,1fr)">'+'<div>INCOME<b>+'+q.val+'</b></div><div>BUILT<b>'+q.built+'/'+q.prod+'</b></div><div>PORT<b>'+(q.coastal?'yes':'no')+'</b></div></div><p>Pick a unit below. Land and air units appear here; ships appear in an adjacent sea zone. New units can act next turn.</p>';
+    const q=Z[selZone], stat=(l,v)=>'<div>'+l+'<b>'+v+'</b></div>';
+    const about=!q.prod?'No factory here. Troops can only be produced where you have one.':q.fresh?'This factory starts producing on your next turn.':'Pick a unit below. Land and air units appear here; ships appear in an adjacent sea zone. New units can act next turn.';
+    card.innerHTML='<div class="top">'+(q.prod?'<img src="assets/factory.webp" alt="">':'')+'<div><h2>'+q.name+'</h2><div class="sub">'+(q.cap>=0?'Capital of '+NAT[q.cap].name:'Territory')+' · '+(q.owner>=0?NAT[q.owner].name:'Neutral')+'</div></div></div><div class="stats" style="grid-template-columns:repeat(3,1fr)">'+stat('INCOME','+'+q.val)+stat('FACTORY',!q.prod?'none':q.fresh?'next turn':(q.prod-q.built)+' of '+q.prod+' left')+stat('PORT',q.coastal?'yes':'no')+'</div><p>'+about+'</p>';
   } else if(inspect&&inspect.zone!==undefined){
     const z=inspect.zone, q=Z[z], ex=explored(z);
     card.innerHTML=ex?'<h2 style="font-family:Cinzel,serif;font-size:16px;margin:0">'+zoneTitle(z)+'</h2>'+(q.kind==='land'?'<div class="sub">Owner: '+(known[teamOf(me)][z]>=0?NAT[known[teamOf(me)][z]].name:'Neutral')+' · pays '+q.val+' IP</div>':'')+'<p>'+(q.kind==='sea'?'Open water. Ships and aircraft only.':q.terr==='F'?'Forest: +25% defense.':q.terr==='M'?'Mountains: +50% defense. Slow going for units with a long move.':'Plains: easy going.')+(q.cap>=0?' Capital: +50% defense.':q.val>=3?' Rich territory: +20% defense.':'')+'</p>':'<div class="empty">Unexplored territory.</div>';
@@ -1223,9 +1271,13 @@ function refreshUI(){
   else card.innerHTML='<div class="empty">'+(turnNat===me?'Click one of your units or territories.':'Enemy movements are underway…')+'</div>';
   // shop
   const sh=$('shop'); sh.innerHTML='';
-  if(selZone!==null&&turnNat===me&&Z[selZone].owner===me){
+  if(selZone!==null&&turnNat===me&&Z[selZone].owner===me&&!Z[selZone].prod){
+    sh.innerHTML='<h3><span>Build in '+Z[selZone].name+'</span><span>'+nations[me].ip+' IP</span></h3><div class="grid"></div>';
+    const b=document.createElement('button'); b.id='buyfactory'; b.disabled=!canBuyFactory(me,selZone); b.innerHTML='<span>Factory</span><span>'+FACTORY_COST+'</span>';
+    b.title='Produces up to '+NEW_FACTORY_LIMIT+' units a turn, starting next turn.'+(b.disabled?' (not enough IP)':''); b.onclick=doBuyFactory; sh.querySelector('.grid').appendChild(b);
+  } else if(selZone!==null&&turnNat===me&&Z[selZone].owner===me){
     const q=Z[selZone]; sh.innerHTML='<h3><span>Produce in '+q.name+'</span><span>'+nations[me].ip+' IP</span></h3><div class="grid"></div>'; const g=sh.querySelector('.grid');
-    for(const t of SHOP_ORDER){ const b=document.createElement('button'); const ok=canBuild(me,t,selZone); b.disabled=!ok; b.className=shopType===t?'on':''; b.innerHTML='<span>'+UT[t].name.replace('Aircraft ','').replace('Armored Division','Armor').replace('Fighter Squadron','Fighter').replace('Bomber Wing','Bomber').replace('Troop ','')+'</span><span>'+UT[t].cost+'</span>'; b.title=UT[t].desc+(!ok&&q.built>=q.prod?' (this territory already built its limit)':'')+(!ok&&UT[t].dom==='sea'&&!q.coastal?' (needs a coast)':''); b.onclick=()=>pickShop(t); g.appendChild(b); }
+    for(const t of SHOP_ORDER){ const b=document.createElement('button'); const ok=canBuild(me,t,selZone); b.disabled=!ok; b.className=shopType===t?'on':''; b.innerHTML='<span>'+UT[t].name.replace('Aircraft ','').replace('Armored Division','Armor').replace('Fighter Squadron','Fighter').replace('Bomber Wing','Bomber').replace('Troop ','')+'</span><span>'+UT[t].cost+'</span>'; b.title=UT[t].desc+(!ok&&q.built>=q.prod?(q.fresh?' (factory starts next turn)':' (this factory is at its limit this turn)'):'')+(!ok&&UT[t].dom==='sea'&&!q.coastal?' (needs a coast)':''); b.onclick=()=>pickShop(t); g.appendChild(b); }
   }
   const cg=$('cargo'); cg.innerHTML='';
   const hub=sel&&(sel.cargo.length?sel:sel.aboard?unitById(sel.aboard):null);
@@ -1237,7 +1289,7 @@ function refreshUI(){
   else if(shopType) hint='Click a highlighted sea zone to place the new ship.';
   else if(sel){ hint=sel.done?'This unit has finished.':selTargetUnits.length?'Drag it onto a red-hatched zone to attack, or a white-outlined one to move.':(selInfo&&selInfo.size?'Drag it onto a white-outlined zone to move.':'No moves left.');
     if(sel.type.dom==='land'&&!sel.aboard) hint+=' Drag into a sea zone with your transport to board.'; if(sel.aboard&&sel.type.dom==='land') hint='Aboard: drag from the transport onto an adjacent coastal territory to unload.'; }
-  else hint=selZone!==null?'Choose what to build.':'Click to select. Drag a unit to move it, or drag the map to pan. B = buy, N = next unit, H = hold, E = end turn.';
+  else hint=selZone!==null?(Z[selZone].prod?(Z[selZone].fresh?'This factory starts producing on your next turn.':'Choose what to build.'):'A factory costs '+FACTORY_COST+' IP and makes '+NEW_FACTORY_LIMIT+' units a turn from your next turn.'):'Click to select. Drag a unit to move it, or drag the map to pan. B = buy, N = next unit, H = hold, E = end turn.';
   $('hint').textContent=hint;
   $('end').disabled=turnNat!==me||busy||gameOver; $('next').disabled=turnNat!==me||gameOver; $('buy').disabled=turnNat!==me||gameOver||busy; $('hold').disabled=!sel||turnNat!==me;
   const idle=turnNat===me&&!busy&&!gameOver&&!units.some(u=>u.nat===me&&u.hp>0&&canAct(u));
@@ -1343,7 +1395,22 @@ function drawMask(g,z,c,mode){
 
 // ================================================================ rendering: units, labels, frame
 const IW=40;
+// the sprite itself on its painted base; (x,y) is the stack's slot
+function drawArt(g,x,y,nat,key,w){
+  const art=baseArt(nat,key), deep=baseDepth(), im=img(nat,key);
+  if(art){ const h=w*art.top.height/art.top.width, ly=y+14-h, far=farOut(); if(far) drawPlate(g,x,x-w/2,w,art,y+14+deep,NAT[nat].color,far); g.drawImage(art.lip,x-w/2,ly+deep,w,h); g.drawImage(art.lip,x-w/2,ly+deep/2,w,h); g.drawImage(art.top,x-w/2,ly,w,h); }
+  else if(im.complete&&im.naturalWidth){ const h=w*im.naturalHeight/im.naturalWidth; g.drawImage(im,x-w/2,y+14-h,w,h); }
+  else { g.fillStyle=NAT[nat].color; g.beginPath(); g.arc(x,y,9,0,7); g.fill(); }
+}
+const FACTORY_W=36;
+function drawFactory(g,x,y,gp){
+  const q=Z[gp.zone];
+  if(selZone===gp.zone){ g.strokeStyle='#ffe27a'; g.lineWidth=2.4; g.beginPath(); g.ellipse(x,y+3,FACTORY_W*0.64,18,0,0,7); g.stroke(); }
+  drawArt(g,x,y,gp.nat,'factory',FACTORY_W);
+  if(gp.nat===me&&turnNat===me&&selZone!==gp.zone&&q.built<q.prod&&nations[me].ip>=UT.infantry.cost){ g.fillStyle='#e0c36a'; g.beginPath(); g.arc(x-FACTORY_W*0.5,y-10,2.8,0,7); g.fill(); }
+}
 function drawIcon(g,x,y,gp,t){
+  if(gp.zone!==undefined){ drawFactory(g,x,y,gp); return; }
   const type=gp.type, air=type.dom==='air', n=gp.list.length, im=img(gp.nat,type.key), w=air?IW*0.85:IW;
   const mineTeam=teamOf(gp.nat)===teamOf(me), allMine=gp.list.every(u=>u.nat===me);
   const dim=allMine&&turnNat===me&&gp.list.every(u=>u.done||u.fresh);
@@ -1355,9 +1422,7 @@ function drawIcon(g,x,y,gp,t){
   if(gp.list.some(u=>u.hit&&t-u.hit<260*pace())) g.translate((Math.random()-.5)*4,(Math.random()-.5)*3);
   if(air){ g.fillStyle='#0005'; g.beginPath(); g.ellipse(x-3,y+17,11,3.5,0,0,7); g.fill(); y-=7; x+=5; }
   if(isSel){ g.strokeStyle='#ffe27a'; g.lineWidth=2.4; g.beginPath(); g.ellipse(x,y+3,w*0.6,17,0,0,7); g.stroke(); }
-  const art=baseArt(gp.nat,type.key), deep=baseDepth();
-  if(art){ const h=w*art.top.height/art.top.width, ly=y+14-h, far=farOut(); if(far) drawPlate(g,x,x-w/2,w,art,y+14+deep,NAT[gp.nat].color,far); g.drawImage(art.lip,x-w/2,ly+deep,w,h); g.drawImage(art.lip,x-w/2,ly+deep/2,w,h); g.drawImage(art.top,x-w/2,ly,w,h); }
-  else { g.fillStyle=NAT[gp.nat].color; g.beginPath(); g.arc(x,y,9,0,7); g.fill(); }
+  const deep=baseDepth(); drawArt(g,x,y,gp.nat,type.key,w);
   g.restore();
   const bx=x-13, by=y+16+deep*0.7; const hp=gp.list.reduce((s,u)=>s+u.hp,0)/(n*type.hp);
   g.fillStyle='#000b'; g.fillRect(bx-1,by-1,26,6); g.fillStyle=hp>.6?'#6fd05c':hp>.3?'#e0c36a':'#e0483f'; g.fillRect(bx,by,24*hp,4); g.fillStyle=NAT[gp.nat].color; g.fillRect(bx-4,by-1,3,6);
@@ -1373,7 +1438,25 @@ function groupSlot(z,i,n){   // where the i-th of n stacks in a zone is drawn
   const Q=Z[z], cols=groupCols(n), rows=Math.ceil(n/cols), col=i%cols, row=Math.floor(i/cols), inRow=Math.min(cols,n-row*cols);
   return {x:Q.px+(col-(inRow-1)/2)*(IW+8), y:Q.py+(row-(rows-1)/2)*34+2};
 }
-function drawGroups(g,z,gs,t){ gs.forEach((gp,i)=>{ const p=groupSlot(z,i,gs.length); gp.faded=!!carried&&gp.list.some(u=>carried.moving.includes(u)); drawIcon(g,p.x,p.y,gp,t); }); }
+// A factory has its own fixed spot, always on its own land and clear of the middle where the troops stand,
+// so it never appears to sit in a neighbour's territory.
+function factorySpot(z){
+  const Q=Z[z]; if(Q.spot) return Q.spot;
+  const inZone=(x,y)=>{ const gx=Math.floor(x/SC), gy=Math.floor(y/SC); return gy>=0&&gy<GH&&ZID[gy*GW+((gx%GW)+GW)%GW]===z; };
+  let best={x:Q.px,y:Q.py}, bs=-1e9;
+  for(const c of Q.cells){ const cx=c%GW, cy=(c-cx)/GW; if((cx+cy)%2) continue;
+    const x=Q.px+wrapD(cx*SC+1-Q.px,WW), y=cy*SC+1; if(y<34||y>WH-30) continue;
+    let on=0; for(let dx=-18;dx<=18;dx+=9) for(let dy=-14;dy<=16;dy+=10) if(inZone(x+dx,y+dy)) on++;        // the footprint of the base
+    const ox=x-Q.px, oy=y-Q.py, crowd=Math.max(0,1-Math.abs(ox)/62)*Math.max(0,1-Math.abs(oy)/48);           // overlap with the troops
+    const score=on*5-crowd*45-Math.hypot(ox,oy)*0.12-(oy<-20&&Math.abs(ox)<50?10:0);                          // and keep off the name above them
+    if(score>bs){ bs=score; best={x,y}; } }
+  return (Q.spot=best);
+}
+function slotOf(z,gs,i){   // where gs[i] is drawn: factories on their spot, unit stacks in rows around the middle
+  if(isFactory(gs[i])) return factorySpot(z);
+  const skip=isFactory(gs[0])?1:0; return groupSlot(z,i-skip,gs.length-skip);
+}
+function drawGroups(g,z,gs,t){ gs.forEach((gp,i)=>{ const p=slotOf(z,gs,i); gp.faded=!!carried&&gp.list.some(u=>carried.moving.includes(u)); drawIcon(g,p.x,p.y,gp,t); }); }
 // every visible unit, stacked by nation and type within its zone (units in mid-animation are listed apart)
 function unitGroups(){
   const team=teamOf(me), byZ=new Map(), flying=[];
@@ -1381,6 +1464,8 @@ function unitGroups(){
   const groups=new Map();
   for(const [z,arr] of byZ){ const m=new Map(); for(const u of arr){ const k=u.nat*16+SHOP_ORDER.indexOf(u.type.key); let gp=m.get(k); if(!gp){ gp={nat:u.nat,type:u.type,list:[]}; m.set(k,gp); } gp.list.push(u); }
     groups.set(z,[...m.values()].sort((a,b)=>(a.type.dom==='air')-(b.type.dom==='air')||a.nat-b.nat)); }
+  for(const q of Z){ if(!q.prod||q.owner<0||!(teamOf(q.owner)===team||vis[team].has(q.id))) continue;   // listed first so troops draw over them
+    let a=groups.get(q.id); if(!a) groups.set(q.id,a=[]); a.unshift({nat:q.owner,type:FACTORY,list:[],zone:q.id}); }
   return {groups,flying};
 }
 // what the current drag would carry: the units that leave their spot, the piece shown under the pointer, and the line to it
@@ -1416,7 +1501,7 @@ function drawLabels(g,ox,groups){
   const K=known[teamOf(me)], fs=Math.max(8,Math.min(13,12*zoom+0.5));
   if(zoom>=0.55){
     for(const Q of Z){ const sx=(Q.px+ox)*zoom; if(sx<-90||sx>VW+90) continue; const sy0=(Q.py-cam.y)*zoom; if(sy0<-40||sy0>VH+40) continue;
-      const rows=groups.has(Q.id)?(ZROWS[Q.id]||1):0, up=rows?(rows*17+10)*zoom:0;
+      const rows=groups.has(Q.id)?(ZROWS[Q.id]??1):0, up=rows?(rows*17+10)*zoom:0;
       if(Q.kind==='land'){
         const o=K[Q.id]; let nm=Q.name; const two=nm.length>13&&/[ -]/.test(nm);
         if(two){ const mid=nm.length/2; let best=-1,bd=99; for(let i=0;i<nm.length;i++) if(nm[i]===' '||nm[i]==='-'){ const d=Math.abs(i-mid); if(d<bd){ bd=d; best=i; } } nm=[nm.slice(0,best+(nm[best]==='-'?1:0)).trim(),nm.slice(best+1).trim()]; }
@@ -1459,7 +1544,7 @@ function draw(){
   g.setTransform(1,0,0,1,0,0); g.fillStyle='#0a1118'; g.fillRect(0,0,cv.width,cv.height);
   const {groups,flying}=unitGroups();
   carried=udrag&&!dragStale()?dragState():null;
-  ZROWS.length=0; for(const [z,gs] of groups) ZROWS[z]=Math.ceil(gs.length/groupCols(gs.length));
+  ZROWS.length=0; for(const [z,gs] of groups){ const n=gs.length-(isFactory(gs[0])?1:0); ZROWS[z]=n?Math.ceil(n/groupCols(n)):0; }
   effects=effects.filter(e=>t-e.t0<e.life);
   const copies=[]; for(let k=-1;k*WW-cam.x<VW/zoom+WW/2;k++) copies.push(k*WW-cam.x);   // one extra on each side for spill-over
   const layer=fn=>{ for(const ox of copies){ setCopy(g,ox); fn(ox); } };
@@ -1489,6 +1574,7 @@ function newGame(seed){
   const w=mapMode==='default'?LFWorld.buildDefault(WORLD_DEFAULT):LFWorld.buildRandom(seed,LFWorld.PRESETS[mapMode==='custom'?customKind:'random']);
   setWorld(w);
   if(mapMode==='default') spawnDefault(); else spawnRandom();
+  spawnFactories();
   for(let t=0;t<2;t++){ for(const z of Z) if(isTeamZone(z.id,t)) for(const q of within(z.id,2)) expl[t].add(q); }
   updateVision(); terrainCanvas=buildTerrainSafe();
   $('log').innerHTML=''; clearSel(); inspect=null;
