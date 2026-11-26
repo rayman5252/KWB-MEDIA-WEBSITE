@@ -17,6 +17,7 @@
   #app{display:flex;height:100vh}
   #stage{flex:1;position:relative;min-width:0;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,#2c3a46 0%,#16212a 70%,#0c1217 100%)}
   #board{position:absolute;left:0;top:0;display:block;touch-action:none;cursor:grab;width:100%;height:100%}
+  #stage{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
   #side{width:340px;flex:none;background:linear-gradient(#2a3320,#1b2114);border-left:3px solid #0b0e08;padding:12px;display:flex;flex-direction:column;gap:9px;overflow:auto}
   h1{font-family:Cinzel,Georgia,serif;font-size:20px;margin:0;letter-spacing:.06em;color:var(--gold);text-align:center}
   a.back{display:block;text-align:center;text-decoration:none;font-family:Cinzel,Georgia,serif;font-size:13px;letter-spacing:.04em;color:var(--gold);background:#00000040;border:1px solid #00000060;border-radius:6px;padding:6px 10px}
@@ -158,12 +159,13 @@
   <div id="picker"></div>
   <details><summary>How to play</summary>
     <ul>
+      <li><b>Whose is whose:</b> the base under every unit is painted in its nation&rsquo;s colour, matching the list beside the map.</li>
       <li><b>Goal:</b> capture the capital of every enemy nation. Your allies are AI commanders. Lose your own capital and you are out.</li>
-      <li><b>Turns:</b> USA, UK, USSR, Germany/Italy, then Japan. Click a unit stack, click a white-outlined territory to move, click a red-hatched one to attack. Use the + and &minus; buttons to move only part of a stack. End Turn when done.</li>
-      <li><b>The map:</b> the world is divided into territories and sea zones. It wraps: sail or fly off the right edge and you come out on the left. Drag to pan, scroll or pinch to zoom, arrow keys to scroll.</li>
+      <li><b>Turns:</b> the nation you command moves first each round, then the others follow in the order USA, UK, USSR, Germany/Italy, Japan. Click a unit stack to select it, then drag it onto a white-outlined territory to move, or onto a red-hatched one to attack. While you drag, the piece you picked up turns grey where it started and an arrow shows where it is headed: white to move, red to attack, grey if it can&rsquo;t go there. A click never moves anything; Esc or right-click cancels a drag. Use the + and &minus; buttons to move only part of a stack. End Turn when done.</li>
+      <li><b>The map:</b> the world is divided into territories and sea zones. It wraps: sail or fly off the right edge and you come out on the left. Drag the map to pan, scroll or pinch to zoom, arrow keys to scroll.</li>
       <li><b>Production:</b> click one of your territories, or press the Buy button, to buy units with Industry Points (IP). Richer territories build more units per turn, capitals build the most. Ships appear in a sea zone next to a coastal territory. Every territory you hold pays its IP value each turn, so capture more of them.</li>
       <li><b>Land:</b> infantry are cheap and take territory. Armor hits hard and moves two territories. Units in forests, mountains, rich territories and capitals defend better. Move into an empty enemy or neutral territory to take it.</li>
-      <li><b>Sea:</b> transports carry 3 land units (move a land unit into the sea zone holding your transport, then sail and unload onto an adjacent coast). Battleships hit up to 2 zones away. Submarines are hidden until something gets next to them and are deadly to ships.</li>
+      <li><b>Sea:</b> transports carry 3 land units (drag a land unit into the sea zone holding your transport, then sail and unload onto an adjacent coast). Battleships hit up to 2 zones away. Submarines are hidden until something gets next to them and are deadly to ships.</li>
       <li><b>Air:</b> aircraft take off from your territories and carriers, and must land again within 2 turns (bombers) or 1 turn after the sortie (fighters) or they crash. Fighters hunt aircraft, bombers smash ground and ships.</li>
       <li><b>Fog of war:</b> you and your allies only see what your units and cities can see.</li>
     </ul>
@@ -177,7 +179,7 @@
 // ================================================================ data
 const NAT=[
   {id:'usa',  name:'United States',   short:'USA',   team:0, color:'#4da3ff', blurb:'Industrial giant across the ocean. Deep pockets, carriers and bombers. Cross the sea and liberate the continent.'},
-  {id:'uk',   name:'United Kingdom',  short:'UK',    team:0, color:'#35d0b5', blurb:'An island fortress with a proud navy, plus colonies from Africa to India and Australia. Hold the Channel, then hit back.'},
+  {id:'uk',   name:'United Kingdom',  short:'UK',    team:0, color:'#96602f', ink:'#fff', blurb:'An island fortress with a proud navy, plus colonies from Africa to India and Australia. Hold the Channel, then hit back.'},
   {id:'ussr', name:'Soviet Union',    short:'USSR',  team:0, color:'#e0483f', blurb:'Endless infantry and armor across the largest land front. Slow to start, brutal to stop.'},
   {id:'axis', name:'Germany & Italy', short:'GER/ITA', team:1, color:'#d6d6d6', blurb:'Master of mainland Europe and North Africa, with panzers, U-boats and a head start. Finish the job before the world wakes up.'},
   {id:'japan',name:'Japan',           short:'JPN',   team:1, color:'#f09a3a', blurb:'An island empire of carriers and transports. Take the Pacific and the Asian mainland.'}
@@ -241,10 +243,10 @@ let WORLD=null, Z=[], NZ=0, DIST=null, ZID=null, LAND=null, GW=0, GH=0, WW=0, WH
 let mapMode='default', customKind='continents', seedNow=1, simLimit=Infinity, simming=false;
 // play-tested seeds for Custom Battles (each survived repeated AI test wars with every nation alive and the sides roughly even)
 const CUSTOM_SEEDS={continents:[66,72,52],islands:[221,57,142],archipelago:[42,64,60]};
-let units=[], nextId=1, nations=[], me=0, turnNat=0, round=1, gameOver=false, AUTOPLAY=false;
+let units=[], nextId=1, nations=[], me=0, turnNat=0, firstNat=0, round=1, gameOver=false, AUTOPLAY=false;   // firstNat opens each round
 let vis=[new Set(),new Set()], expl=[new Set(),new Set()], known=[[],[]];
 function setWorld(w){
-  WORLD=w; Z=w.Z; NZ=w.NZ; DIST=w.dist; ZID=w.zid; LAND=w.land; GW=w.W; GH=w.H; WW=GW*SC; WH=GH*SC; _within=[]; MASKS={}; ovDirty=true; ovCanvas=null;
+  WORLD=w; Z=w.Z; NZ=w.NZ; DIST=w.dist; ZID=w.zid; LAND=w.land; GW=w.W; GH=w.H; WW=GW*SC; WH=GH*SC; _within=[]; ovDirty=true; buildGeometry(w);
   for(const z of Z){ z.built=0; z.prod=0; z.px=z.ax*SC+SC/2; z.py=z.ay*SC+SC/2;
     if(z.kind==='land'){ const v=z.val; let c=v>=7?3:v>=4?2:v>=2?1:0; if(z.cap>=0) c++; z.prod=c; } }
 }
@@ -459,16 +461,18 @@ function checkEnd(){
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 let effects=[], busy=false, turboAI=false, animUntil=Infinity;   // AI turns stop animating after a time budget so the wait stays short
 const animOK=()=>!turboAI&&nowMs()<animUntil;
+const AI_PACE=1.3, AI_ANIM_BUDGET=3500;   // AI turns play 30% slower so the player can follow them
+const pace=()=>turnNat===me&&!AUTOPLAY?1:AI_PACE;   // 1 during the player's own turn
 const nowMs=()=>performance.now();
-function addText(z,text,color){ effects.push({x:Z[z].px,y:Z[z].py-26,text,color,t0:nowMs(),life:1100,type:'text'}); }
-function addBoom(z,big){ effects.push({x:Z[z].px,y:Z[z].py-6,t0:nowMs(),life:big?900:500,type:'boom',big}); }
+function addText(z,text,color){ effects.push({x:Z[z].px,y:Z[z].py-26,text,color,t0:nowMs(),life:1100*pace(),type:'text'}); }
+function addBoom(z,big){ effects.push({x:Z[z].px,y:Z[z].py-6,t0:nowMs(),life:(big?900:500)*pace(),type:'boom',big}); }
 const visibleToMe=z=>vis[teamOf(me)].has(z);
 // during AI turns, glide the camera to a battle if it is off-screen or near an edge
 async function followAction(z){
   if(!animOK()||(turnNat===me&&!AUTOPLAY)||!VW) return;
   const sx=(((Z[z].px-cam.x)%WW)+WW)%WW*zoom, sy=(Z[z].py-cam.y)*zoom;
   if(sx>VW*.2&&sx<VW*.8&&sy>VH*.2&&sy<VH*.8) return;
-  centerOn(z); await sleep(340);
+  centerOn(z,false,320*pace()); await sleep(340*pace());
 }
 function tween(ms,fn){ return new Promise(res=>{ const t0=nowMs(); (function f(){ const p=Math.min(1,(nowMs()-t0)/ms); fn(p); if(p<1) requestAnimationFrame(f); else res(); })(); }); }
 const wdx=(a,b)=>wrapD(Z[b].px-Z[a].px,WW);
@@ -497,7 +501,7 @@ async function moveUnit(u,dz,info){
     const occ=units.find(x=>x.hp>0&&!x.aboard&&x.z===q&&isEnemyNat(u.nat,x.nat)&&(x.type.dom!=='air'||u.type.dom==='air'));
     if(occ){ bumped=occ; break; }
     const show=animOK()&&(visibleToMe(u.z)||visibleToMe(q));
-    if(show){ const ax=Z[u.z].px, ay=Z[u.z].py, dx=wdx(u.z,q), dy=Z[q].py-ay; await tween(100,p=>{ u.ox=ax+dx*p; u.oy=ay+dy*p; }); u.ox=u.oy=undefined; }
+    if(show){ const ax=Z[u.z].px, ay=Z[u.z].py, dx=wdx(u.z,q), dy=Z[q].py-ay; await tween(100*pace(),p=>{ u.ox=ax+dx*p; u.oy=ay+dy*p; }); u.ox=u.oy=undefined; }
     u.z=q; syncCargo(u); last=q; updateVision();
   }
   if(bumped){ u.mp=0; log('Contact! '+NAT[bumped.nat].short+' '+bumped.type.name+' was lying in wait.', teamOf(u.nat)===teamOf(me)?'bad':'good'); addText(u.z,'AMBUSH!','#ff9a8a'); updateVision(); return; }
@@ -517,23 +521,23 @@ async function attackUnit(a,d){
   const az=a.z, dz=d.z;
   if(show) await followAction(dz);
   if(show&&az!==dz){ const ax=Z[az].px, ay=Z[az].py, dx=wdx(az,dz)*0.3, dy=(Z[dz].py-ay)*0.3; a.ox=ax; a.oy=ay;
-    await tween(80,p=>{ a.ox=ax+dx*p; a.oy=ay+dy*p; });
+    await tween(80*pace(),p=>{ a.ox=ax+dx*p; a.oy=ay+dy*p; });
     sfx(a.type.key==='battleship'||a.type.key==='sub'?'gun':a.type.dom==='air'?'bomb':'shot');
     d.hit=nowMs(); addText(dz,'-'+pv.dmg,'#ff7a6a');
-    await tween(80,p=>{ a.ox=ax+dx*(1-p); a.oy=ay+dy*(1-p); });
+    await tween(80*pace(),p=>{ a.ox=ax+dx*(1-p); a.oy=ay+dy*(1-p); });
     a.ox=a.oy=undefined;
-  } else if(show){ sfx('shot'); d.hit=nowMs(); addText(dz,'-'+pv.dmg,'#ff7a6a'); await sleep(200); }
+  } else if(show){ sfx('shot'); d.hit=nowMs(); addText(dz,'-'+pv.dmg,'#ff7a6a'); await sleep(200*pace()); }
   const dWasLand=d.type.dom==='land'&&!d.aboard;
   d.hp-=pv.dmg; log(NAT[a.nat].short+' '+a.type.name+' hits '+NAT[d.nat].short+' '+d.type.name+' for '+pv.dmg+'.');
   if(d.hp<=0){
     killUnit(d,a);
     const cleared=!units.some(x=>x.hp>0&&!x.aboard&&x.z===dz&&x.type.dom!=='air'&&isEnemyNat(a.nat,x.nat));
     if(a.type.dom==='land'&&!a.aboard&&dWasLand&&isLand(dz)&&D(a.z,dz)===1&&cleared){
-      if(show){ const ax=Z[a.z].px, ay=Z[a.z].py, dx=wdx(a.z,dz), dy=Z[dz].py-ay; await tween(140,p=>{ a.ox=ax+dx*p; a.oy=ay+dy*p; }); a.ox=a.oy=undefined; }
+      if(show){ const ax=Z[a.z].px, ay=Z[a.z].py, dx=wdx(a.z,dz), dy=Z[dz].py-ay; await tween(140*pace(),p=>{ a.ox=ax+dx*p; a.oy=ay+dy*p; }); a.ox=a.oy=undefined; }
       a.z=dz; updateVision(); captureZone(a);
     }
   } else if(pv.counter>0){
-    a.hp-=pv.counter; a.hit=nowMs(); if(show){ addText(a.z,'-'+pv.counter,'#ffb84a'); await sleep(160); }
+    a.hp-=pv.counter; a.hit=nowMs(); if(show){ addText(a.z,'-'+pv.counter,'#ffb84a'); await sleep(160*pace()); }
     if(a.hp<=0) killUnit(a,d);
   }
   updateVision();
@@ -574,7 +578,7 @@ async function startTurn(n){
 async function endTurn(){
   if(gameOver||round>simLimit) return;
   crashCheck(turnNat); clearSel();
-  let n=turnNat; do{ n=(n+1)%5; if(n===0) round++; }while(!nations[n].alive);
+  let n=turnNat; do{ n=(n+1)%5; if(n===firstNat) round++; }while(!nations[n].alive);
   await startTurn(n);
 }
 
@@ -770,7 +774,7 @@ function aiBuy(n,lf){
 }
 
 async function aiTurn(n){
-  animUntil=nowMs()+3500;
+  animUntil=nowMs()+AI_ANIM_BUDGET*AI_PACE;
   try{ await aiTurnInner(n); } finally{ animUntil=Infinity; }
 }
 async function aiTurnInner(n){
@@ -806,11 +810,11 @@ async function aiTurnInner(n){
         else if(t==='sea') await aiNaval(u,n,M);
         else await aiLand(u,n,M);
       }catch(e){ console.error('ai',n,u.type.key,e); }
-      if(animOK()&&visibleToMe(u.z)) await sleep(25);
+      if(animOK()&&visibleToMe(u.z)) await sleep(25*pace());
     }
     updateVision();
   }
-  if(animOK()) await sleep(200);
+  if(animOK()) await sleep(200*pace());
 }
 
 // ================================================================ audio (synth)
@@ -864,9 +868,48 @@ const $=id=>document.getElementById(id);
 const cv=$('board'), ctx=cv.getContext('2d');
 let zoom=1, DPR=Math.min(2,window.devicePixelRatio||1), VW=0, VH=0; const cam={x:0,y:0};
 let sel=null, selGroup=[], selCount=0, selInfo=null, selTargetUnits=[], selTargetZones=new Set(), selZone=null, shopType=null, placeSpots=[], hover=null, inspect=null, dirty=true;
-let terrainCanvas=null, ovCanvas=null, ovCtx=null, ovImg=null, ovDirty=true, MASKS={};
+let terrainCanvas=null, ovDirty=true;
+let ZRINGS=[], ZPATH=[], EDGES=null, ZTINT=[];   // smooth vector outlines of every zone and border (world pixels)
 const IMG={};
 function img(nat,type){ const k=NAT[nat].id+'_'+type; if(!IMG[k]){ const i=new Image(); i.onload=()=>{dirty=true;}; i.src='assets/u_'+k+'.webp'; IMG[k]=i; } return IMG[k]; }
+// The sprites' hex bases are repainted in the nation's colour (made once per sprite; the art files are untouched).
+// The base's side wall is the band just above the bottom outline of the picture.
+const ART={};
+function baseArt(nat,type){ const k=NAT[nat].id+'_'+type; if(ART[k]) return ART[k]; const im=img(nat,type); if(!im.complete||!im.naturalWidth) return null;
+  const w=256, h=Math.round(w*im.naturalHeight/im.naturalWidth), make=()=>{ const c=document.createElement('canvas'); c.width=w; c.height=h; return c; };
+  const top=make(), g=top.getContext('2d'); g.imageSmoothingQuality='high'; g.drawImage(im,0,0,w,h);
+  const lip=make(); let d; try{ d=g.getImageData(0,0,w,h); }catch(e){ return (ART[k]={top,lip,from:0,to:1}); }   // opened straight from disk: pixels are locked
+  const p=d.data, lg=lip.getContext('2d'), ld=lg.createImageData(w,h), q=ld.data, rgb=NATRGB[nat];
+  const low=[]; for(let x=0;x<w;x++){ let y=h-1; while(y>=0&&p[(y*w+x)*4+3]<128) y--; low[x]=y; }
+  const floor=Math.max(...low), wall=Math.round(w*0.115);
+  // walk out from the lowest point; the base ends where the outline jumps up, so overhanging bows, rifles and wings are left alone
+  const mid=low.indexOf(floor), step=Math.round(w*0.035), onBase=(x,back)=>x>=0&&x<w&&low[x]>=floor-w*0.24&&low[x]>=low[back]-step;
+  let a=mid, b=mid; while(onBase(a-1,Math.min(mid,a+2))) a--; while(onBase(b+1,Math.max(mid,b-2))) b++;
+  // the side wall is one dark tone: sample it clear of the bow end, so hulls and grass that cross the band keep their own colour
+  const lum=i=>0.3*p[i]+0.59*p[i+1]+0.11*p[i+2], seen=[];
+  for(let x=Math.round(a+(b-a)*0.4);x<=b;x++) for(let y=low[x]-Math.round(wall*0.65);y<low[x]-4;y++) if(y>=0) seen.push(lum((y*w+x)*4));
+  seen.sort((m,n)=>m-n); const darkest=(seen[Math.floor(seen.length*0.85)]||60)+22;
+  for(let x=a;x<=b;x++){
+    for(let y=Math.max(0,low[x]-wall);y<h;y++){ const i=(y*w+x)*4; if(!p[i+3]||(lum(i)>darkest&&y<low[x]-3)) continue;
+      const shade=0.72+0.6*lum(i)/255, edge=y>low[x]-4?0.45:1;     // keep the lighting, darken the very rim
+      for(let c=0;c<3;c++){ p[i+c]=Math.min(255,rgb[c]*shade*edge); q[i+c]=rgb[c]*0.8*edge; } q[i+3]=p[i+3]; } }
+  g.putImageData(d,0,0); lg.putImageData(ld,0,0);
+  const art=ART[k]={top,lip,from:a/w,to:(b+1)/w};
+  for(const key of ['top','lip']){ const i=new Image(); i.onload=()=>{ art[key]=i; dirty=true; }; i.src=art[key].toDataURL(); }   // pictures draw far faster than canvases that were read back
+  return art; }
+// extra depth under the base, thicker (in map units) when zoomed out so the colour still reads
+const baseDepth=()=>Math.max(1.5,Math.min(5,2.4/zoom));
+const farOut=()=>Math.max(0,Math.min(1,(1.1-zoom)/0.5));   // 0 up close, 1 when the map is zoomed well out
+function drawPlate(g,x,left,w,art,bottom,color,far){   // a solid hexagon of the nation's colour peeking out around the base
+  const cx=left+w*(art.from+art.to)/2, hw=w*(art.to-art.from)/2+4*far, hh=hw*0.56, cy=bottom+2.5*far-hh;
+  g.beginPath(); g.moveTo(cx-hw,cy); g.lineTo(cx-hw*0.52,cy-hh); g.lineTo(cx+hw*0.52,cy-hh); g.lineTo(cx+hw,cy); g.lineTo(cx+hw*0.52,cy+hh); g.lineTo(cx-hw*0.52,cy+hh); g.closePath();
+  g.fillStyle=color; g.fill(); g.strokeStyle='#000d'; g.lineWidth=1.3/zoom; g.stroke();
+}
+const GREY={};
+function greyImg(nat,type){ const k=NAT[nat].id+'_'+type; if(GREY[k]) return GREY[k]; const im=img(nat,type); if(!im.complete||!im.naturalWidth) return null;
+  const c=document.createElement('canvas'); c.width=im.naturalWidth; c.height=im.naturalHeight; const g=c.getContext('2d'); g.drawImage(im,0,0);
+  const d=g.getImageData(0,0,c.width,c.height), p=d.data; for(let i=0;i<p.length;i+=4){ const v=70+0.6*(0.3*p[i]+0.59*p[i+1]+0.11*p[i+2]); p[i]=p[i+1]=p[i+2]=v; }
+  g.putImageData(d,0,0); return (GREY[k]=c); }
 function log(msg,cls){ const li=document.createElement('li'); if(cls) li.className=cls; li.textContent=msg; const L=$('log'); L.appendChild(li); while(L.children.length>140) L.removeChild(L.firstChild); L.scrollTop=L.scrollHeight; }
 function banner(t){ const b=$('banner'); b.textContent=t; b.classList.remove('show'); void b.offsetWidth; b.classList.add('show'); }
 const explored=z=>expl[teamOf(me)].has(z);
@@ -907,11 +950,11 @@ function setZoom(z,sx,sy){
   clampCam(); dirty=true;
 }
 const fitZoom=()=>Math.max(.35,Math.min(VW/WW,VH/WH));
-function centerOn(z,instant){
+function centerOn(z,instant,ms){
   const tx=Z[z].px-VW/zoom/2, ty=Z[z].py-VH/zoom/2;
   if(instant){ cam.x=tx; cam.y=ty; clampCam(); dirty=true; return; }
   const sx=cam.x, sy=cam.y, dx=wrapD(tx-sx,WW), dy=ty-sy, t0=nowMs(), id=camAnim={};
-  (function f(){ if(camAnim!==id) return; const p=Math.min(1,(nowMs()-t0)/320), e=p*p*(3-2*p); cam.x=sx+dx*e; cam.y=sy+dy*e; clampCam(); dirty=true; if(p<1) requestAnimationFrame(f); })();
+  (function f(){ if(camAnim!==id) return; const p=Math.min(1,(nowMs()-t0)/(ms||320)), e=p*p*(3-2*p); cam.x=sx+dx*e; cam.y=sy+dy*e; clampCam(); dirty=true; if(p<1) requestAnimationFrame(f); })();
 }
 
 // ================================================================ input
@@ -948,28 +991,106 @@ async function doGroupAttack(z){
   if(keep) selectUnitQuiet(keep); else clearSel();
   refreshUI();
 }
-async function clickZone(z){
+// A click only ever selects (or places a new ship). Moving and attacking are done by dragging a unit.
+function clickAt(cx,cy){
+  const mine=turnNat===me&&!busy&&!gameOver, hit=mine?iconAt(cx,cy,ownGroup):null;
+  const ally=mine&&!hit&&!shopType?iconAt(cx,cy,gp=>gp.nat!==me&&!isEnemyNat(me,gp.nat)):null;
+  clickZone(zoneAtClient(cx,cy),hit);
+  if(ally) $('hint').textContent='That is a '+NAT[ally.list[0].nat].short+' unit. Your allies are run by the computer; your own pieces carry your colour.';
+}
+function clickZone(z,hit){
   if(busy||gameOver||z===null) return;
   if(turnNat===me){
     if(selZone!==null&&shopType&&placeSpots.includes(z)){ doBuy(z); return; }
-    if(sel&&!sel.done){
-      if(selTargetZones.has(z)){ await doGroupAttack(z); return; }
-      if(selInfo&&selInfo.has(z)){ await doGroupMove(z); return; }
-    }
+    if(hit){ if(!holdsSelection(hit.list)){ selectUnit(pickUnit(hit.list)); return; } z=hit.z; }   // clicking a piece picks that piece
     const st=ownStack(z);
-    if(st.length){
+    if(st.length){   // clicking the same spot again cycles through the stack, cargo and city
       let i=0, cur=-1;
       if(sel) cur=st.findIndex(e=>e.u&&(e.u===sel||selGroup.includes(e.u)));
       else if(selZone===z) cur=st.findIndex(e=>e.zone===z);
       if(cur>=0) i=(cur+1)%st.length;
       const e=st[i]; if(e.u) selectUnit(e.u); else selectZone(e.zone); return;
     }
+    if(sel&&!sel.done&&(selTargetZones.has(z)||(selInfo&&selInfo.has(z)))){ $('hint').textContent='Drag the unit onto '+Z[z].name+' to '+(selTargetZones.has(z)?'attack':'move')+'.'; return; }
   }
   const vs=unitsAt(z).filter(u=>seenBy(u,teamOf(me)));
   const foe=vs.find(u=>u.nat!==me);
   inspect=foe?{zone:z,unit:foe}:{zone:z};
   sel=null; selGroup=[]; selInfo=null; selTargetUnits=[]; selTargetZones=new Set(); selZone=null; shopType=null; placeSpots=[];
   dirty=true; refreshUI();
+}
+// ---- picking and dragging pieces
+const ownGroup=gp=>gp.nat===me, foeGroup=gp=>isEnemyNat(me,gp.nat);
+const holdsSelection=list=>!!sel&&list.some(u=>u===sel||selGroup.includes(u));
+const pickUnit=list=>list.find(u=>u===sel)||list.find(canAct)||list[0];
+const insideBoard=(cx,cy)=>{ const r=cv.getBoundingClientRect(); return cx>=r.left&&cx<r.right&&cy>=r.top&&cy<r.bottom; };
+// the unit stack drawn under the pointer, if any (touch targets stay finger-sized when zoomed out)
+function iconAt(cx,cy,want){
+  if(!insideBoard(cx,cy)) return null;
+  const r=cv.getBoundingClientRect(), wx=(cx-r.left)/zoom+cam.x, wy=(cy-r.top)/zoom+cam.y;
+  const half=Math.max(24,16/zoom), top=Math.max(24,16/zoom), bottom=Math.max(22,14/zoom); let best=null;
+  for(const [z,gs] of unitGroups().groups) gs.forEach((gp,i)=>{ if(!want(gp)) return;
+    const p=groupSlot(z,i,gs.length), air=gp.type.dom==='air', dx=(((wx-p.x-(air?5:0))%WW)+WW*1.5)%WW-WW/2, dy=wy-p.y+(air?7:0);
+    const im=img(gp.nat,gp.type.key), rise=im.naturalWidth?(air?IW*0.85:IW)*im.naturalHeight/im.naturalWidth-14:0;
+    if(Math.abs(dx)<=half&&dy>=-Math.max(top,rise)&&dy<=bottom){ const d=dx*dx+dy*dy; if(!best||d<best.d) best={d,z,list:gp.list,x:p.x,y:p.y}; } });
+  return best;
+}
+let udrag=null;   // the unit being dragged
+function startUnitDrag(hit,e){
+  if(busy||gameOver||turnNat!==me) return false;
+  let alt=null;
+  if(sel&&sel.aboard&&canAct(sel)&&hit.list.some(u=>u.id===sel.aboard)) alt=unitById(sel.aboard);   // dragging the ship unloads the chosen passenger
+  else if(!(holdsSelection(hit.list)&&canAct(sel))){ const u=hit.list.find(canAct); if(!u) return false; selectUnitQuiet(u); sfx('click'); }   // a piece with nothing left to do just pans the map
+  inspect=null; shopType=null; placeSpots=[];
+  const air=hit.list[0].type.dom==='air', box=cv.getBoundingClientRect(), sx=e.clientX-box.left, wx=sx/zoom+cam.x, x0=hit.x+(air?5:0);
+  udrag={id:e.pointerId,unit:sel,hit,sx,wx,span:wrapD((((wx-x0)%WW)+WW)%WW,WW),y0:hit.y-(air?7:0),alt,altMoves:alt&&canAct(alt)?reach(alt):null,altTargets:alt&&canAct(alt)?targetsFrom(alt,alt.z):[],x:e.clientX,y:e.clientY,touch:e.pointerType!=='mouse',armed:false};
+  refreshUI(); return true;
+}
+// where a drop would land: an enemy piece that spills over a border still counts as its own zone
+function dropZone(cx,cy){
+  if(!insideBoard(cx,cy)) return null;
+  const foe=iconAt(cx,cy,foeGroup); return foe&&selTargetZones.has(foe.z)?foe.z:zoneAtClient(cx,cy);
+}
+// the drag is dropped if the selection or the turn changes under it
+const dragStale=()=>busy||gameOver||turnNat!==me||!sel||sel!==udrag.unit;
+function dropAction(cx,cy){
+  const z=dropZone(cx,cy), d=udrag; if(z===null) return {z,act:null};
+  if(selTargetZones.has(z)&&(z!==sel.z||iconAt(cx,cy,foeGroup))) return {z,act:'attack'};
+  if(z!==sel.z&&selInfo&&selInfo.has(z)) return {z,act:'move'};
+  if(d.altMoves&&z!==d.alt.z){ if(d.altTargets.some(t=>t.z===z)) return {z,act:'attack',alt:true}; if(d.altMoves.has(z)) return {z,act:'move',alt:true}; }
+  return {z,act:null};
+}
+function moveDrag(){
+  if(dragStale()){ cancelDrag(); return; }
+  const {x,y}=udrag, a=dropAction(x,y), tip=$('tip');
+  if(a.z===null){ tip.style.display='none'; hover=null; }
+  else { hoverAt({clientX:x,clientY:y},a.z); if(udrag.touch) tip.style.top=Math.max(4,y-tip.offsetHeight-56)+'px'; }
+  cv.style.cursor=a.act||a.z===sel.z?'grabbing':'not-allowed'; dirty=true;
+}
+function cancelDrag(){ if(!udrag) return; udrag=null; drag=null; hover=null; $('tip').style.display='none'; cv.style.cursor=''; dirty=true; }
+// pointing finger over anything you can pick, open hand over the map
+function setCursor(cx,cy){
+  const pick=turnNat===me&&!busy&&!gameOver&&(iconAt(cx,cy,ownGroup)||(shopType&&insideBoard(cx,cy)&&placeSpots.includes(zoneAtClient(cx,cy))));
+  cv.style.cursor=pick?'pointer':'';
+}
+function releaseBoard(){ cancelDrag(); drag=null; pinch=null; ptrs.clear(); cv.style.cursor=''; }   // forget a grab whose release never arrived
+async function dropUnit(e){
+  udrag.x=e.clientX; udrag.y=e.clientY;
+  const d=udrag, a=dragStale()?null:dropAction(d.x,d.y);
+  cancelDrag();
+  if(!a||a.z===null) return;
+  if(!a.act){ if(a.z!==sel.z) $('hint').textContent='That unit can’t go to '+Z[a.z].name+' from here.'; return; }
+  if(a.alt) selectUnitQuiet(d.alt);
+  if(a.act==='attack') await doGroupAttack(a.z); else await doGroupMove(a.z);
+}
+// scroll the map when a dragged unit is held near its edge
+function edgeScroll(){
+  const r=cv.getBoundingClientRect(), {x,y}=udrag, m=44;
+  if(!insideBoard(x,y)) return;
+  const vx=x<r.left+m?-1:x>r.right-m?1:0, vy=y<r.top+m?-1:y>r.bottom-m?1:0;
+  if(!vx&&!vy){ udrag.armed=true; return; }   // not until the drag has been clear of the edges once
+  if(!udrag.armed) return;
+  cam.x+=vx*9/zoom; cam.y+=vy*9/zoom; clampCam(); moveDrag();
 }
 function doBuy(z){
   const pz=selZone, t=shopType; if(pz===null||!canBuild(me,t,pz)) return;
@@ -982,36 +1103,44 @@ function pickShop(t){
   if(spots.length===1){ shopType=t; doBuy(spots[0]); return; }
   shopType=shopType===t?null:t; placeSpots=shopType?spots:[]; sfx('click'); dirty=true; refreshUI();
 }
-// pointer handling: drag to pan (world wraps), click to act, pinch to zoom
+// pointer handling: drag a unit to move or attack, drag the map to pan (it wraps), click to select, pinch to zoom
 const ptrs=new Map(); let drag=null, pinch=null;
 cv.addEventListener('pointerdown',e=>{
   ac(); camAnim=null; ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{ cv.setPointerCapture(e.pointerId); }catch(_){}
   if(e.button===2) return;
-  if(ptrs.size===1) drag={x0:e.clientX,y0:e.clientY,cx:cam.x,cy:cam.y,moved:false};
-  else if(ptrs.size===2){ drag=null; const [a,b]=[...ptrs.values()]; pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,z:zoom}; }
+  if(ptrs.size===1) drag={x0:e.clientX,y0:e.clientY,cx:cam.x,cy:cam.y,moved:false,grab:turnNat===me&&!busy&&!gameOver?iconAt(e.clientX,e.clientY,ownGroup):null};
+  else if(ptrs.size===2){ cancelDrag(); drag=null; const [a,b]=[...ptrs.values()]; pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,z:zoom}; }
 });
 cv.addEventListener('pointermove',e=>{
+  if(drag&&e.pointerType==='mouse'&&e.buttons===0) releaseBoard();   // button is up: never keep dragging
   const p=ptrs.get(e.pointerId); if(p){ p.x=e.clientX; p.y=e.clientY; }
   if(pinch&&ptrs.size===2){ const [a,b]=[...ptrs.values()], r=cv.getBoundingClientRect(); setZoom(pinch.z*(Math.hypot(a.x-b.x,a.y-b.y)||1)/pinch.d,(a.x+b.x)/2-r.left,(a.y+b.y)/2-r.top); return; }
+  if(udrag){ if(e.pointerId===udrag.id){ udrag.x=e.clientX; udrag.y=e.clientY; moveDrag(); } return; }
   if(drag){ const dx=e.clientX-drag.x0, dy=e.clientY-drag.y0;
-    if(!drag.moved&&Math.hypot(dx,dy)>6) drag.moved=true;
+    if(!drag.moved&&Math.hypot(dx,dy)>(e.pointerType==='mouse'?8:14)){ drag.moved=true; if(drag.grab&&startUnitDrag(drag.grab,e)){ moveDrag(); return; } }   // less than that is just a wobbly click
     if(drag.moved){ cam.x=drag.cx-dx/zoom; cam.y=drag.cy-dy/zoom; clampCam(); dirty=true; cv.style.cursor='grabbing'; $('tip').style.display='none'; return; } }
-  if(e.pointerType==='mouse'&&!ptrs.size||e.pointerType==='mouse'&&!drag) hoverAt(e);
+  if(e.pointerType==='mouse'&&!ptrs.size||e.pointerType==='mouse'&&!drag){ hoverAt(e); setCursor(e.clientX,e.clientY); }
 });
 function endPtr(e,cancel){
   const wasDrag=drag; ptrs.delete(e.pointerId); if(ptrs.size<2) pinch=null; cv.style.cursor='';
-  if(wasDrag&&!wasDrag.moved&&!cancel&&ptrs.size===0&&e.button!==2){ ac(); clickZone(zoneAtClient(e.clientX,e.clientY)); }
+  if(udrag&&e.pointerId===udrag.id){ if(cancel) cancelDrag(); else if(e.button!==2) dropUnit(e); if(ptrs.size===0) drag=null; return; }
+  if(wasDrag&&!wasDrag.moved&&!cancel&&ptrs.size===0&&e.button!==2){ ac(); clickAt(e.clientX,e.clientY); }
   if(ptrs.size===0) drag=null;
+  if(e.pointerType==='mouse'&&!cancel) setCursor(e.clientX,e.clientY);
 }
 cv.addEventListener('pointerup',e=>endPtr(e,false));
 cv.addEventListener('pointercancel',e=>endPtr(e,true));
-cv.addEventListener('contextmenu',ev=>{ ev.preventDefault(); if(!busy){ clearSel(); inspect=null; refreshUI(); } });
-cv.addEventListener('mouseleave',()=>{ $('tip').style.display='none'; hover=null; dirty=true; });
+cv.addEventListener('lostpointercapture',e=>{ if(ptrs.has(e.pointerId)) endPtr(e,true); });
+addEventListener('blur',releaseBoard);
+cv.addEventListener('contextmenu',ev=>{ ev.preventDefault(); if(udrag){ if(!udrag.touch) cancelDrag(); return; } if(drag) return;   // a long press while dragging is not a right-click
+  if(!busy){ clearSel(); inspect=null; refreshUI(); } });
+cv.addEventListener('mouseleave',()=>{ if(udrag) return; $('tip').style.display='none'; hover=null; dirty=true; });
 cv.addEventListener('wheel',ev=>{ ev.preventDefault(); const r=cv.getBoundingClientRect();
   if(ev.ctrlKey||ev.metaKey){ setZoom(zoom*Math.exp(-ev.deltaY*0.0014),ev.clientX-r.left,ev.clientY-r.top); }
-  else { camAnim=null; cam.x+=ev.deltaX/zoom; cam.y+=ev.deltaY/zoom; clampCam(); dirty=true; } },{passive:false});
-function hoverAt(ev){
-  const z=zoneAtClient(ev.clientX,ev.clientY), tip=$('tip');
+  else { camAnim=null; cam.x+=ev.deltaX/zoom; cam.y+=ev.deltaY/zoom; clampCam(); dirty=true; }
+  if(!drag&&!udrag) setCursor(ev.clientX,ev.clientY); },{passive:false});
+function hoverAt(ev,at){
+  const z=at!==undefined?at:zoneAtClient(ev.clientX,ev.clientY), tip=$('tip');
   if(z!==hover){ hover=z; dirty=true; }
   if(z===null){ tip.style.display='none'; return; }
   const ex=explored(z); let html='';
@@ -1032,6 +1161,7 @@ function hoverAt(ev){
 addEventListener('keydown',ev=>{
   if(!$('title').classList.contains('hidden')) return;
   const k=ev.key.toLowerCase(), step=70/zoom;
+  if(udrag){ if(k==='escape') cancelDrag(); return; }
   if(k==='n') nextUnit(); else if(k==='h') holdUnit(); else if(k==='b') nextCity(); else if(k==='e'||k==='enter'){ if(!$('overlay').classList.contains('hidden')) return; endClick(); }
   else if(k==='escape'){ clearSel(); inspect=null; refreshUI(); }
   else if(k==='+'||k==='='){ setZoom(zoom*1.15); } else if(k==='-'){ setZoom(zoom/1.15); }
@@ -1066,7 +1196,7 @@ $('zin').onclick=()=>setZoom(zoom*1.2); $('zout').onclick=()=>setZoom(zoom/1.2);
 function refreshUI(){
   if(!nations.length||!Z.length) return;
   const T=$('turn');
-  T.innerHTML='<span>Round <b>'+round+'</b></span><span class="pill" style="background:'+NAT[turnNat].color+'">'+(turnNat===me?'YOUR TURN':NAT[turnNat].short+' moving')+'</span><span>IP <b>'+nations[me].ip+'</b> (+'+income(me)+')</span>';
+  T.innerHTML='<span>Round <b>'+round+'</b></span><span class="pill" style="background:'+NAT[turnNat].color+(NAT[turnNat].ink?';color:'+NAT[turnNat].ink:'')+'">'+(turnNat===me?'YOUR TURN':NAT[turnNat].short+' moving')+'</span><span>IP <b>'+nations[me].ip+'</b> (+'+income(me)+')</span>';
   let f=''; for(const n of [0,1,2,3,4]){ const nn=nations[n]; f+='<div class="frow'+(turnNat===n?' active':'')+(nn.alive?'':' out')+(n===me?' me':'')+'"><span class="dot" style="background:'+NAT[n].color+'"></span><span class="n">'+NAT[n].name+(n===me?' (you)':'')+'</span><span class="m">'+(teamOf(n)===teamOf(me)?'ally':'enemy')+'</span><span class="m">'+Z.filter(z=>z.kind==='land'&&z.owner===n).length+' terr.</span><span class="m">'+units.filter(u=>u.nat===n&&u.hp>0).length+' units</span></div>'; }
   $('factions').innerHTML=f;
   const card=$('card'), subj=sel||(inspect&&inspect.unit?inspect.unit:null);
@@ -1105,9 +1235,9 @@ function refreshUI(){
   let hint='';
   if(turnNat!==me) hint='Waiting for '+NAT[turnNat].name+'…';
   else if(shopType) hint='Click a highlighted sea zone to place the new ship.';
-  else if(sel){ hint=sel.done?'This unit has finished.':selTargetUnits.length?'Red-hatched zones can be attacked. White-outlined zones are moves.':(selInfo&&selInfo.size?'White-outlined zones show where it can move.':'No moves left.');
-    if(sel.type.dom==='land'&&!sel.aboard) hint+=' Move into a sea zone with your transport to board.'; if(sel.aboard&&sel.type.dom==='land') hint='Aboard: click an adjacent coastal territory to unload.'; }
-  else hint=selZone!==null?'Choose what to build.':'Click a unit or territory. Drag to pan, scroll to wrap around the world. B = buy, N = next unit, H = hold, E = end turn.';
+  else if(sel){ hint=sel.done?'This unit has finished.':selTargetUnits.length?'Drag it onto a red-hatched zone to attack, or a white-outlined one to move.':(selInfo&&selInfo.size?'Drag it onto a white-outlined zone to move.':'No moves left.');
+    if(sel.type.dom==='land'&&!sel.aboard) hint+=' Drag into a sea zone with your transport to board.'; if(sel.aboard&&sel.type.dom==='land') hint='Aboard: drag from the transport onto an adjacent coastal territory to unload.'; }
+  else hint=selZone!==null?'Choose what to build.':'Click to select. Drag a unit to move it, or drag the map to pan. B = buy, N = next unit, H = hold, E = end turn.';
   $('hint').textContent=hint;
   $('end').disabled=turnNat!==me||busy||gameOver; $('next').disabled=turnNat!==me||gameOver; $('buy').disabled=turnNat!==me||gameOver||busy; $('hold').disabled=!sel||turnNat!==me;
   const idle=turnNat===me&&!busy&&!gameOver&&!units.some(u=>u.nat===me&&u.hp>0&&canAct(u));
@@ -1125,7 +1255,7 @@ function buildTerrain(){
   for(let i=0;i<GW*GH;i++) if(LAND[i]){ sh[i]=0; q.push(i); }
   for(let qi=0;qi<q.length;qi++){ const c=q[qi]; if(sh[c]>=8) continue; const x=c%GW, y=(c-x)/GW; const nb=[y*GW+(x+1)%GW,y*GW+(x+GW-1)%GW]; if(y>0) nb.push(c-GW); if(y<GH-1) nb.push(c+GW);
     for(const n of nb) if(sh[n]===255){ sh[n]=sh[c]+1; q.push(n); } }
-  const pid=new Int16Array(WW*WH);
+  const pid=rasterZones();
   const LC={P:[176,170,122],F:[132,158,94],M:[158,146,122]};
   for(let y=0;y<WH;y++){
     const gy=(y+0.5)/SC-0.5, y0=Math.floor(gy), fy=gy-y0, ya=Math.max(0,Math.min(GH-1,y0)), yb=Math.max(0,Math.min(GH-1,y0+1));
@@ -1133,67 +1263,83 @@ function buildTerrain(){
       const gx=(x+0.5)/SC-0.5, x0=Math.floor(gx), fx=gx-x0, xa=((x0%GW)+GW)%GW, xb=(((x0+1)%GW)+GW)%GW;
       const ia=ya*GW+xa, ib=ya*GW+xb, ic=yb*GW+xa, id=yb*GW+xb;
       const wa=(1-fx)*(1-fy), wb=fx*(1-fy), wc=(1-fx)*fy, wd=fx*fy;
-      const v=LAND[ia]*wa+LAND[ib]*wb+LAND[ic]*wc+LAND[id]*wd, isL=v>=0.5?1:0;
+      const v=LAND[ia]*wa+LAND[ib]*wb+LAND[ic]*wc+LAND[id]*wd, own=pid[y*WW+x], isL=own>=0?(Z[own].kind==='land'?1:0):(v>=0.5?1:0);
       let best=-1,bw=-1;
       if(LAND[ia]===isL&&wa>bw){ bw=wa; best=ia; } if(LAND[ib]===isL&&wb>bw){ bw=wb; best=ib; } if(LAND[ic]===isL&&wc>bw){ bw=wc; best=ic; } if(LAND[id]===isL&&wd>bw){ bw=wd; best=id; }
       if(best<0){ best=ia; bw=wa; if(wb>bw){ bw=wb; best=ib; } if(wc>bw){ bw=wc; best=ic; } if(wd>bw){ bw=wd; best=id; } }
-      const z=ZID[best]; pid[y*WW+x]=z;
+      const z=own>=0?own:ZID[best];
       const u=x/WW, w=y/WH, n=nA(u,w)*0.5+nB(u,w)*0.32+nC(u,w)*0.18;
       let r,gg,b;
       if(isL){
         const c=LC[Z[z].terr]||LC.P; let f=0.84+0.3*n;
         if(Z[z].terr==='M'){ const ridge=Math.abs(nB((u*3)%1,(w*3)%1)-0.5)*2; f*=0.82+0.3*ridge; }
         r=c[0]*f; gg=c[1]*f; b=c[2]*f;
-        const e=(v-0.5)/0.5; if(e<0.28){ const k=(0.28-e)/0.28; r=r*(1-k*0.45)+236*k*0.45; gg=gg*(1-k*0.45)+228*k*0.45; b=b*(1-k*0.45)+180*k*0.45; }
-        if(e<0.06){ r*=0.6; gg*=0.6; b*=0.6; }
+        const e=Math.max(0,(v-0.5)/0.5); if(e<0.28){ const k=(0.28-e)/0.28; r=r*(1-k*0.45)+236*k*0.45; gg=gg*(1-k*0.45)+228*k*0.45; b=b*(1-k*0.45)+180*k*0.45; }
       } else {
         let f=0.9+0.2*n; r=26*f; gg=70*f; b=104*f;
         const d=sh[best]; if(d<8){ const k=(1-d/8)*0.55; r=r*(1-k)+70*k; gg=gg*(1-k)+140*k; b=b*(1-k)+168*k; }
-        const vv=v/0.5; if(vv>0.7){ const k=(vv-0.7)/0.3*0.35; r=r*(1-k)+210*k; gg=gg*(1-k)+232*k; b=b*(1-k)+238*k; }
+        const vv=Math.min(1,v/0.5); if(vv>0.7){ const k=(vv-0.7)/0.3*0.35; r=r*(1-k)+210*k; gg=gg*(1-k)+232*k; b=b*(1-k)+238*k; }
         const jit=((z*37)%9-4)*0.9; r+=jit*0.4; gg+=jit; b+=jit*1.2;
       }
       const o=(y*WW+x)*4; px[o]=r; px[o+1]=gg; px[o+2]=b; px[o+3]=255;
     }
   }
-  // zone borders (2px)
-  const bm=new Uint8Array(WW*WH);
-  for(let y=0;y<WH-1;y++) for(let x=0;x<WW;x++){ const i=y*WW+x, a=pid[i], j=y*WW+(x+1)%WW, k=i+WW;
-    if(pid[j]!==a&&Z[pid[j]].kind===Z[a].kind){ bm[i]=Z[a].kind==='land'?2:1; bm[j]=bm[i]; }
-    if(pid[k]!==a&&Z[pid[k]].kind===Z[a].kind){ bm[i]=Z[a].kind==='land'?2:1; bm[k]=bm[i]; } }
-  for(let i=0;i<WW*WH;i++){ if(!bm[i]) continue; const o=i*4;
-    if(bm[i]===2){ px[o]=px[o]*0.45+55*0.55; px[o+1]=px[o+1]*0.45+42*0.55; px[o+2]=px[o+2]*0.45+25*0.55; }
-    else { px[o]=px[o]*0.78+160*0.22; px[o+1]=px[o+1]*0.78+200*0.22; px[o+2]=px[o+2]*0.78+225*0.22; } }
   g.putImageData(im,0,0);
   terrainCanvas=t;
 }
-// ================================================================ rendering: ownership + fog overlay (grid resolution)
+// ================================================================ rendering: vector zone outlines
+function buildGeometry(w){
+  const geo=LFWorld.traceBorders(w);
+  const trace=(path,pts)=>{ path.moveTo(pts[0][0]*SC,pts[0][1]*SC); for(let i=1;i<pts.length;i++) path.lineTo(pts[i][0]*SC,pts[i][1]*SC); };
+  ZRINGS=geo.rings;
+  ZPATH=geo.rings.map(rs=>{ const p=new Path2D(); for(const r of rs){ trace(p,r); p.closePath(); } return p; });
+  EDGES={coast:new Path2D(),land:new Path2D(),sea:new Path2D()};
+  for(const c of geo.chains){ if(c.p<0) continue; const a=Z[c.p].kind, b=Z[c.q].kind; trace(EDGES[a!==b?'coast':a],c.pts); }
+}
+// which zone covers each terrain pixel, taken from the smooth outlines so land colours stop exactly at the lines
+function rasterZones(){
+  const pid=new Int16Array(WW*WH).fill(-1);
+  ZRINGS.forEach((rings,z)=>{ const rows=new Map();
+    for(const r of rings) for(let i=0;i<r.length;i++){ const a=r[i], b=r[(i+1)%r.length], x1=a[0]*SC, y1=a[1]*SC, x2=b[0]*SC, y2=b[1]*SC; if(y1===y2) continue;
+      const lo=Math.min(y1,y2), hi=Math.max(y1,y2);
+      for(let y=Math.ceil(lo-0.5);y+0.5<hi;y++){ let row=rows.get(y); if(!row) rows.set(y,row=[]); row.push(x1+(y+0.5-y1)*(x2-x1)/(y2-y1)); } }
+    for(const [y,xs] of rows){ if(y<0||y>=WH) continue; xs.sort((p,q)=>p-q);
+      for(let i=0;i+1<xs.length;i+=2) for(let x=Math.ceil(xs[i]-0.5);x+0.5<xs[i+1];x++) pid[y*WW+((x%WW)+WW)%WW]=z; } });
+  return pid;
+}
+const onView=(Q,ox)=>(Q.bx1+2)*SC+ox>=0&&(Q.bx0-1)*SC+ox<=VW/zoom&&(Q.by1+2)*SC>=cam.y&&(Q.by0-1)*SC<=cam.y+VH/zoom;
+// ================================================================ rendering: ownership + fog tint, borders
 function buildOverlay(){
-  if(!ovCanvas){ ovCanvas=document.createElement('canvas'); ovCanvas.width=GW; ovCanvas.height=GH; ovCtx=ovCanvas.getContext('2d'); ovImg=ovCtx.createImageData(GW,GH); }
-  const team=teamOf(me), V=vis[team], E=expl[team], K=known[team], col=new Uint32Array(NZ);
+  const team=teamOf(me), V=vis[team], E=expl[team], K=known[team];
   for(let z=0;z<NZ;z++){
     let r=0,g=0,b=0,a=0;
     if(Z[z].kind==='land'){ const o=K[z]; if(o>=0&&E.has(z)){ r=NATRGB[o][0]; g=NATRGB[o][1]; b=NATRGB[o][2]; a=0.36; } }
     const fa=!E.has(z)?0.55:(!V.has(z)?0.3:0);
     if(fa>0){ const na=a+fa*(1-a); r=(r*a*(1-fa)+6*fa)/na; g=(g*a*(1-fa)+10*fa)/na; b=(b*a*(1-fa)+16*fa)/na; a=na; }
-    col[z]=((Math.round(a*255)&255)<<24)|((Math.round(b)&255)<<16)|((Math.round(g)&255)<<8)|(Math.round(r)&255);
+    ZTINT[z]=a>0?'rgba('+Math.round(r)+','+Math.round(g)+','+Math.round(b)+','+a.toFixed(3)+')':null;
   }
-  const u32=new Uint32Array(ovImg.data.buffer); for(let i=0;i<GW*GH;i++) u32[i]=col[ZID[i]];
-  ovCtx.putImageData(ovImg,0,0); ovDirty=false;
+  ovDirty=false;
 }
-// ================================================================ rendering: zone highlight masks
-function zoneMask(z,c,mode){
-  const key=z+'|'+c.join(',')+'|'+mode; let m=MASKS[key]; if(m) return m;
-  const Q=Z[z], w=Q.bx1-Q.bx0+1, h=Q.by1-Q.by0+1; m=document.createElement('canvas'); m.width=w; m.height=h;
-  const g=m.getContext('2d'), im=g.createImageData(w,h), d=im.data, a=Math.round(c[3]*255);
-  const at=(x,y)=>(y<0||y>=GH)?z:ZID[y*GW+(((x%GW)+GW)%GW)];
-  for(const cell of Q.cells){ const x=cell%GW, y=(cell-x)/GW;
-    if(mode===1){ let edge=false; for(let k=1;k<=2&&!edge;k++) if(at(x-k,y)!==z||at(x+k,y)!==z||at(x,y-k)!==z||at(x,y+k)!==z) edge=true; if(!edge) continue; }
-    else if(mode===2&&((x+y)%7)>=3) continue;
-    const ux=x+GW*Math.round((Q.ref-x)/GW), o=((y-Q.by0)*w+(ux-Q.bx0))*4; d[o]=c[0]; d[o+1]=c[1]; d[o+2]=c[2]; d[o+3]=a; }
-  g.putImageData(im,0,0); return (MASKS[key]=m);
+function drawTints(g,ox){ for(let z=0;z<NZ;z++) if(ZTINT[z]&&onView(Z[z],ox)){ g.fillStyle=ZTINT[z]; g.fill(ZPATH[z],'evenodd'); } }
+function drawBorders(g){   // stroked live, so they stay sharp at every zoom; widths are in screen pixels
+  g.lineJoin=g.lineCap='round';
+  const line=(path,color,px)=>{ g.strokeStyle=color; g.lineWidth=px/zoom; g.stroke(path); };
+  line(EDGES.sea,'rgba(160,200,225,.32)',Math.max(.8,.7*zoom));
+  line(EDGES.land,'rgba(52,39,22,.82)',Math.max(1,.85*zoom));
+  line(EDGES.coast,'rgba(34,27,16,.92)',Math.max(1.1,zoom));
 }
+// ================================================================ rendering: zone highlights
 const HL={move:[255,255,255,.20],moveE:[255,255,255,.95],unload:[140,255,140,.30],unloadE:[170,255,170,1],place:[140,255,140,.36],placeE:[170,255,170,1],atk:[255,36,16,.70],atkF:[30,0,0,.18],atkE:[255,70,40,1],sel:[255,226,100,.18],selE:[255,226,100,1],hov:[255,255,255,.10],hovE:[255,255,255,.5]};
-function drawMask(g,z,c,mode){ const m=zoneMask(z,c,mode||0), Q=Z[z]; g.drawImage(m,Q.bx0*SC,Q.by0*SC,m.width*SC,m.height*SC); }
+// mode 0 = fill, 1 = outline just inside the zone, 2 = diagonal hatching
+function drawMask(g,z,c,mode){
+  const Q=Z[z], P=ZPATH[z], color='rgba('+c.join(',')+')';
+  if(!mode){ g.fillStyle=color; g.fill(P,'evenodd'); return; }
+  g.save(); g.clip(P,'evenodd'); g.strokeStyle=color; g.lineJoin='round';
+  if(mode===1){ g.lineWidth=2*Math.max(2.2,Math.min(4.5,3*zoom))/zoom; g.stroke(P); }
+  else { const x0=Q.bx0*SC, x1=(Q.bx1+1)*SC, y0=Q.by0*SC, y1=(Q.by1+1)*SC; g.lineWidth=4.2; g.beginPath();
+    for(let s=Math.floor((x0+y0)/14)*14;s<=x1+y1+14;s+=14){ g.moveTo(s+3-y0,y0); g.lineTo(s+3-y1,y1); } g.stroke(); }
+  g.restore();
+}
 
 // ================================================================ rendering: units, labels, frame
 const IW=40;
@@ -1202,14 +1348,18 @@ function drawIcon(g,x,y,gp,t){
   const mineTeam=teamOf(gp.nat)===teamOf(me), allMine=gp.list.every(u=>u.nat===me);
   const dim=allMine&&turnNat===me&&gp.list.every(u=>u.done||u.fresh);
   const isSel=sel&&gp.list.some(u=>u===sel||selGroup.includes(u));
+  if(gp.faded){ const gi=greyImg(gp.nat,type.key); g.save(); g.globalAlpha=.65; if(air){ y-=7; x+=5; }   // where a dragged piece came from
+    if(gi) g.drawImage(gi,x-w/2,y+14-w*gi.height/gi.width,w,w*gi.height/gi.width); else { g.fillStyle='#999'; g.beginPath(); g.arc(x,y,9,0,7); g.fill(); }
+    g.restore(); return; }
   g.save(); if(dim) g.globalAlpha=.6;
-  if(gp.list.some(u=>u.hit&&t-u.hit<260)) g.translate((Math.random()-.5)*4,(Math.random()-.5)*3);
+  if(gp.list.some(u=>u.hit&&t-u.hit<260*pace())) g.translate((Math.random()-.5)*4,(Math.random()-.5)*3);
   if(air){ g.fillStyle='#0005'; g.beginPath(); g.ellipse(x-3,y+17,11,3.5,0,0,7); g.fill(); y-=7; x+=5; }
   if(isSel){ g.strokeStyle='#ffe27a'; g.lineWidth=2.4; g.beginPath(); g.ellipse(x,y+3,w*0.6,17,0,0,7); g.stroke(); }
-  if(im.complete&&im.naturalWidth){ const h=w*im.naturalHeight/im.naturalWidth; g.drawImage(im,x-w/2,y+14-h,w,h); }
+  const art=baseArt(gp.nat,type.key), deep=baseDepth();
+  if(art){ const h=w*art.top.height/art.top.width, ly=y+14-h, far=farOut(); if(far) drawPlate(g,x,x-w/2,w,art,y+14+deep,NAT[gp.nat].color,far); g.drawImage(art.lip,x-w/2,ly+deep,w,h); g.drawImage(art.lip,x-w/2,ly+deep/2,w,h); g.drawImage(art.top,x-w/2,ly,w,h); }
   else { g.fillStyle=NAT[gp.nat].color; g.beginPath(); g.arc(x,y,9,0,7); g.fill(); }
   g.restore();
-  const bx=x-13, by=y+16; const hp=gp.list.reduce((s,u)=>s+u.hp,0)/(n*type.hp);
+  const bx=x-13, by=y+16+deep*0.7; const hp=gp.list.reduce((s,u)=>s+u.hp,0)/(n*type.hp);
   g.fillStyle='#000b'; g.fillRect(bx-1,by-1,26,6); g.fillStyle=hp>.6?'#6fd05c':hp>.3?'#e0c36a':'#e0483f'; g.fillRect(bx,by,24*hp,4); g.fillStyle=NAT[gp.nat].color; g.fillRect(bx-4,by-1,3,6);
   if(n>1){ g.fillStyle='#000d'; g.beginPath(); g.arc(x+w*0.42,y-8,8,0,7); g.fill(); g.strokeStyle=NAT[gp.nat].color; g.lineWidth=1.5; g.stroke(); g.fillStyle='#fff'; g.font='bold 11px Georgia'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(n,x+w*0.42,y-7.5); g.textBaseline='alphabetic'; }
   const cargo=gp.list.reduce((s,u)=>s+u.cargo.length,0);
@@ -1218,11 +1368,44 @@ function drawIcon(g,x,y,gp,t){
   if(allMine&&turnNat===me&&gp.list.some(u=>canAct(u))&&!isSel){ g.fillStyle='#e0c36a'; g.beginPath(); g.arc(x-w*0.5,y-10,2.8,0,7); g.fill(); }
 }
 const ZROWS=[];
-function drawGroups(g,z,gs,t){
-  const Q=Z[z], n=gs.length, cols=n<=2?n:n<=6?3:4, rows=Math.ceil(n/cols), cw=IW+8, ch=34;
-  gs.forEach((gp,i)=>{ const col=i%cols, row=Math.floor(i/cols), inRow=Math.min(cols,n-row*cols);
-    drawIcon(g,Q.px+(col-(inRow-1)/2)*cw, Q.py+(row-(rows-1)/2)*ch+2, gp, t); });
-  ZROWS[z]=rows;
+const groupCols=n=>n<=2?n:n<=6?3:4;
+function groupSlot(z,i,n){   // where the i-th of n stacks in a zone is drawn
+  const Q=Z[z], cols=groupCols(n), rows=Math.ceil(n/cols), col=i%cols, row=Math.floor(i/cols), inRow=Math.min(cols,n-row*cols);
+  return {x:Q.px+(col-(inRow-1)/2)*(IW+8), y:Q.py+(row-(rows-1)/2)*34+2};
+}
+function drawGroups(g,z,gs,t){ gs.forEach((gp,i)=>{ const p=groupSlot(z,i,gs.length); gp.faded=!!carried&&gp.list.some(u=>carried.moving.includes(u)); drawIcon(g,p.x,p.y,gp,t); }); }
+// every visible unit, stacked by nation and type within its zone (units in mid-animation are listed apart)
+function unitGroups(){
+  const team=teamOf(me), byZ=new Map(), flying=[];
+  for(const u of units){ if(u.hp<=0||u.aboard||!seenBy(u,team)) continue; if(u.ox!==undefined){ flying.push(u); continue; } let a=byZ.get(u.z); if(!a){ a=[]; byZ.set(u.z,a); } a.push(u); }
+  const groups=new Map();
+  for(const [z,arr] of byZ){ const m=new Map(); for(const u of arr){ const k=u.nat*16+SHOP_ORDER.indexOf(u.type.key); let gp=m.get(k); if(!gp){ gp={nat:u.nat,type:u.type,list:[]}; m.set(k,gp); } gp.list.push(u); }
+    groups.set(z,[...m.values()].sort((a,b)=>(a.type.dom==='air')-(b.type.dom==='air')||a.nat-b.nat)); }
+  return {groups,flying};
+}
+// what the current drag would carry: the units that leave their spot, the piece shown under the pointer, and the line to it
+let carried=null;
+function dragState(){
+  const d=udrag, a=dropAction(d.x,d.y), r=cv.getBoundingClientRect(), sx=d.x-r.left, x=sx/zoom+cam.x, y=(d.y-r.top)/zoom+cam.y;
+  const step=(sx-d.sx)/zoom; d.span+=step+wrapD((((x-d.wx-step)%WW)+WW)%WW,WW); d.sx=sx; d.wx=x;   // follow the drag so the line stays on its starting piece
+  let moving, shown;
+  if(a.alt){ moving=shown=groupOf(d.alt); }                       // the drop would sail the ship itself
+  else { shown=selGroup.slice(0,selCount); moving=d.alt?[]:shown; }   // a passenger leaves its ship where it is
+  const u=a.alt?d.alt:d.unit;
+  return {act:a.act,moving,icon:{nat:u.nat,type:u.type,list:shown},x,y,x0:x-d.span,y0:d.y0};
+}
+function drawDrag(g,t){
+  const c=carried, color=c.act==='attack'?'#ff4a2a':c.act==='move'?'#ffffff':'#a8a8a8', px=v=>v/zoom;
+  setCopy(g,-cam.x); g.lineCap=g.lineJoin='round';
+  const dx=c.x-c.x0, dy=c.y-c.y0, len=Math.hypot(dx,dy), head=px(20), gap=28;   // the arrow stops short of the carried piece
+  const dot=(r,fill)=>{ g.fillStyle=fill; g.beginPath(); g.arc(c.x0,c.y0,px(r),0,7); g.fill(); };
+  if(len>gap+head){ const ux=dx/len, uy=dy/len, tx=c.x-ux*gap, ty=c.y-uy*gap, bx=tx-ux*head, by=ty-uy*head, wing=px(11);
+    const shaft=(col,w)=>{ g.strokeStyle=col; g.lineWidth=px(w); g.beginPath(); g.moveTo(c.x0,c.y0); g.lineTo(bx,by); g.stroke(); };
+    const tip=()=>{ g.beginPath(); g.moveTo(tx,ty); g.lineTo(bx-uy*wing,by+ux*wing); g.lineTo(bx+uy*wing,by-ux*wing); g.closePath(); };
+    shaft('rgba(0,0,0,.7)',9); g.strokeStyle='rgba(0,0,0,.7)'; g.lineWidth=px(4.5); tip(); g.stroke();
+    shaft(color,4.5); g.fillStyle=color; tip(); g.fill(); }
+  dot(8,'rgba(0,0,0,.7)'); dot(5.5,color);
+  drawIcon(g,c.icon.type.dom==='air'?c.x-5:c.x,c.icon.type.dom==='air'?c.y+7:c.y,c.icon,t);
 }
 function drawLabel(g,text,sx,sy,fs,fill,alpha){
   g.globalAlpha=alpha; g.font='700 '+fs+'px Cinzel,Georgia,serif'; g.textAlign='center'; g.lineJoin='round'; g.lineWidth=3.2; g.strokeStyle='#0b1008e6'; g.fillStyle=fill;
@@ -1248,42 +1431,49 @@ function drawLabels(g,ox,groups){
   }
   g.setTransform(DPR*zoom,0,0,DPR*zoom,DPR*zoom*ox,-DPR*zoom*cam.y);
 }
-function drawCopy(g,t,ox,groups,flying){
-  const s=DPR*zoom;
-  g.setTransform(s,0,0,s,s*ox,-s*cam.y); g.imageSmoothingEnabled=true; g.imageSmoothingQuality='high';
-  g.drawImage(terrainCanvas,0,0); g.drawImage(ovCanvas,0,0,WW,WH);
-  // highlights
+// The world wraps, so stacks, outlines and effects near the seam spill into the neighbouring copy of the map.
+// Each layer is therefore drawn across every copy before the next one starts, so no later map tile paints over it.
+function setCopy(g,ox){ const s=DPR*zoom; g.setTransform(s,0,0,s,s*ox,-s*cam.y); g.imageSmoothingEnabled=true; g.imageSmoothingQuality='high'; }
+function drawTerrain(g){ g.drawImage(terrainCanvas,0,0); }
+function drawHighlights(g){
   if(sel&&selInfo) for(const [z,v] of selInfo){ drawMask(g,z,v.unload?HL.unload:HL.move,0); drawMask(g,z,v.unload?HL.unloadE:HL.moveE,1); }
   for(const z of placeSpots){ drawMask(g,z,HL.place,0); drawMask(g,z,HL.placeE,1); }
   for(const z of selTargetZones){ drawMask(g,z,HL.atkF,0); drawMask(g,z,HL.atk,2); drawMask(g,z,HL.atkE,1); }
   const cur=sel?sel.z:selZone; if(cur!==null&&cur!==undefined){ drawMask(g,cur,HL.sel,0); drawMask(g,cur,HL.selE,1); }
   if(hover!==null&&hover!==undefined){ drawMask(g,hover,HL.hov,0); drawMask(g,hover,HL.hovE,1); }
-  // labels first, so unit stacks sit on top of them
-  drawLabels(g,ox,groups);
-  // unit stacks
-  for(const [z,gs] of groups) drawGroups(g,z,gs,t);
-  for(const u of flying) drawIcon(g,u.ox,u.oy,{nat:u.nat,type:u.type,list:[u]},t);
-  // effects
+}
+function drawUnits(g,t,ox,groups,flying){
+  const near=x=>x+ox>-160&&x+ox<VW/zoom+160;   // skip stacks that are well off screen
+  for(const [z,gs] of groups) if(near(Z[z].px)) drawGroups(g,z,gs,t);
+  for(const u of flying) if(near(u.ox)) drawIcon(g,u.ox,u.oy,{nat:u.nat,type:u.type,list:[u]},t);
+}
+function drawEffects(g,t){
   for(const e of effects){ const p=(t-e.t0)/e.life;
     if(e.type==='text'){ g.globalAlpha=Math.max(0,1-p*p); g.fillStyle=e.color; g.strokeStyle='#000'; g.lineWidth=3; g.font='bold 18px Georgia'; g.textAlign='center'; g.strokeText(e.text,e.x,e.y-p*26); g.fillText(e.text,e.x,e.y-p*26); g.globalAlpha=1; }
     else if(e.type==='boom'){ const R=(e.big?50:34)*(0.3+p); g.globalAlpha=Math.max(0,1-p); const gr=g.createRadialGradient(e.x,e.y,2,e.x,e.y,R); gr.addColorStop(0,'#fff6b0'); gr.addColorStop(.5,'#ff8a2a'); gr.addColorStop(1,'#a3200000'); g.fillStyle=gr; g.beginPath(); g.arc(e.x,e.y,R,0,7); g.fill(); g.globalAlpha=1; } }
 }
 function draw(){
   if(!WW||!terrainCanvas) return;
-  const t=nowMs(), g=ctx, team=teamOf(me);
+  const t=nowMs(), g=ctx;
   if(ovDirty) buildOverlay();
   g.setTransform(1,0,0,1,0,0); g.fillStyle='#0a1118'; g.fillRect(0,0,cv.width,cv.height);
-  const byZ=new Map(), flying=[];
-  for(const u of units){ if(u.hp<=0||u.aboard||!seenBy(u,team)) continue; if(u.ox!==undefined){ flying.push(u); continue; } let a=byZ.get(u.z); if(!a){ a=[]; byZ.set(u.z,a); } a.push(u); }
-  const groups=new Map();
-  for(const [z,arr] of byZ){ const m=new Map(); for(const u of arr){ const k=u.nat*16+SHOP_ORDER.indexOf(u.type.key); let gp=m.get(k); if(!gp){ gp={nat:u.nat,type:u.type,list:[]}; m.set(k,gp); } gp.list.push(u); }
-    groups.set(z,[...m.values()].sort((a,b)=>(a.type.dom==='air')-(b.type.dom==='air')||a.nat-b.nat)); }
-  ZROWS.length=0; for(const [z,gs] of groups){ const n=gs.length, cols=n<=2?n:n<=6?3:4; ZROWS[z]=Math.ceil(n/cols); }
+  const {groups,flying}=unitGroups();
+  carried=udrag&&!dragStale()?dragState():null;
+  ZROWS.length=0; for(const [z,gs] of groups) ZROWS[z]=Math.ceil(gs.length/groupCols(gs.length));
   effects=effects.filter(e=>t-e.t0<e.life);
-  for(let k=0;k*WW-cam.x<VW/zoom;k++) drawCopy(g,t,k*WW-cam.x,groups,flying);
-  dirty=effects.length>0||busy||units.some(u=>u.hit&&t-u.hit<300);
+  const copies=[]; for(let k=-1;k*WW-cam.x<VW/zoom+WW/2;k++) copies.push(k*WW-cam.x);   // one extra on each side for spill-over
+  const layer=fn=>{ for(const ox of copies){ setCopy(g,ox); fn(ox); } };
+  layer(()=>drawTerrain(g));
+  layer(ox=>drawTints(g,ox));
+  layer(()=>drawBorders(g));
+  layer(()=>drawHighlights(g));
+  layer(ox=>drawLabels(g,ox,groups));   // labels first, so unit stacks sit on top of them
+  layer(ox=>drawUnits(g,t,ox,groups,flying));
+  layer(()=>drawEffects(g,t));
+  if(carried) drawDrag(g,t);
+  dirty=!!udrag||effects.length>0||busy||units.some(u=>u.hit&&t-u.hit<300*pace());
 }
-function loop(){ if(dirty||busy||effects.length) draw(); requestAnimationFrame(loop); }
+function loop(){ if(udrag&&dragStale()) cancelDrag(); if(udrag) edgeScroll(); if(dirty||busy||effects.length) draw(); requestAnimationFrame(loop); }
 
 // ================================================================ end screen + boot
 function showEnd(win,why){
@@ -1293,7 +1483,7 @@ function showEnd(win,why){
 }
 function showTitle(){ $('title').classList.remove('hidden'); }
 function newGame(seed){
-  seedNow=seed; units=[]; nextId=1; effects=[]; busy=false; gameOver=false; round=1; turnNat=0;
+  seedNow=seed; units=[]; nextId=1; effects=[]; busy=false; gameOver=false; round=1; turnNat=firstNat;
   nations=[0,1,2,3,4].map(()=>({alive:false,ip:0}));
   vis=[new Set(),new Set()]; expl=[new Set(),new Set()]; known=[[],[]];
   const w=mapMode==='default'?LFWorld.buildDefault(WORLD_DEFAULT):LFWorld.buildRandom(seed,LFWorld.PRESETS[mapMode==='custom'?customKind:'random']);
@@ -1308,7 +1498,7 @@ function buildTerrainSafe(){ buildTerrain(); return terrainCanvas; }
 // ---- balance check: play short AI-vs-AI wars on a candidate map and measure how even the two sides are
 async function simWar(seed,rounds){
   simming=true; turboAI=true; AUTOPLAY=true; simLimit=1; busy=true;
-  try{ newGame(seed); await startTurn(0); for(let r=2;r<=rounds&&!gameOver;r++){ simLimit=round; await endTurn(); } }
+  try{ firstNat=0; newGame(seed); await startTurn(firstNat); for(let r=2;r<=rounds&&!gameOver;r++){ simLimit=round; await endTurn(); } }
   finally{ simming=false; turboAI=false; AUTOPLAY=false; simLimit=Infinity; busy=false; }
   const T=t=>TEAMS[t].nats.reduce((s,n)=>s+(nations[n].alive?income(n):0),0), a=T(0), x=T(1);
   const lone=Z.filter(z=>z.kind==='land').length;
@@ -1333,9 +1523,9 @@ async function startGame(n,seed){
   if(!seed&&mapMode==='random') seed=await findBalancedSeed(note);
   if(!seed&&mapMode==='custom'){ const L=CUSTOM_SEEDS[customKind]; seed=L.length?L[(Math.random()*L.length)|0]:await findBalancedSeed(note); }
   note(''); $('title').classList.add('hidden'); setMusic('battle');
-  newGame(seed||((Math.random()*1e9)|0)); resize();
+  firstNat=me; newGame(seed||((Math.random()*1e9)|0)); resize();
   zoom=Math.max(.7,Math.min(1.15,VH/WH)); centerOn(capitalZone(me).id,true);
-  dirty=true; busy=true; refreshUI(); try{ await startTurn(0); }finally{ busy=false; } refreshUI();
+  dirty=true; busy=true; refreshUI(); try{ await startTurn(firstNat); }finally{ busy=false; } refreshUI();
 }
 (function boot(){
   const pk=$('picker');

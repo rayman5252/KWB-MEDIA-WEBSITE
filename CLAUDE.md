@@ -14,7 +14,7 @@ Ray Wolters' ("Big Ray") business site for KWB Media LLC: video production, soci
 - Games, each a self-contained folder with `index.html` + `assets/`:
   - `brand-fighter/` — Brand Fighter: Slop Strikes Back (arcade brawler; Ray calls it "the street fighter game")
   - `rays-realm/` — Ray's Realm (fantasy hex strategy)
-  - `ww2-hex/` — Landfall: WWII (hex strategy modeled on Ray's Realm)
+  - `ww2-hex/` — Landfall: WWII (territory-and-sea-zone world strategy modeled on Ray's Realm; no save or online play)
   - `over-the-marne/` — Over the Marne (2D WWI biplanes)
   - `skull-cove-kart/` — Skull Cove Kart (racing)
   - `dead-air/` — Dead Air (first-person zombie shooter)
@@ -37,6 +37,7 @@ Special Olympics and United Way can be named as clients. Do **not** name Electri
 - Ray works on two computers. At the start of a session, `git pull` before touching anything; push when done.
 
 ## Current state / where we left off
+- Last work (Nov 25): Landfall — units now move and attack by click-and-drag; a plain click only selects (or places a new ship). While dragging, the starting piece is greyed and an arrow runs to the pointer. The cursor is a pointing finger over your pieces and an open hand over the map. Unit bases are painted in the nation colour in code (`baseArt`; art files unchanged), and the UK colour is now brown. Borders, ownership/fog tints and highlights are now smooth vector shapes (`traceBorders` in `assets/world.js`), drawn live so they stay sharp when zoomed; clicks still use the cell raster. Unit stacks no longer get cut off at the map seam (`draw()` renders layer by layer across the wrapped copies) and sit farther from the top and bottom edges (anchor choice in `assets/world.js`; a few very thin sea zones there are still tight). The nation you pick now moves first each round (others follow in the usual order), and AI turns play 30% slower (`AI_PACE`). Open question: AI animation still stops after a per-nation time budget (`AI_ANIM_BUDGET`), so in a test game over half of AI attacks resolved instantly.
 - Last work (Nov 25): Ray's Realm — ships move 4, Elven Ranger 8 health, Mercenaries no longer count toward the supply cap (still 3 at a time; the AI never hires them), forest and crags tiles turned upright. Nothing half-done.
 - Terrain art gotcha: `t_*` tiles are saved as pointy-topped hexes and the game draws them turned 90° clockwise, so scenery must lie on its side (top pointing left) in the file. Gold/crystal mine, keep and fort tiles are drawn as saved.
 - Pinned for later: military "Leader" units (Ray wants to think about it first).

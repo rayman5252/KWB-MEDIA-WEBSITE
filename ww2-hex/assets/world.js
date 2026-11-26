@@ -78,7 +78,8 @@ function assemble(W,H,zid,zones,land,links,cuts){
     for(const c of z.cells){ const x=c%W, y=(c-x)/W, ux=ref+wrapD(x-ref,W); if(ux<x0)x0=ux; if(ux>x1)x1=ux; if(y<y0)y0=y; if(y>y1)y1=y; mx+=ux; }
     z.bx0=Math.floor(x0); z.bx1=Math.floor(x1); z.by0=y0; z.by1=y1; z.cx=mx/z.cells.length; z.cy=cy/z.cells.length; z.ref=ref;
   }
-  // distance to nearest zone border (for anchors)
+  // distance to nearest zone border (for anchors; the top and bottom of the map count as borders when picking one)
+  const EDGE_TOP=30, EDGE_BOTTOM=22;   // raster cells of headroom and footroom a stack and its label need
   const bd=new Int16Array(N).fill(-1), q=[];
   for(let i=0;i<N;i++){ const x=i%W, y=(i-x)/W, z=zid[i];
     const r=y*W+(x+1)%W, l=y*W+(x+W-1)%W; let b=zid[r]!==z||zid[l]!==z; if(!b&&y>0) b=zid[i-W]!==z; if(!b&&y<H-1) b=zid[i+W]!==z;
@@ -86,7 +87,8 @@ function assemble(W,H,zid,zones,land,links,cuts){
   for(let qi=0;qi<q.length;qi++){ const c=q[qi], x=c%W, y=(c-x)/W; const nb=[y*W+(x+1)%W, y*W+(x+W-1)%W]; if(y>0) nb.push(c-W); if(y<H-1) nb.push(c+W);
     for(const n of nb) if(bd[n]<0){ bd[n]=bd[c]+1; q.push(n); } }
   for(const z of Z){ let best=-1,bs=-1e9;
-    for(const c of z.cells){ const x=c%W, y=(c-x)/W, ux=z.ref+wrapD(x-z.ref,W); const s=bd[c]*100-((ux-z.cx)**2+(y-z.cy)**2)*0.01; if(s>bs){ bs=s; best=c; } }
+    for(const c of z.cells){ const x=c%W, y=(c-x)/W, ux=z.ref+wrapD(x-z.ref,W); const near=Math.max(0,EDGE_TOP-y)+Math.max(0,y-(H-1-EDGE_BOTTOM));   // cells too close to the top or bottom for a unit stack
+      const s=(Math.min(bd[c],y,H-1-y)-near)*100-((ux-z.cx)**2+(y-z.cy)**2)*0.01; if(s>bs){ bs=s; best=c; } }
     const ax=best%W, ay=(best-ax)/W; z.ax=ax; z.ay=ay; z.depth=bd[best]; }
   // adjacency by shared cell edges (4-neighbourhood)
   const adjSet=Z.map(()=>new Map());
@@ -232,7 +234,56 @@ function assignNations(world,rnd){
 }
 
 // terrain styles for Custom Battles / Random World
+// ---------------------------------------------------------------- smooth vector borders (for drawing only)
+// Walks the edges between differently-zoned raster cells into chains that run junction to junction, smooths each
+// chain once (so both neighbours share exactly the same line), then joins the chains into closed rings per zone.
+// Coordinates are in raster cells. x is left unwrapped, so a line crossing the seam may run past 0 or W.
+function traceBorders(world){
+  const W=world.W, H=world.H, zid=world.zid, NV=W*(H+1), E=[], at=new Array(NV);
+  const mod=x=>((x%W)+W)%W, key=(x,y)=>Math.round(y)*W+mod(Math.round(x));
+  const edge=(x,y,dx,dy,a,b)=>{ const e={u:key(x,y),v:key(x+dx,y+dy),x,y,dx,dy,p:Math.min(a,b),q:Math.max(a,b),used:false};
+    E.push(e); (at[e.u]=at[e.u]||[]).push(e); (at[e.v]=at[e.v]||[]).push(e); };
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const a=zid[y*W+mod(x-1)], b=zid[y*W+x]; if(a!==b) edge(x,y,0,1,a,b); }
+  for(let y=0;y<=H;y++) for(let x=0;x<W;x++){ const a=y>0?zid[(y-1)*W+x]:-1, b=y<H?zid[y*W+x]:-1; if(a!==b) edge(x,y,1,0,a,b); }
+  const chains=[];
+  const walk=(start,e)=>{ const first=e, pts=[]; let v=start, x=mod(start), y=(start-mod(start))/W; pts.push([x,y]);
+    for(;;){ e.used=true; const fwd=e.u===v; v=fwd?e.v:e.u; x+=fwd?e.dx:-e.dx; y+=fwd?e.dy:-e.dy; pts.push([x,y]);
+      if(v===start||at[v].length!==2) break; e=at[v][0]===e?at[v][1]:at[v][0]; if(e.used) break; }
+    chains.push({p:first.p,q:first.q,u:start,v,loop:v===start&&at[start].length===2,pts}); };
+  for(let v=0;v<NV;v++) if(at[v]&&at[v].length!==2) for(const e of at[v]) if(!e.used) walk(v,e);
+  for(const e of E) if(!e.used) walk(e.u,e);                    // islands and other closed loops
+  for(const c of chains) c.pts=simplify(c.p<0?c.pts:smooth(c.pts,c.loop),0.12);
+  // rings per zone
+  const mine=world.Z.map(()=>[]); for(const c of chains){ if(c.p>=0) mine[c.p].push(c); if(c.q>=0) mine[c.q].push(c); }
+  const rings=mine.map((list,z)=>{ const ends=new Map(), used=new Set(), out=[];
+    for(const c of list){ if(c.loop) continue; for(const k of [c.u,c.v]){ if(!ends.has(k)) ends.set(k,[]); ends.get(k).push(c); } }
+    for(const c of list){ if(used.has(c)) continue; used.add(c); const ring=c.pts.map(p=>p.slice());
+      if(!c.loop){ let end=c.v; while(end!==c.u){ const d=ends.get(end).find(o=>!used.has(o)); if(!d) break; used.add(d);
+          const pts=d.u===end?d.pts:d.pts.slice().reverse(), shift=Math.round((ring[ring.length-1][0]-pts[0][0])/W)*W;
+          for(let i=1;i<pts.length;i++) ring.push([pts[i][0]+shift,pts[i][1]]); end=d.u===end?d.v:d.u; } }
+      let m=0; for(const p of ring) m+=p[0]; m/=ring.length; const k=Math.round((world.Z[z].ref-m)/W)*W; if(k) for(const p of ring) p[0]+=k;
+      out.push(ring); }
+    return out; });
+  return {chains,rings};
+}
+// turn the cell staircase into flowing lines: cut through the middle of each step, then relax; junctions stay put
+function smooth(pts,loop){
+  const n=pts.length, mid=i=>[(pts[i][0]+pts[i+1][0])/2,(pts[i][1]+pts[i+1][1])/2];
+  let q=[]; if(!loop) q.push(pts[0]); for(let i=0;i<n-1;i++) q.push(mid(i)); if(!loop) q.push(pts[n-1]);
+  const m=q.length, passes=m>=10?3:m>=6?1:0;
+  for(let k=0;k<passes;k++) q=q.map((p,i)=>{ if(!loop&&(i===0||i===m-1)) return p; const a=q[(i+m-1)%m], b=q[(i+1)%m]; return [(a[0]+2*p[0]+b[0])/4,(a[1]+2*p[1]+b[1])/4]; });
+  if(loop) q.push(q[0].slice());
+  return q;
+}
+function simplify(pts,tol){   // Douglas-Peucker
+  const n=pts.length; if(n<3) return pts; const keep=new Uint8Array(n); keep[0]=keep[n-1]=1; const todo=[[0,n-1]];
+  while(todo.length){ const [i,j]=todo.pop(), a=pts[i], dx=pts[j][0]-a[0], dy=pts[j][1]-a[1], L=dx*dx+dy*dy; let far=-1, fd=tol*tol;
+    for(let k=i+1;k<j;k++){ const px=pts[k][0]-a[0], py=pts[k][1]-a[1], t=L?Math.max(0,Math.min(1,(px*dx+py*dy)/L)):0, d=(px-t*dx)**2+(py-t*dy)**2; if(d>fd){ fd=d; far=k; } }
+    if(far>=0){ keep[far]=1; todo.push([i,far],[far,j]); } }
+  return pts.filter((p,i)=>keep[i]);
+}
+
 const PRESETS={random:{gw:[5,11,23],frac:0.34,minD:40},continents:{gw:[2,5,12],frac:0.36,minD:42},islands:{gw:[4,9,20],frac:0.28,minD:38},archipelago:{gw:[6,14,30],frac:0.21,minD:32}};
-const api={PRESETS,mulberry32,decodeRLE,flood,assemble,buildDefault,buildRandom,components,wrapD};
+const api={PRESETS,mulberry32,decodeRLE,flood,assemble,buildDefault,buildRandom,components,wrapD,traceBorders};
 if(typeof module!=='undefined'&&module.exports) module.exports=api; else root.LFWorld=api;
 })(typeof window!=='undefined'?window:globalThis);
