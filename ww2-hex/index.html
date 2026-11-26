@@ -1438,23 +1438,27 @@ function groupSlot(z,i,n){   // where the i-th of n stacks in a zone is drawn
   const Q=Z[z], cols=groupCols(n), rows=Math.ceil(n/cols), col=i%cols, row=Math.floor(i/cols), inRow=Math.min(cols,n-row*cols);
   return {x:Q.px+(col-(inRow-1)/2)*(IW+8), y:Q.py+(row-(rows-1)/2)*34+2};
 }
-// A factory has its own fixed spot, always on its own land and clear of the middle where the troops stand,
-// so it never appears to sit in a neighbour's territory.
-function factorySpot(z){
-  const Q=Z[z]; if(Q.spot) return Q.spot;
+// A factory stands on its own land, clear of the troop stacks and the territory name, so it never seems to belong to a
+// neighbour or hides behind an army. Its spot depends only on how many stacks share the territory.
+function factorySpot(z,n){
+  const Q=Z[z]; n=n||0; if(!Q.spots) Q.spots=[]; if(Q.spots[n]) return Q.spots[n];
   const inZone=(x,y)=>{ const gx=Math.floor(x/SC), gy=Math.floor(y/SC); return gy>=0&&gy<GH&&ZID[gy*GW+((gx%GW)+GW)%GW]===z; };
+  const taken=[]; for(let i=0;i<n;i++) taken.push(groupSlot(z,i,n));
+  const nextDoor=[]; for(const a of Q.adj) for(let i=0;i<3;i++) nextDoor.push(groupSlot(a,i,3));   // where neighbours' fleets and armies usually stand
+  const rows=n?Math.ceil(n/groupCols(n)):0, nameY=Q.py-(rows?rows*17+22:4);
+  const near=(a,b)=>Math.max(0,1-Math.abs(a)/42)*Math.max(0,1-Math.abs(b)/36);      // 1 = right on top, 0 = clear
   let best={x:Q.px,y:Q.py}, bs=-1e9;
   for(const c of Q.cells){ const cx=c%GW, cy=(c-cx)/GW; if((cx+cy)%2) continue;
     const x=Q.px+wrapD(cx*SC+1-Q.px,WW), y=cy*SC+1; if(y<34||y>WH-30) continue;
     let on=0; for(let dx=-18;dx<=18;dx+=9) for(let dy=-14;dy<=16;dy+=10) if(inZone(x+dx,y+dy)) on++;        // the footprint of the base
-    const ox=x-Q.px, oy=y-Q.py, crowd=Math.max(0,1-Math.abs(ox)/62)*Math.max(0,1-Math.abs(oy)/48);           // overlap with the troops
-    const score=on*5-crowd*45-Math.hypot(ox,oy)*0.12-(oy<-20&&Math.abs(ox)<50?10:0);                          // and keep off the name above them
+    let covered=0; for(const p of taken) covered+=near(x-p.x,y-p.y);
+    let crowded=0; for(const p of nextDoor) crowded+=near(wrapD(x-p.x,WW),y-p.y);
+    const score=on*5-(on<14?60:0)-(inZone(x,y+4)?0:500)-covered*150-crowded*90-near((x-Q.px)*0.8,y-nameY)*25-Math.hypot(x-Q.px,y-Q.py)*0.12;
     if(score>bs){ bs=score; best={x,y}; } }
-  return (Q.spot=best);
+  return (Q.spots[n]=best);
 }
 function slotOf(z,gs,i){   // where gs[i] is drawn: factories on their spot, unit stacks in rows around the middle
-  if(isFactory(gs[i])) return factorySpot(z);
-  const skip=isFactory(gs[0])?1:0; return groupSlot(z,i-skip,gs.length-skip);
+  const skip=isFactory(gs[0])?1:0; return i<skip?factorySpot(z,gs.length-1):groupSlot(z,i-skip,gs.length-skip);
 }
 function drawGroups(g,z,gs,t){ gs.forEach((gp,i)=>{ const p=slotOf(z,gs,i); gp.faded=!!carried&&gp.list.some(u=>carried.moving.includes(u)); drawIcon(g,p.x,p.y,gp,t); }); }
 // every visible unit, stacked by nation and type within its zone (units in mid-animation are listed apart)
