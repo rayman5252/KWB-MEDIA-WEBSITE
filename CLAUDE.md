@@ -37,4 +37,7 @@ Special Olympics and United Way can be named as clients. Do **not** name Electri
 - Ray works on two computers. At the start of a session, `git pull` before touching anything; push when done.
 
 ## Current state / where we left off
+- Last work (Nov 25): Ray's Realm — ships move 4, Elven Ranger 8 health, Mercenaries no longer count toward the supply cap (still 3 at a time; the AI never hires them), forest and crags tiles turned upright. Nothing half-done.
+- Terrain art gotcha: `t_*` tiles are saved as pointy-topped hexes and the game draws them turned 90° clockwise, so scenery must lie on its side (top pointing left) in the file. Gold/crystal mine, keep and fort tiles are drawn as saved.
+- Pinned for later: military "Leader" units (Ray wants to think about it first).
 - Last work (Nov 24): Ray's Realm — Scriptorium and research, mana crystal mines, Wizard spells, Dirigible, 3D gold mine, Hydra/hills/Paladin tweaks.
