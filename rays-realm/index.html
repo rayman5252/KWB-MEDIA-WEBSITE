@@ -276,7 +276,7 @@
 <div id="storyscreen" class="scene hidden"><video id="storyvid" src="assets/title.mp4" poster="assets/title.jpg" muted loop playsinline></video><div class="shade"></div>
   <div class="box"><div class="alabel">The Tale of the Realm</div><h2>War Comes</h2>
     <div id="storytext">
-      <p>For a hundred years Ray's Realm knew peace. The harvests were full, the river roads were open, and four great houses kept faith with the crown from the four corners of the land.</p>
+      <p>For a hundred years Ray's Realm knew peace. The harvests were full, the river roads were open, and the great houses kept faith with the crown, from the four corners of the land to the halls beneath the mountains.</p>
       <p>Then the borders began to bleed. A stolen herd. A burned mill. A toll too cruel at the river bridge. Small quarrels hardened into raids, and raids into sieges, until no house trusted another.</p>
       <p>Now barbarian hordes gather in the hills, the gold mines are the last wealth in the land, and every keep has barred its gates. There is room for only one crown.</p>
       <p class="last">To survive, you must choose your army, hold your keep, seize the mines and conquer the realm before it conquers you. Choose well.</p>
@@ -287,7 +287,7 @@
     <p id="armytext"></p><div id="armyspecial"><div><b>Special unit</b><span id="armyunit"></span></div><div><b>Army bonus</b><span id="armybonus"></span></div></div><div id="armytabs"></div>
     <div class="arow"><button id="armygo">Lead This Army</button><button class="sec" id="armyback">Back</button></div></div></div>
 <div id="title" class="scene"><video id="titlevid" muted loop playsinline autoplay></video><img class="bgm" id="titleimg" alt="" style="display:none"><div class="shade"></div>
-  <div class="box"><h2>Ray's Realm</h2><div class="tag">Four armies. One crown. Hold the gold, rule the realm.</div>
+  <div class="box"><h2>Ray's Realm</h2><div class="tag">Five armies. One crown. Hold the gold, rule the realm.</div>
   <div id="armypick"><span>Enemy armies</span><button data-n="1">1</button><button data-n="2">2</button><button data-n="3">3</button></div>
   <div id="mappick"><span>Map size</span><button data-m="small">FAST GAME<small>(SMALL MAP)</small></button><button data-m="normal">NORMAL MAP</button><button data-m="large">LONG GAME<small>(LARGER MAP)</small></button></div>
   <button id="continue" style="display:none;margin:0 6px 10px">Continue</button>
@@ -296,7 +296,8 @@
   <a class="back" href="/ai-game-fun.html">&larr; Back to AI Game Fun</a>
   <div id="musicnote" style="display:none;margin-top:10px;font-size:13px;opacity:.85;text-shadow:0 2px 6px #000">♪ Click anywhere to start the music</div>
   <details><summary>How to play</summary><ul>
-    <li><b>Armies:</b> each army recruits one special unit and has its own bonus. Order of the Cross: the Paladin, and units next to a Paladin heal 3 health each turn. Dark Host: the Hydra (9 attack; replaces the Dragon) and 2 gold for every enemy unit destroyed. Golden Valkyries: the winged Valkyrie, mines that pay +1 gold, and Mercenaries for 2 gold. Emerald Court: the Elven Ranger (range 2–4), 1 extra hex of sight and 1 less damage in forest.</li>
+    <li><b>Armies:</b> each army recruits one special unit and has its own bonus. Order of the Cross: the Paladin, and units next to a Paladin heal 3 health each turn. Dark Host: the Hydra (9 attack; replaces the Dragon) and 2 gold for every enemy unit destroyed. Golden Valkyries: the winged Valkyrie, mines that pay +1 gold, and Mercenaries for 2 gold. Emerald Court: the Elven Ranger (range 2–4), 1 extra hex of sight and 1 less damage in forest. Stonehold Clans (Dwarves): sturdier warriors, Crossbowmen instead of Archers, the Steam Tank instead of the Dragon, forts for 18 gold, 1 extra gold every turn, stone walls, and foot soldiers and ram riders that climb mountains.</li>
+    <li><b>Stone walls (Dwarves):</b> 5 gold each, on meadow or hills within 2 hexes of a Dwarf unit or keep; 2 a turn, 12 standing, never beside an enemy or within 3 hexes of a keep the Dwarves don't hold. Enemy and barbarian ground units cannot pass; flyers go over but cannot land; Dwarves walk through. Only a Catapult, Dragon or Hydra can knock a wall down, and one hit does it.</li>
     <li><b>Omens:</b> from round 4 on, the sky or the land sometimes turns on everyone. Each omen is announced one round ahead (see the Omens panel). Fog Bank: everyone sees 1 hex less. Thunderstorm: ships cannot sail and ranged units lose 1 range. Hard Frost: rivers freeze for 2–3 rounds so units can walk across (ships are stuck), then the ice cracks: anyone still on it takes 4 damage and is thrown onto the nearest bank. Bountiful Harvest: mines pay double. Plague: the largest army loses 2 health on each unit that can move. Frost Giants Spotted: huge Frost Giants appear at random places, march on the nearest army and attack anyone, then retreat to the mountains after 6 rounds; slay one for 15 gold.</li>
     <li>Each unit has <b>movement points</b> per turn and can spend them in several steps until you press End Turn. Attacking ends that unit's turn. Catapults can't fire after moving.</li>
     <li><b>Gold mines:</b> end a move on one to seize it. Each held mine pays +2 gold at the start of your turn.</li>
@@ -306,8 +307,8 @@
     <li><b>Barbarians:</b> skull-banner towers hide in undiscovered land. Their riders and archers only defend their home, but they hit hard. Destroy a tower for a 10 gold bounty.</li>
     <li><b>Recruit</b> from the sidebar: new units appear near your keep and rest until next turn. Each keep you hold lets you recruit up to 4 units per turn, and each fort can also recruit two more units beside it. Ships spawn on the river.</li>
     <li><b>Mercenaries</b> cost 3 gold and match a Foot Soldier. They are hired on the spot: place one on any hex you can see, not just near a keep. A contract lasts 5 rounds (a badge shows the rounds left), or until he is killed. Three at a time at most. They don't use up your keep recruits or count towards your supply.</li>
-    <li><b>Ships</b> are unarmed transports that carry 2 land units. Walk a unit onto a ship to board, sail up to 4 hexes, then select the ship and press Unload to land passengers on any adjacent shore, all in the same turn. Boarding uses up the unit's walking, and landing ends its turn (no attack after landing).</li>
-    <li>Forests: +1 defence, cost 2 to enter (free for the Emerald Court). Hills: +1 defence and +1 sight for a foot unit standing on them (flyers get neither). Crags and river block foot soldiers; cross at the fords.</li>
+    <li><b>Ships</b> are unarmed transports that carry 2 land units. Walk a unit onto a ship to board, sail up to 4 hexes, then select the ship and press Unload to land passengers on any adjacent shore, all in the same turn. Boarding uses up the unit's walking, and landing ends its turn (no attack after landing). <b>Unload all</b> lands everyone at once, each on a free shore hex. Archers, Crossbowmen and Rangers can <b>fire from the deck</b> (a unit that has fired stays aboard until next turn), and when a ship is attacked and stays afloat, every one of them shoots back, however close or far the attacker is. Steam Tanks are too heavy to board.</li>
+    <li>Forests: +1 defence, cost 2 to enter (free for the Emerald Court). Hills: +1 defence and +1 sight for a foot unit standing on them (flyers get neither). Crags and river block foot soldiers; cross at the fords. Dwarf warriors and ram riders can climb crags (+2 defence), one crag hex per turn.</li>
     <li><b>Forts:</b> pay 25 gold to build one on any grass hex near your units. It gives +2 defence to your unit standing there, +2 supply, and lets you recruit two units per turn on adjacent hexes (even a ship, if water is adjacent). It collapses if that unit is slain, and is razed if an enemy steps on it. Keeps give +2 and recruit without limit; each fort recruits two units per turn.</li>
     <li><b>Scriptorium (long games):</b> raise one on any open hex you can see (30 gold) to research technologies: armour, whetstones, dirigibles and a secret of your own army. Each discovery is paid for up front and lands at a random time, and a fire can destroy the work. If an enemy ends a move on your Scriptorium it is captured: you lose your newest discovery and the capturer learns one.</li>
     <li><b>Mana &amp; Wizards:</b> each keep you hold gives 1 mana a turn, each mana crystal mine you hold gives 2 (seize them like gold mines), and a Scriptorium gives 1. Mana pays for research and for Wizard spells, which a Wizard casts instead of attacking: Heal (3), Flash (6) stuns an enemy, and Chain Lightning (9) leaps between up to four enemies. A Wizard beside a crystal mine mends 2 health a turn.</li>
@@ -315,7 +316,7 @@
     <li><b>Healing:</b> wounded units that stay out of battle recover 5% of their health each turn, or 10% if they end within 2 hexes of a keep or fort you hold.</li>
     <li>Defenders counter-attack if the attacker is within their range.</li>
     <li><b>Saving:</b> the game saves itself at the start of each of your turns and when you close the page, and you can press <b>Save</b> (or S) any time on your turn. Use <b>Continue</b> on this screen to pick up where you left off. There is one save slot per browser; it is cleared when a battle is won or lost.</li>
-    <li><b>Enemy armies:</b> choose to face 1, 2 or 3 computer armies before a New Battle. Any empty corner keeps are abandoned: march in to claim them for loot and income (the enemy may grab them too).</li>
+    <li><b>Enemy armies:</b> choose to face 1, 2 or 3 computer armies before a New Battle; they are drawn at random from the other armies, four armies at most in a battle. Any empty corner keeps are abandoned: march in to claim them for loot and income (the enemy may grab them too).</li>
     <li><b>Head to Head Online:</b> play a friend on another computer. One of you picks an army and creates a match, then texts the 5-letter code; the other joins and picks a different army. Only your two armies are on the map, with twice the barbarians. Each turn is sent automatically when you press End Turn. If the connection drops, the guest reconnects on their own; the host can use Resume match.</li>
     <li><b>Victory:</b> capture every enemy keep by ending a move on it. Taking a keep also loots 5–25 gold. Lose your own keep — or your whole army and gold — and the realm is lost.</li>
   </ul></details></div></div>
@@ -329,11 +330,17 @@ const SPR = {
   cavalry:{w:313,h:468,cx:162,bottom:466,bw:300}, dragon:{w:334,h:360,cx:151,bottom:358,bw:300},
   archer:{w:325,h:456,cx:151,bottom:454,bw:300}, scout:{w:302,h:418,cx:151,bottom:416,bw:300},
   barbarcher:{w:302,h:446,cx:151,bottom:444,bw:300}, frostgiant:{w:472,h:537,cx:233,bottom:569,bw:252}, barbtower:{w:302,h:394,cx:151,bottom:393,bw:300}, barbrider:{w:302,h:443,cx:151,bottom:441,bw:300}, merc:{w:337,h:440,cx:186,bottom:438,bw:300}, archertower:{w:302,h:354,cx:151,bottom:353,bw:300},
+  crossbow:{w:325,h:456,cx:151,bottom:454,bw:300}, steamtank:{w:335,h:291,cx:151,bottom:290,bw:300},
   paladin:{w:302,h:475,cx:149,bottom:474,bw:300}, hydra:{w:334,h:360,cx:151,bottom:358,bw:300}, dirigible:{w:300,h:378,cx:149,bottom:377,bw:300}, valkyrie:{w:302,h:400,cx:151,bottom:399,bw:300}, ranger:{w:302,h:400,cx:151,bottom:399,bw:300}
 };
 const IMG = {};
-const SPRM = {f0_dirigible:{w:300,h:379,cx:149,bottom:378,bw:300}, f1_dirigible:{w:300,h:381,cx:149,bottom:380,bw:300}, f2_dirigible:{w:300,h:380,cx:149,bottom:379,bw:300}, f3_dirigible:{w:301,h:373,cx:150,bottom:372,bw:300}, f4_frostgiant:{w:472,h:537,cx:233,bottom:569,bw:252}, f1_hydra:{w:362,h:386,cx:196,bottom:385,bw:300}, f0_merc:{w:335,h:438,cx:184,bottom:437,bw:300}, f1_merc:{w:336,h:438,cx:184,bottom:437,bw:300}, f2_merc:{w:332,h:441,cx:181,bottom:440,bw:300}, f3_merc:{w:333,h:437,cx:182,bottom:436,bw:300}, f1_archer:{w:323,h:451,cx:152,bottom:450,bw:300}, f1_archertower:{w:302,h:374,cx:149,bottom:373,bw:300}, f1_catapult:{w:340,h:304,cx:155,bottom:303,bw:300}, f1_cavalry:{w:339,h:467,cx:188,bottom:466,bw:300}, f1_dragon:{w:332,h:356,cx:149,bottom:355,bw:300}, f1_knight:{w:319,h:416,cx:167,bottom:415,bw:300}, f1_scout:{w:300,h:390,cx:149,bottom:389,bw:300}, f1_ship:{w:300,h:369,cx:149,bottom:368,bw:300}, f1_wizard:{w:302,h:367,cx:149,bottom:366,bw:300}, f2_archer:{w:323,h:454,cx:150,bottom:453,bw:300}, f2_archertower:{w:301,h:416,cx:149,bottom:415,bw:300}, f2_catapult:{w:356,h:307,cx:162,bottom:306,bw:300}, f2_cavalry:{w:312,h:467,cx:160,bottom:466,bw:300}, f2_dragon:{w:332,h:358,cx:149,bottom:357,bw:300}, f2_knight:{w:337,h:410,cx:186,bottom:409,bw:300}, f2_scout:{w:300,h:415,cx:149,bottom:414,bw:300}, f2_ship:{w:300,h:361,cx:149,bottom:360,bw:300}, f2_valkyrie:{w:484,h:511,cx:241,bottom:510,bw:300}, f2_wizard:{w:300,h:357,cx:149,bottom:356,bw:300}, f3_archer:{w:327,h:455,cx:149,bottom:454,bw:300}, f3_archertower:{w:300,h:445,cx:149,bottom:444,bw:300}, f3_catapult:{w:325,h:313,cx:150,bottom:312,bw:300}, f3_cavalry:{w:312,h:466,cx:160,bottom:465,bw:300}, f3_dragon:{w:333,h:358,cx:150,bottom:357,bw:300}, f3_knight:{w:344,h:464,cx:190,bottom:463,bw:300}, f3_ranger:{w:313,h:445,cx:149,bottom:444,bw:300}, f3_scout:{w:300,h:410,cx:149,bottom:409,bw:300}, f3_ship:{w:300,h:367,cx:149,bottom:366,bw:300}, f3_wizard:{w:300,h:357,cx:149,bottom:356,bw:300}, f0_paladin:{w:302,h:475,cx:149,bottom:474,bw:300}};   // per-sprite metrics for the new army art (falls back to SPR by unit type)
-const SPECIAL = {paladin:0, hydra:1, valkyrie:2, ranger:3};   // army-only units: the sprite exists for that army alone
+// armies are team numbers 0-3 and 5; 4 is the barbarians (and marks an abandoned keep), so it stays put for old saves
+const DWARF = 5, ARMY_IDS = [0,1,2,3,DWARF], TEAMS = 6;
+const isArmy = t => ARMY_IDS.includes(t);
+const perArmy = fill => Array.from({length:TEAMS},()=>typeof fill==='function'?fill():fill);
+const padArmy = (a,fill) => perArmy(fill).map((v,i)=>a&&a[i]!==undefined?a[i]:v);
+const SPRM = {f5_knight:{w:303,h:410,cx:149,bottom:409,bw:300}, f5_crossbow:{w:300,h:388,cx:149,bottom:387,bw:300}, f5_cavalry:{w:328,h:461,cx:171,bottom:460,bw:300}, f5_scout:{w:315,h:396,cx:149,bottom:395,bw:300}, f5_catapult:{w:335,h:320,cx:162,bottom:319,bw:300}, f5_wizard:{w:300,h:354,cx:149,bottom:353,bw:300}, f5_merc:{w:316,h:396,cx:158,bottom:395,bw:300}, f5_archertower:{w:300,h:355,cx:149,bottom:354,bw:300}, f5_ship:{w:300,h:367,cx:149,bottom:366,bw:300}, f5_dirigible:{w:300,h:377,cx:149,bottom:376,bw:300}, f5_steamtank:{w:300,h:332,cx:149,bottom:331,bw:300}, f0_dirigible:{w:300,h:379,cx:149,bottom:378,bw:300}, f1_dirigible:{w:300,h:381,cx:149,bottom:380,bw:300}, f2_dirigible:{w:300,h:380,cx:149,bottom:379,bw:300}, f3_dirigible:{w:301,h:373,cx:150,bottom:372,bw:300}, f4_frostgiant:{w:472,h:537,cx:233,bottom:569,bw:252}, f1_hydra:{w:362,h:386,cx:196,bottom:385,bw:300}, f0_merc:{w:335,h:438,cx:184,bottom:437,bw:300}, f1_merc:{w:336,h:438,cx:184,bottom:437,bw:300}, f2_merc:{w:332,h:441,cx:181,bottom:440,bw:300}, f3_merc:{w:333,h:437,cx:182,bottom:436,bw:300}, f1_archer:{w:323,h:451,cx:152,bottom:450,bw:300}, f1_archertower:{w:302,h:374,cx:149,bottom:373,bw:300}, f1_catapult:{w:340,h:304,cx:155,bottom:303,bw:300}, f1_cavalry:{w:339,h:467,cx:188,bottom:466,bw:300}, f1_dragon:{w:332,h:356,cx:149,bottom:355,bw:300}, f1_knight:{w:319,h:416,cx:167,bottom:415,bw:300}, f1_scout:{w:300,h:390,cx:149,bottom:389,bw:300}, f1_ship:{w:300,h:369,cx:149,bottom:368,bw:300}, f1_wizard:{w:302,h:367,cx:149,bottom:366,bw:300}, f2_archer:{w:323,h:454,cx:150,bottom:453,bw:300}, f2_archertower:{w:301,h:416,cx:149,bottom:415,bw:300}, f2_catapult:{w:356,h:307,cx:162,bottom:306,bw:300}, f2_cavalry:{w:312,h:467,cx:160,bottom:466,bw:300}, f2_dragon:{w:332,h:358,cx:149,bottom:357,bw:300}, f2_knight:{w:337,h:410,cx:186,bottom:409,bw:300}, f2_scout:{w:300,h:415,cx:149,bottom:414,bw:300}, f2_ship:{w:300,h:361,cx:149,bottom:360,bw:300}, f2_valkyrie:{w:484,h:511,cx:241,bottom:510,bw:300}, f2_wizard:{w:300,h:357,cx:149,bottom:356,bw:300}, f3_archer:{w:327,h:455,cx:149,bottom:454,bw:300}, f3_archertower:{w:300,h:445,cx:149,bottom:444,bw:300}, f3_catapult:{w:325,h:313,cx:150,bottom:312,bw:300}, f3_cavalry:{w:312,h:466,cx:160,bottom:465,bw:300}, f3_dragon:{w:333,h:358,cx:150,bottom:357,bw:300}, f3_knight:{w:344,h:464,cx:190,bottom:463,bw:300}, f3_ranger:{w:313,h:445,cx:149,bottom:444,bw:300}, f3_scout:{w:300,h:410,cx:149,bottom:409,bw:300}, f3_ship:{w:300,h:367,cx:149,bottom:366,bw:300}, f3_wizard:{w:300,h:357,cx:149,bottom:356,bw:300}, f0_paladin:{w:302,h:475,cx:149,bottom:474,bw:300}};   // per-sprite metrics for the new army art (falls back to SPR by unit type)
+const SPECIAL = {paladin:0, hydra:1, valkyrie:2, ranger:3, crossbow:5, steamtank:5};   // army-only units: the sprite exists for that army alone
 const spriteKey = (team,type) => 'f'+team+'_'+type;   // each army's mercenaries wear its colours; barbarians keep the plain one (f4_merc)
 const TILEIMG = {};
 const TILEFILE = {'M':'tf_crystal','S':'tf_scriptorium','~':'t_water','f':'t_forest','h':'t_hills','^':'t_crags','G':'tf_mine','K':'tf_keep','F':'tf_fort'};
@@ -342,7 +349,7 @@ const tilesReady = Promise.all(Object.entries(TILEFILE).map(([ch,n]) => new Prom
 })));
 // 3D forts and home keeps, one of each per army (f0_fort … f3_keep). Abandoned or unseen keeps keep the painted tile.
 const STRUCT_IMG = {}, STRUCT_DIM = {};
-for(let t=0;t<4;t++) for(const n of ['fort','keep']){ const i=new Image(); i.src='assets/f'+t+'_'+n+'.webp'; STRUCT_IMG['f'+t+'_'+n]=i; }
+for(const t of ARMY_IDS) for(const n of ['fort','keep']){ const i=new Image(); i.src='assets/f'+t+'_'+n+'.webp'; STRUCT_IMG['f'+t+'_'+n]=i; }
 const STRUCT_W = {fort:1.9, keep:2.0}, STRUCT_DROP = 0.66;   // sprite width in hex radii, and how far below the hex centre its base sits
 function structDim(k){   // darkened copy for forts/keeps you have seen but can't currently see (canvas filters aren't reliable in every browser)
   if(STRUCT_DIM[k]) return STRUCT_DIM[k];
@@ -350,14 +357,76 @@ function structDim(k){   // darkened copy for forts/keeps you have seen but can'
   const g=c.getContext('2d'); g.drawImage(i,0,0); g.globalCompositeOperation='source-atop'; g.fillStyle='rgba(8,12,24,0.5)'; g.fillRect(0,0,c.width,c.height);
   return STRUCT_DIM[k]=c;
 }
+// ---- Dwarf stone walls are drawn in code so neighbouring pieces join up: an arm runs from the hex centre to each side shared with
+// another wall, with a stout post where the line turns, branches or ends. The faces carry stonework cut from the wall art.
+const WALL_TEX = new Image(); WALL_TEX.src='assets/wall_stone.webp';
+const WALL_H = 0.46, WALL_HALF = 0.17, POST_R = 0.27, POST_H = 0.62, MERLON_H = 0.15;   // all in hex radii
+// shape of the wall on (c,r): ground-plane polygons around the hex centre (ground y is the screen y before the map's tilt)
+function wallShape(c,r,team){
+  const o=center(c,r), arms=[];
+  for(const [nc,nr] of neighbors(c,r)) if(seenWall.get(key(nc,nr))===team){ const p=center(nc,nr), dx=p.x-o.x, dy=(p.y-o.y)/TILT; arms.push({a:Math.atan2(dy,dx), len:Math.hypot(dx,dy)/2, joined:true}); }
+  const lone=!arms.length;
+  if(lone) arms.push({a:0,len:S*0.66,joined:false},{a:Math.PI,len:S*0.66,joined:false});   // a single piece: a short straight stretch
+  const straight=arms.length===2&&Math.abs(Math.cos(arms[0].a-arms[1].a)+1)<0.05;
+  return {o,arms,post:!straight};
+}
+const armBox = (a,from,to,half,side=0) => { const ux=Math.cos(a), uy=Math.sin(a), px=-uy, py=ux;
+  return [[from,side-half],[to,side-half],[to,side+half],[from,side+half]].map(([l,w])=>[ux*l+px*w, uy*l+py*w]); };
+const postShape = rad => [0,1,2,3,4,5].map(i=>[Math.cos(i*Math.PI/3)*S*rad, Math.sin(i*Math.PI/3)*S*rad]);
+// an upright block standing on a ground polygon, from height z0 to z1; skip = index of a side hidden inside a joint
+function wallBlock(o,poly,z0,z1,dim,seed,skip=-1){
+  const p=poly.map(([x,y])=>[o.x+x, o.y+y*TILT]), n=p.length;
+  let area=0; for(let i=0;i<n;i++){ const a=p[i], b=p[(i+1)%n]; area+=a[0]*b[1]-b[0]*a[1]; }
+  const quad=pts=>{ ctx.beginPath(); pts.forEach(([x,y],i)=>ctx[i?'lineTo':'moveTo'](x,y)); ctx.closePath(); };
+  const tex=WALL_TEX.complete&&WALL_TEX.naturalWidth;
+  for(let i=0;i<n;i++){
+    if(i===skip) continue;
+    let a=p[i], b=p[(i+1)%n]; const ex=b[0]-a[0], ey=b[1]-a[1], len=Math.hypot(ex,ey)||1;
+    const nx=(area>0?ey:-ey)/len, ny=(area>0?-ex:ex)/len;
+    if(ny<=0.02) continue;   // faces turned away from the viewer
+    if(a[0]>b[0]) [a,b]=[b,a];
+    const face=[[a[0],a[1]-z0],[b[0],b[1]-z0],[b[0],b[1]-z1],[a[0],a[1]-z1]];
+    quad(face); ctx.fillStyle='#77786f'; ctx.fill();
+    if(tex){ const th=WALL_TEX.naturalHeight, tw=WALL_TEX.naturalWidth, full=z0>0?th*0.5:th, sw=Math.min(tw,Math.max(8,len/(z1-z0)*full)), sx=((seed*53+i*97)%1000)/1000*(tw-sw);
+      ctx.save(); ctx.transform((b[0]-a[0])/sw,(b[1]-a[1])/sw,0,(z1-z0)/full,a[0],a[1]-z1); ctx.drawImage(WALL_TEX,sx,0,sw,full,0,0,sw,full); ctx.restore(); }
+    quad(face); ctx.fillStyle=nx>0?`rgba(0,0,0,${0.34*nx})`:`rgba(255,246,220,${-0.14*nx})`; ctx.fill();
+    ctx.strokeStyle='#23231fcc'; ctx.lineWidth=1; ctx.stroke();
+    if(dim){ ctx.fillStyle='rgba(8,12,24,0.5)'; ctx.fill(); }
+  }
+  const top=p.map(([x,y])=>[x,y-z1]);
+  quad(top); ctx.fillStyle='#a3a499'; ctx.fill();
+  if(tex){ ctx.save(); quad(top); ctx.clip(); ctx.globalAlpha=0.28; const xs=top.map(q=>q[0]), ys=top.map(q=>q[1]), x0=Math.min(...xs), y0=Math.min(...ys);
+    ctx.drawImage(WALL_TEX,(seed*31)%200,20,120,60,x0,y0,Math.max(...xs)-x0,Math.max(...ys)-y0); ctx.restore(); }
+  quad(top); ctx.strokeStyle='#2c2c27aa'; ctx.lineWidth=1; ctx.stroke();
+  if(dim){ ctx.fillStyle='rgba(8,12,24,0.5)'; ctx.fill(); }
+}
+function drawWallShadow(s){
+  const {o,arms,post}=wallShape(s.c,s.r,s.team);
+  ctx.fillStyle='rgba(0,0,0,0.24)';
+  const patch=poly=>{ ctx.beginPath(); poly.forEach(([x,y],i)=>ctx[i?'lineTo':'moveTo'](o.x+x+S*0.13, o.y+y*TILT+S*0.07)); ctx.closePath(); ctx.fill(); };
+  for(const m of arms) patch(armBox(m.a,0,m.len,S*WALL_HALF));
+  if(post) patch(postShape(POST_R));
+}
+function drawWall(s){
+  const {o,arms,post}=wallShape(s.c,s.r,s.team), seed=s.c*17+s.r*29, h=S*WALL_H;
+  const part=(m,i)=>()=>{
+    wallBlock(o,armBox(m.a,0,m.len+(m.joined?0.6:0),S*WALL_HALF),0,h,s.dim,seed+i,m.joined?1:-1);
+    const teeth=[]; for(const t of [0.46,0.84]) for(const side of [-1,1]) teeth.push(armBox(m.a,m.len*t-S*0.075,m.len*t+S*0.075,S*0.06,side*S*(WALL_HALF-0.06)));
+    teeth.sort((a,b)=>(a[0][1]+a[2][1])-(b[0][1]+b[2][1])).forEach((q,j)=>wallBlock(o,q,h,h+S*MERLON_H,s.dim,seed+j));
+  };
+  const list=arms.map((m,i)=>({z:Math.sin(m.a),draw:part(m,i)}));
+  if(post) list.push({z:0.001,draw:()=>{ wallBlock(o,postShape(POST_R),0,S*POST_H,s.dim,seed+7); wallBlock(o,postShape(POST_R*0.55),S*POST_H,S*(POST_H+0.11),s.dim,seed+8); }});
+  list.sort((a,b)=>a.z-b.z).forEach(q=>q.draw());   // far side first
+}
 function drawStruct(s){
+  if(s.kind==='wall'){ drawWall(s); return true; }
   const i=STRUCT_IMG[s.img]; if(!i||!i.complete||!i.naturalWidth) return false;
   const {x,y}=center(s.c,s.r), w=S*STRUCT_W[s.kind], h=w*i.naturalHeight/i.naturalWidth;
   ctx.imageSmoothingQuality='high'; ctx.drawImage(s.dim?structDim(s.img):i, x-w/2, y+S*STRUCT_DROP-h, w, h);
   return true;
 }
 const BARB_TYPES = ['barbarcher','barbrider','barbtower','frostgiant','merc'];   // Barbarians (team 4) only have their own sprite set
-const imgReady = Promise.all(Object.keys(SPR).flatMap(n => (n==='merc'?[0,1,2,3,4]:BARB_TYPES.includes(n)?[4]:SPECIAL[n]!=null?[SPECIAL[n]]:[0,1,2,3]).map(t => new Promise(res => {
+const imgReady = Promise.all(Object.keys(SPR).flatMap(n => (n==='merc'?[0,1,2,3,4,5]:BARB_TYPES.includes(n)?[4]:SPECIAL[n]!=null?[SPECIAL[n]]:(n==='archer'||n==='dragon')?[0,1,2,3]:ARMY_IDS).map(t => new Promise(res => {
   const i = new Image(); i.onload = i.onerror = res; i.src = 'assets/'+spriteKey(t,n)+'.webp'; IMG[spriteKey(t,n)] = i;
 }))));
 
@@ -366,9 +435,10 @@ const FACTIONS = [
   {name:'Dark Host',          short:'Dark',  color:'#a06ae0', base:2},
   {name:'Golden Valkyries',   short:'Valkyrie',color:'#e8a73a', base:2},
   {name:'Emerald Court',      short:'Emerald',color:'#4fcf7a', base:2},
-  {name:'Barbarian Horde',    short:'Barbarian',color:'#d6cdb8', base:0, barb:true}
+  {name:'Barbarian Horde',    short:'Barbarian',color:'#d6cdb8', base:0, barb:true},
+  {name:'Stonehold Clans',    short:'Dwarf', color:'#d4562a', base:3}
 ];
-const FACTION_INK = ['#2c5fa8','#6a3fa6','#a6661a','#2f8f4a','#6b6455'];   // readable on parchment
+const FACTION_INK = ['#2c5fa8','#6a3fa6','#a6661a','#2f8f4a','#6b6455','#a63d17'];   // readable on parchment
 const MINE_INCOME = 2;
 const MAP_SIZES={small:[19,15],normal:[25,19],large:[31,23]};
 let mapSize='normal';
@@ -378,7 +448,7 @@ const MINES = [];
 // . meadow  h hills  f forest  ~ river  ^ crags  G gold mine  K keep
 const TERR = {
   '.':{name:'Meadow',def:0}, 'f':{name:'Forest',def:1,note:'Costs 2 to enter, +1 defence (the Emerald Court walk through it freely).'}, 'M':{name:'Mana Crystal Mine',def:0,note:'End a move here to seize it. Held crystal mines give +2 mana each turn, and Wizards beside one heal 2 health a turn.'}, 'h':{name:'Hills',def:1,note:'+1 defence and +1 sight for a foot unit standing here (not flyers). Costs 1 to enter.'},
-  '~':{name:'River',def:0,note:'Ships only (dragons fly over).'}, '^':{name:'Crags',def:2,note:'Only dragons can cross.'},
+  '~':{name:'River',def:0,note:'Ships only (dragons fly over).'}, '^':{name:'Crags',def:2,note:'+2 defence. Only flyers can cross, plus Dwarf foot soldiers and ram riders at one crag hex a turn.'},
   'G':{name:'Gold Mine',def:0,note:`End a move here to seize it. Held mines pay +${MINE_INCOME} gold each turn.`},
   'K':{name:'Keep',def:2,note:'+2 defence. Pays +2 gold each turn. Recruits appear within 2 hexes of a keep you hold. Walk onto an enemy keep to capture it.'}
 };
@@ -391,8 +461,8 @@ const TYPES = {
             desc:'A sellsword with Foot Soldier stats for only 3 gold. Hired on the spot: place him on any hex you can see. His contract lasts 5 rounds, or until he is killed. You can field 3 at a time.'},
   cavalry: {name:'Knight', short:'Knight', cost:8, hp:10, atk:8, def:2, mv:3, rng:[1,1], cls:'ground', charge:true,
             desc:'Mounted warrior. Charge: +2 damage if it moved 2 or more hexes before striking. Great for seizing mines.'},
-  archer:  {name:'Archer', short:'Archer', cost:5, hp:7, atk:5, def:0, mv:2, rng:[2,3], cls:'ground',
-            desc:'Shoots 2–3 hexes. Cannot fire at adjacent foes, so keep it behind the line.'},
+  archer:  {name:'Archer', short:'Archer', cost:5, hp:7, atk:5, def:0, mv:2, rng:[2,3], cls:'ground', shooter:true,
+            desc:'Shoots 2–3 hexes. Cannot fire at adjacent foes, so keep it behind the line. Can shoot from aboard a ship.'},
   archertower:{name:'Archer Tower', short:'Archer Tower', cost:10, hp:16, atk:5, def:0, mv:0, rng:[1,4], cls:'ground', vision:4,
             desc:'A garrisoned tower that cannot move. Fires like an Archer with 16 hit points and +1 range, and can hit adjacent targets too (range 1–4). Sees 4 hexes. Can be built on grass only, next to any of your units, even far from home.'},
   barbtower:{name:'Barbarian Tower', short:'Barbarian Tower', cost:0, hp:16, atk:5, def:0, mv:0, rng:[1,4], cls:'ground', vision:4, barb:true,
@@ -405,35 +475,50 @@ const TYPES = {
             desc:'Armoured raider on horseback, a little weaker than a Knight. Charges for +2 damage, but stays close to his tower.'},
   scout:   {name:'Scout', short:'Scout', cost:4, hp:8, atk:2, def:2, mv:3, rng:[1,1], cls:'ground', vision:4,
             desc:'Light rider with sharp eyes: sees 4 hexes instead of 3, and slips past enemy zones of control. Weak in a fight, so scout ahead and stay out of trouble.'},
-  catapult:{name:'Catapult', short:'Catapult', cost:8, hp:8, atk:8, def:0, mv:2, rng:[2,3], cls:'ground', stat:true,
+  catapult:{name:'Catapult', short:'Catapult', cost:8, hp:8, atk:8, def:0, mv:2, rng:[2,3], cls:'ground', stat:true, siege:true,
             desc:'Devastating siege fire at range 2–3, but it cannot move and fire in the same turn.'},
   ship:    {name:'Ship', short:'Ship', cost:6, hp:10, atk:0, def:1, mv:4, rng:[0,0], cls:'water', noattack:true, cap:2,
-            desc:'Unarmed. Carries 2 land units. Board, sail 4 hexes and land on an adjacent shore all in one turn; landing ends that unit\'s turn.'},
+            desc:'Carries 2 land units. Board, sail 4 hexes and land on an adjacent shore all in one turn; landing ends that unit\'s turn. Archers aboard can shoot, and return fire on anyone who attacks the ship.'},
+  crossbow:{name:'Dwarf Crossbowman', short:'Crossbowman', cost:6, hp:10, atk:6, def:2, mv:2, rng:[1,2], cls:'ground', only:5, shooter:true,
+            desc:'Heavy bolts at range 1–2: hits harder and takes more punishment than an archer, with a shorter reach. Can shoot from aboard a ship.'},
+  steamtank:{name:'Steam Tank', short:'Steam Tank', cost:18, hp:24, atk:8, def:3, mv:3, rng:[1,2], cls:'ground', only:5, heavy:true,
+            desc:'A boiler-driven iron fortress: 24 health, 8 attack and 3 defence, firing 1–2 hexes. Too heavy to climb mountains or board a ship.'},
   wizard:  {name:'Wizard', short:'Wizard', cost:8, hp:8, atk:6, def:0, mv:2, rng:[1,3], cls:'ground', pierce:true,
             desc:'Arcane bolt ignores armour and terrain. Range 1–3. Fragile. Spends mana on Heal, Flash and Chain Lightning instead of attacking, and mends 2 health a turn beside a mana crystal mine.'},
-  dragon:  {name:'Dragon', short:'Dragon', cost:18, hp:22, atk:7, def:2, mv:5, rng:[1,2], cls:'fly',
+  dragon:  {name:'Dragon', short:'Dragon', cost:18, hp:22, atk:7, def:2, mv:5, rng:[1,2], cls:'fly', siege:true,
             desc:'Flies over anything. Fire breath reaches 2 hexes. The terror of the field.'},
   // ---- army-only units (each army recruits exactly one)
   paladin: {name:'Paladin', short:'Paladin', cost:9, hp:16, atk:7, def:3, mv:2, rng:[1,1], cls:'ground', only:0,
             desc:'The Order\'s holy champion: 16 hit points and 3 defence. Healing Light: friendly units within 1 hex of a Paladin heal 3 health at the start of your turn.'},
   dirigible:{name:'Dirigible', short:'Dirigible', cost:7, hp:6, atk:0, def:0, mv:5, rng:[0,0], cls:'fly', noattack:true, vision:5, tech:true,
             desc:'A patched-canvas scout airship unlocked by the Dirigibles tech. Flies over anything, sees 5 hexes, and cannot attack. Fragile: keep it away from archers.'},
-  hydra:   {name:'Hydra', short:'Hydra', cost:22, hp:22, atk:9, def:2, mv:5, rng:[1,2], cls:'fly', only:1,
+  hydra:   {name:'Hydra', short:'Hydra', cost:22, hp:22, atk:9, def:2, mv:5, rng:[1,2], cls:'fly', only:1, siege:true,
             desc:'The many-headed terror of the Dark Host, which has no Dragons. Flies over anything and its heads strike up to 2 hexes away. Hits harder than any dragon: 9 attack.'},
   valkyrie:{name:'Valkyrie', short:'Valkyrie', cost:8, hp:9, atk:6, def:2, mv:3, rng:[1,1], cls:'fly', only:2,
             desc:'A winged shield-maiden who flies over rivers, forests and crags. Fast and hard-hitting.'},
-  ranger:  {name:'Elven Ranger', short:'Ranger', cost:6, hp:8, atk:5, def:0, mv:2, rng:[2,4], cls:'ground', vision:4, only:3,
-            desc:'Elite Emerald Court sharpshooter. Longbow reaches 2–4 hexes and sees 4 hexes, but cannot fire at adjacent foes.'}
+  ranger:  {name:'Elven Ranger', short:'Ranger', cost:6, hp:8, atk:5, def:0, mv:2, rng:[2,4], cls:'ground', vision:4, only:3, shooter:true,
+            desc:'Elite Emerald Court sharpshooter. Longbow reaches 2–4 hexes and sees 4 hexes, but cannot fire at adjacent foes. Can shoot from aboard a ship.'}
 };
 const SHOP_ORDER = Object.keys(TYPES).filter(k=>!TYPES[k].barb).sort((a,b)=>TYPES[a].cost-TYPES[b].cost);   // recruit menu, cheapest first
-const shopFor = team => SHOP_ORDER.filter(k=>(TYPES[k].only==null||TYPES[k].only===team)&&!(k==='dragon'&&team===1)&&!(TYPES[k].tech&&!hasTech(team,'airships')));   // the Dark Host fields the Hydra instead of the Dragon   // army-only units show for that army alone
+const shopFor = team => SHOP_ORDER.filter(k=>(TYPES[k].only==null||TYPES[k].only===team)&&!(k==='dragon'&&(team===1||team===DWARF))&&!(k==='archer'&&team===DWARF)&&!(TYPES[k].tech&&!hasTech(team,'airships')));   // the Dark Host fields the Hydra instead of the Dragon   // army-only units show for that army alone
+// the Dwarves use some shared units under their own names and art
+const retitle = (k,name,short,desc) => ({...TYPES[k], name, short, desc:desc||TYPES[k].desc});
+const TEAM_TYPES = { 5:{
+  knight:{...retitle('knight','Dwarf Warrior','Warrior','Stout front-line axeman in heavy plate: 14 health and 3 defence, tougher than other foot soldiers. Hits hard in melee.'), hp:14, def:3},
+  cavalry:retitle('cavalry','Ram Rider','Ram Rider','A warrior on a mountain ram. Charge: +2 damage if it moved 2 or more hexes before striking.'),
+  scout:retitle('scout','Ram Scout','Ram Scout'),
+  wizard:retitle('wizard','Runesmith','Runesmith','Rune-fire ignores armour and terrain. Range 1–3. Fragile. Spends mana on Heal, Flash and Chain Lightning instead of attacking, and mends 2 health a turn beside a mana crystal mine.'),
+  merc:{...retitle('merc','Dwarf Mercenary','Mercenary',TYPES.merc.desc.replace('with Foot Soldier stats','with 14 health')), hp:14},
+  archertower:retitle('archertower','Crossbow Tower','Crossbow Tower','A manned stone tower that cannot move. 16 hit points, fires 1–4 hexes and sees 4. Can be built on grass only, next to any of your units, even far from home.')
+}};
+const typeOf = (team,k) => (TEAM_TYPES[team]&&TEAM_TYPES[team][k])||TYPES[k];
 const PALADIN_HEAL = 3, SPOILS = 2;
 // ---- Scriptorium & research (long games only). Each army researches shared techs plus one of its own; discoveries are a gamble.
 const SCRIP_COST = 30, MISHAP = 0.10;
 const TECHS = {
   plate:   {name:'Plate Armour',      cost:12, desc:'+1 defence for all foot units.'},
   whet:    {name:'Whetstones',        cost:12, desc:'+1 attack for melee units.'},
-  longbow: {name:'Longbows',          cost:12, desc:'Archers and Rangers gain +1 range.'},
+  longbow: {name:'Longbows',          cost:12, desc:'Archers, Crossbowmen and Rangers gain +1 range.'},
   march:   {name:'Forced March',      cost:12, desc:'+1 move for foot units.'},
   cart:    {name:'Cartography',       cost:20, desc:'Your units see 1 hex farther.'},
   mining:  {name:'Deep Mining',       cost:20, desc:'Your gold mines pay +1 gold.'},
@@ -447,11 +532,12 @@ const TECHS = {
   oath:    {name:"Crusader's Oath",   cost:28, army:0, desc:"The Paladin's healing reaches 2 hexes."},
   blood:   {name:'Blood Rites',       cost:28, army:1, desc:'Dark Host units heal 2 health whenever they slay an enemy.'},
   legion:  {name:'Winged Legion',     cost:28, army:2, desc:'Valkyries gain +1 move and +1 defence.'},
-  archery: {name:'Master Archers',    cost:28, army:3, desc:'Elven Rangers gain +1 attack and +1 range.'}
+  archery: {name:'Master Archers',    cost:28, army:3, desc:'Elven Rangers gain +1 attack and +1 range.'},
+  boiler:  {name:'High-Pressure Boilers', cost:28, army:5, desc:'Steam Tanks gain +1 move and +1 attack.'}
 };
 const AI_TECH_ORDER = ['plate','whet','mining','cart','medic','horses','ARMY','masonry','longbow','march','charter','almanac','ships'];
 const MANA_CAP = 60, MANA_CRYSTAL = 2;
-let mana=[0,0,0,0];   // spent on research and Wizard spells
+let mana=perArmy(0);   // spent on research and Wizard spells
 const crystalsOf = t => MINES.filter(m=>m.mana&&mineOwner.get(key(m.c,m.r))===t).length;
 const manaIncome = t => keepsOf(t) + (scripOf(t)?1:0) + MANA_CRYSTAL*crystalsOf(t);
 const SPELLS = {
@@ -461,21 +547,24 @@ const SPELLS = {
 };
 const SPELL_RANGE = 3, CHAIN_DMG = [6,5,4,3];
 let spellMode=null, spellFlash=0;
-let techs=[[],[],[],[]], research=[null,null,null,null], scrip=new Map(), seenScrip=new Map();   // researched ids (oldest first); {id,fails} under way; Scriptorium tiles
-const hasTech = (t,id) => t>=0 && t<4 && techs[t].includes(id);
+let techs=perArmy(()=>[]), research=perArmy(null), scrip=new Map(), seenScrip=new Map();   // researched ids (oldest first); {id,fails} under way; Scriptorium tiles
+const hasTech = (t,id) => isArmy(t) && techs[t].includes(id);
 const scripOf = t => [...scrip].find(([k,tm])=>tm===t);
 const scripEnabled = () => mapSize==='large';
 const techChance = t => research[t] ? Math.min(0.9,0.30+0.10*research[t].fails) : 0;
 const techAllowed = (t,id) => { const T=TECHS[id]; return T && (T.army==null||T.army===t); };
-const towerCost = t => hasTech(t,'masonry') ? 20 : TOWER_COST;
+const DWARF_FORT = 18;   // Master Builders
+const towerCost = t => t===DWARF ? DWARF_FORT : hasTech(t,'masonry') ? 20 : TOWER_COST;
 const capOf = s => s.type.cap + (hasTech(s.team,'ships')?1:0);
-const mvOf = u => u.type.mv + (u.type.mv>0&&u.type.cls==='ground'&&hasTech(u.team,'march')?1:0) + (u.key==='valkyrie'&&hasTech(u.team,'legion')?1:0);
+const mvOf = u => u.type.mv + (u.type.mv>0&&u.type.cls==='ground'&&hasTech(u.team,'march')?1:0) + (u.key==='valkyrie'&&hasTech(u.team,'legion')?1:0) + (u.key==='steamtank'&&hasTech(u.team,'boiler')?1:0);
+// attack gained from an army's own research
+const atkBonus = a => (a.key==='ranger'&&hasTech(a.team,'archery')?1:0) + (a.key==='steamtank'&&hasTech(a.team,'boiler')?1:0);
 const spoilsAmt = () => SPOILS;
 const bloodHeal = a => { if(a.team===1&&hasTech(1,'blood')&&a.hp<a.type.hp) a.hp=Math.min(a.type.hp,a.hp+2); };
 const MIN_COST = 3;   // no cap on army size: armies are limited only by gold and free hexes
 const MERC_ROUNDS = 5, MERC_MAX = 3;
 const KEEP_RECRUITS = 4;   // units an army may recruit per turn for each keep it holds (plus one per unused fort); mercenaries are hired outside this quota
-let recruitsUsed = [0,0,0,0];
+let recruitsUsed = perArmy(0);
 const recruitQuota = t => KEEP_RECRUITS*keepsOf(t);
 const recruitsLeft = t => Math.max(0,recruitQuota(t)-recruitsUsed[t]);
 // Supply: an army can only field as many units as its land can feed. Every unit counts (passengers and towers too) except Mercenaries, who have their own limit (MERC_MAX).
@@ -513,12 +602,15 @@ function visTiles(src,out){
       for(let c=Math.max(0,q.c-rad);c<=Math.min(COLS-1,q.c+rad);c++) if(hexDist(q,{c,r})<=rad) out.add(key(c,r));
   }
 }
-function tileCost(cls,c,r,team){
+// Dwarf foot soldiers and ram riders can climb crags, one crag hex per turn
+const climbs = u => u.team===DWARF && u.type.cls==='ground' && u.type.mv>0 && !u.type.heavy && u.key!=='catapult';
+function tileCost(cls,c,r,team,climb){
   const t=tileCh(c,r);
   if(cls==='fly') return 1;
+  if(walls.size){ const w=walls.get(key(c,r)); if(w!=null&&w!==team) return null; }   // only the builders walk through a wall
   if(cls==='water') return (t==='~'&&!omenIs('frost')&&!omenIs('storm')) ? 1 : null;   // frozen or storm-bound: ships cannot sail
   if(t==='~') return omenIs('frost') ? 1 : null;   // the frozen river can be walked
-  if(t==='^') return null;
+  if(t==='^') return climb&&cls==='ground' ? 1 : null;
   return t==='f' ? (team===3 ? 1 : 2) : 1;   // Emerald Court: no movement penalty in forest
 }
 
@@ -531,23 +623,33 @@ const ARMY_INFO=[
  {unit:'Valkyrie (8 gold): a winged flyer with 3 moves that ignores rivers, forests and crags.', bonus:'Gold Hoard: your gold mines pay +1 gold and Mercenaries cost only 2.', cmd:'Empress Joy, Head of the Golden Valkyries', text:"Empress Joy leads the Golden Valkyries, shield-maidens forged in the northern passes and loyal to no throne but hers. They ride light, strike first and take their gold in battle. Where the Valkyries pass, mines change hands and keeps fall quiet. Join her, and glory is paid in advance."},
  {unit:'Elven Ranger (6 gold): longbow with range 2–4 and 4-hex sight.', bonus:'Forest Sight: your units see 1 hex farther, take 1 less damage in forest and walk through forest with no movement penalty.', cmd:'Lord Aelindor, Head of the Emerald Court', text:"Ancient, graceful and cold as the green deep forest, the Emerald Court has watched the human kingdoms rise and fall for a thousand years. Lord Aelindor wears armour of living emerald and fights with the calm of one who has already seen the ending. The Court does not seek war. It simply never loses one."}
 ];
-let myArmy=0; try{ const a=+localStorage.getItem('raysRealm.myArmy'); if(a>=0&&a<4) myArmy=a; }catch(e){}   // the army you pick on the title screen for a game against the computer
-// enemies for army `me`: the far corner is me^2 (0<->2, 1<->3), the other two are its neighbours
+ARMY_INFO[DWARF]={unit:'Crossbowman (6 gold, range 1–2) and Steam Tank (18 gold): 24 health, 8 attack, 3 defence. The Dwarves field no archers and no dragons.', bonus:'Master Builders: stone walls only siege can break, forts for 18 gold, 1 extra gold every turn, and warriors and ram riders who climb mountains.', cmd:'Thane Durgan Stonehand, Head of the Stonehold Clans', text:"Under the crags the Stonehold Clans have hammered, brewed and kept their grudges for longer than any crown has lasted. Thane Durgan Stonehand does not charge when he can build, and does not retreat from anything he has built. His clans walk the mountain paths no army can follow, and the iron beasts of their forges are never in a hurry. They do not need to be."};
+let myArmy=0; try{ const a=+localStorage.getItem('raysRealm.myArmy'); if(isArmy(a)) myArmy=a; }catch(e){}   // the army you pick on the title screen for a game against the computer
+// corners facing corner `me`: the far corner is me^2 (0<->2, 1<->3), the other two are its neighbours
 const enemiesOf = (n,me) => ENEMY_SETS[n].map(t=>t^me);
-let enemyCount=3, activeArmies=[true,true,true,true];
+let enemyCount=3, activeArmies=perArmy(false);
 try{ const n=+localStorage.getItem('raysRealm.enemies'); if(ENEMY_SETS[n]) enemyCount=n; }catch(e){}
-const setArmies = n => { enemyCount=ENEMY_SETS[n]?n:3; activeArmies=[0,1,2,3].map(t=>t===ME||enemiesOf(enemyCount,ME).includes(t)); };
+const shuffled = a => { const b=[...a]; for(let i=b.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [b[i],b[j]]=[b[j],b[i]]; } return b; };
+// seats: which army starts in which of the four corners (4 = empty, an abandoned keep). Your army takes its home corner (the Dwarves a random one);
+// the enemies are drawn at random from the other armies and take the corners ENEMY_SETS picks (one enemy sits in the far corner).
+function seatArmies(n,foes){
+  const mine=ME<4?ME:Math.floor(Math.random()*4), slots=foes?[mine^2]:enemiesOf(n,mine), draw=foes||shuffled(ARMY_IDS.filter(t=>t!==ME)).slice(0,slots.length);
+  const seats=[4,4,4,4]; seats[mine]=ME;
+  const rest=draw.filter(t=>{ if(slots.includes(t)){ seats[t]=t; return false; } return true; });   // an army takes its home corner when it can
+  for(const s of shuffled(slots.filter(c=>seats[c]===4))) if(rest.length) seats[s]=rest.shift();
+  return seats;
+}
 const enemyWord = () => ['','the enemy keep','both enemy keeps','all three enemy keeps'][enemyCount];
-let ME=myArmy, MP=null, lastPay=[0,0,0,0];   // lastPay: gold each army collected at the start of its latest turn   // ME: the army this computer plays; MP: online head-to-head session (null in a normal game)
+let ME=myArmy, MP=null, lastPay=perArmy(0);   // lastPay: gold each army collected at the start of its latest turn   // ME: the army this computer plays; MP: online head-to-head session (null in a normal game)
 let inspected=null;   // enemy/other unit you clicked on, shown in the info card until you click elsewhere
 let units=[], turn=1, side=0, sel=null, hover=null, busy=false, over=false;
 let moveInfo=null, targets=[], recruitType=null, spawnSet=[], boardShips=[], undoSnap=null;
-let gold=[0,0,0,0], elim=[false,false,false,false], mineOwner=new Map(), keepOwner=[0,1,2,3];
+let gold=perArmy(0), elim=perArmy(false), mineOwner=new Map(), keepOwner=[0,1,2,3];
 let explored=new Set(), visible=new Set(), seenMine=new Map(), seenKeep=[null,null,null,null], seenTower=new Map();
 let effects=[], proj=null, logEl, S=40, ox=0, oy=0, dpr=1, bg=null, uid=0;
 
 function makeUnit(type,team,c,r){
-  const T=TYPES[type];
+  const T=typeOf(team,type);
   return {id:++uid,type:T,key:type,team,c,r,hp:T.hp,mp:T.mv,moved:false,done:false,steps:0,anim:null,cargo:[],aboard:null,off:{x:0,y:0},alpha:1,
           name: ((team===ME&&!MP)||T.barb) ? T.name : FACTIONS[team].short+' '+T.short, sprite:spriteKey(team,type), rounds:T.merc?MERC_ROUNDS+1+(hasTech(team,'charter')?3:0):null};
 }
@@ -555,6 +657,9 @@ const unitAt = (c,r) => units.find(u => u.c===c && u.r===r);
 const alive = team => units.filter(u => u.team===team);
 const TOWER_COST = 25;
 let towers = new Map(), towerUsed = new Set();
+// Dwarf stone walls: they stop every other army's ground units; flyers pass over but cannot land; only a siege unit (Catapult, Dragon, Hydra) brings one down
+const WALL_COST = 5, WALL_PER_TURN = 2, WALL_MAX = 12, WALL_KEEP_GAP = 3;
+let walls = new Map(), seenWall = new Map(), wallsBuilt = 0;
 const TOWER_RECRUITS = 2;   // units a fort can recruit each turn. towerUsed holds the key for the 1st use and key+'#1' for the 2nd, so saves and undo keep working
 const towerUseId = (k,i) => i ? k+'#'+i : k;
 const towerUses = k => { let n=0; for(let i=0;i<TOWER_RECRUITS;i++) if(towerUsed.has(towerUseId(k,i))) n++; return n; };
@@ -569,7 +674,7 @@ const income = t => FACTIONS[t].base + (MINE_INCOME+(t===2?1:0)+(hasTech(t,'mini
 // ---- undo: one level, the last move/board/unload/recruit/tower (attacks and end of turn clear it)
 function takeSnap(label){
   const all=[...units,...units.flatMap(u=>u.cargo)];
-  return { label, evLen:mpEvents.length, recruitsUsed:[...recruitsUsed], units:[...units], gold:[...gold], mana:[...mana], mineOwner:new Map(mineOwner), keepOwner:[...keepOwner], towers:new Map(towers), scrip:new Map(scrip), seenScrip:new Map(seenScrip),
+  return { label, evLen:mpEvents.length, recruitsUsed:[...recruitsUsed], units:[...units], gold:[...gold], mana:[...mana], mineOwner:new Map(mineOwner), keepOwner:[...keepOwner], towers:new Map(towers), walls:new Map(walls), seenWall:new Map(seenWall), wallsBuilt, scrip:new Map(scrip), seenScrip:new Map(seenScrip),
     towerUsed:new Set(towerUsed), explored:new Set(explored), seenMine:new Map(seenMine), seenKeep:[...seenKeep], seenTower:new Map(seenTower),
     recs:all.map(u=>({u,c:u.c,r:u.r,hp:u.hp,mp:u.mp,moved:u.moved,done:u.done,steps:u.steps,aboard:u.aboard,cargo:[...u.cargo]})) };
 }
@@ -577,7 +682,7 @@ function undoLast(){
   if(!undoSnap||busy||over||side!==ME) return;
   const z=undoSnap; undoSnap=null; if(z.evLen!=null&&mpEvents.length>z.evLen) mpEvents.length=z.evLen;
   for(const q of z.recs){ Object.assign(q.u,{c:q.c,r:q.r,hp:q.hp,mp:q.mp,moved:q.moved,done:q.done,steps:q.steps,aboard:q.aboard,cargo:q.cargo,anim:null,alpha:1,off:{x:0,y:0}}); }
-  units=z.units; gold=z.gold; mana=z.mana||mana; recruitsUsed=z.recruitsUsed; mineOwner=z.mineOwner; keepOwner=z.keepOwner; towers=z.towers; scrip=z.scrip; seenScrip=z.seenScrip; towerUsed=z.towerUsed;
+  walls=z.walls; seenWall=z.seenWall; wallsBuilt=z.wallsBuilt; units=z.units; gold=z.gold; mana=z.mana||mana; recruitsUsed=z.recruitsUsed; mineOwner=z.mineOwner; keepOwner=z.keepOwner; towers=z.towers; scrip=z.scrip; seenScrip=z.seenScrip; towerUsed=z.towerUsed;
   explored=z.explored; seenMine=z.seenMine; seenKeep=z.seenKeep; seenTower=z.seenTower;
   clearSel(); recruitType=null; spawnSet=[];
   log(`Undid your last ${z.label}.`,'sys'); sfx('step'); refreshUI();
@@ -594,10 +699,10 @@ function packUnit(u){
   o.cargo=u.cargo.map(packUnit); return o;
 }
 const canSave = () => gameStarted && !MP && !over && side===ME && !busy && MAP.length>0;
-const myFog = () => ({explored:[...explored], seenMine:[...seenMine], seenKeep:[...seenKeep], seenTower:[...seenTower], seenScrip:[...seenScrip], barbSeen:[...barbSeen]});
+const myFog = () => ({explored:[...explored], seenMine:[...seenMine], seenKeep:[...seenKeep], seenTower:[...seenTower], seenScrip:[...seenScrip], seenWall:[...seenWall], barbSeen:[...barbSeen]});
 function packState(){
   return {v:1, savedAt:Date.now(), me:ME, enemyCount, mapSeed, mapSize, turn, side, uid, gold, mana, recruitsUsed, elim, keepOwner, seenKeep,
-    mineOwner:[...mineOwner], towers:[...towers], scrip:[...scrip], seenScrip:[...seenScrip], techs, research, towerUsed:[...towerUsed], explored:[...explored], seenMine:[...seenMine], seenTower:[...seenTower],
+    mineOwner:[...mineOwner], walls:[...walls], seenWall:[...seenWall], wallsBuilt, towers:[...towers], scrip:[...scrip], seenScrip:[...seenScrip], techs, research, towerUsed:[...towerUsed], explored:[...explored], seenMine:[...seenMine], seenTower:[...seenTower],
     barbSeen:[...barbSeen], omenNow, omenNext, omenLast, armies:activeArmies, lastPay,
     aiFog:aiFog.map(F=>F&&{explored:[...F.explored], seenMine:[...F.seenMine], seenKeep:F.seenKeep}),
     units:units.map(packUnit)};
@@ -614,31 +719,32 @@ function readSave(){ try{ const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'nu
 function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
 // rebuild the whole game from a packed state (a save, or a turn sent by the other player online)
 function restoreState(d){
-  undoSnap=null; setArmies(d.enemyCount??3); if(Array.isArray(d.armies)) activeArmies=d.armies.slice(0,4);
+  undoSnap=null; enemyCount=ENEMY_SETS[d.enemyCount]?d.enemyCount:3; activeArmies=perArmy(false); if(Array.isArray(d.armies)) activeArmies=padArmy(d.armies.slice(0,TEAMS),false); else for(const t of [ME,...enemiesOf(enemyCount,ME<4?ME:0)]) activeArmies[t]=true;
   { const ms=MAP_SIZES[d.mapSize]?d.mapSize:'normal'; if(d.mapSeed!==mapSeed||ms!==mapSize||!MAP.length){ mapSeed=d.mapSeed; mapSize=ms; generateMap(mapSeed); resize(); } }
   const unpack=(o,ship)=>{ const T=TYPES[o.key]; if(!T) return null;
-    const u={...o, type:T, anim:null, off:{x:0,y:0}, alpha:1, aboard:ship||null, cargo:[]};
+    const u={...o, type:typeOf(o.team,o.key), anim:null, off:{x:0,y:0}, alpha:1, aboard:ship||null, cargo:[]};
     u.cargo=(o.cargo||[]).map(c=>unpack(c,u)).filter(Boolean); return u; };
   units=d.units.map(o=>unpack(o)).filter(Boolean);
   uid=Math.max(d.uid||0,...units.flatMap(u=>[u.id,...u.cargo.map(c=>c.id)]));
   turn=d.turn; side=d.side??ME; sel=null; hover=null; moveInfo=null; targets=[]; recruitType=null; spawnSet=[]; boardShips=[]; busy=false; over=false; effects=[]; proj=null;
-  gold=d.gold; mana=d.mana||[0,0,0,0]; lastPay=d.lastPay||[0,0,0,0]; recruitsUsed=d.recruitsUsed; elim=d.elim; keepOwner=d.keepOwner; seenKeep=d.seenKeep;
-  mineOwner=new Map(d.mineOwner); towers=new Map(d.towers); scrip=new Map(d.scrip||[]); seenScrip=new Map(d.seenScrip||[]); techs=d.techs||[[],[],[],[]]; research=d.research||[null,null,null,null]; towerUsed=new Set(d.towerUsed);
+  gold=padArmy(d.gold,0); mana=padArmy(d.mana,0); lastPay=padArmy(d.lastPay,0); recruitsUsed=padArmy(d.recruitsUsed,0); elim=padArmy(d.elim,true); keepOwner=d.keepOwner; seenKeep=d.seenKeep;
+  walls=new Map(d.walls||[]); seenWall=new Map(d.seenWall||[]); wallsBuilt=d.wallsBuilt||0;
+  mineOwner=new Map(d.mineOwner); towers=new Map(d.towers); scrip=new Map(d.scrip||[]); seenScrip=new Map(d.seenScrip||[]); techs=padArmy(d.techs,()=>[]); research=padArmy(d.research,null); towerUsed=new Set(d.towerUsed);
   explored=new Set(d.explored); visible=new Set(); seenMine=new Map(d.seenMine); seenTower=new Map(d.seenTower); barbSeen=new Set(d.barbSeen);
   resetAIFog();
   (d.aiFog||[]).forEach((F,t)=>{ if(F&&aiFog[t]){ aiFog[t].explored=new Set(F.explored); aiFog[t].seenMine=new Map(F.seenMine); aiFog[t].seenKeep=F.seenKeep; } });
-  [0,1,2,3,4].forEach(updateAIVision);
+  [0,1,2,3,4,5].forEach(updateAIVision);
   { const fix=o=>o&&o.type==='surge'?{...o,type:'giants'}:o; omenNow=fix(d.omenNow); omenNext=fix(d.omenNext); omenLast=d.omenLast==='surge'?'giants':d.omenLast; } refreshOmenPanel();
   updateVision();
 }
 function loadGame(d){
-  ME=(d.me>=0&&d.me<4)?d.me:0; MP=null; stopAmbience(); restoreState(d); loadOmenSfx(); logEl.innerHTML='';
+  ME=isArmy(d.me)?d.me:0; MP=null; stopAmbience(); restoreState(d); loadOmenSfx(); logEl.innerHTML='';
   log(`Saved game loaded: turn ${turn}, ${enemyCount} enem${enemyCount>1?'ies':'y'} (map seed ${mapSeed}).`,'sys');
   if(omenNow) log(`Omen in effect: ${OMENS[omenNow.type].name}. ${OMENS[omenNow.type].rule}`,'sys');
   refreshUI(); scrollToKeep();
   if(omenNow) startAmbience(omenNow.type);
 }
-function scrollToKeep(){ const sc=document.getElementById('scroller'), q=center(KEEPS[ME][0],KEEPS[ME][1]); sc.scrollLeft=Math.max(0,q.x-sc.clientWidth*0.3); sc.scrollTop=Math.max(0,q.y-sc.clientHeight*0.4); }
+function scrollToKeep(){ const sc=document.getElementById('scroller'), home=KEEPS[Math.max(0,keepOwner.indexOf(ME))], q=center(home[0],home[1]); sc.scrollLeft=Math.max(0,q.x-sc.clientWidth*0.3); sc.scrollTop=Math.max(0,q.y-sc.clientHeight*0.4); }
 // ================================================================ online head-to-head
 // Two browsers connect directly (WebRTC via PeerJS; its free public server only introduces them, the game data
 // goes straight between the two computers). The game is turn-based, so the whole state travels once per turn:
@@ -721,14 +827,17 @@ async function mpReceive(d){
   if(Array.isArray(d.events)&&d.events.length&&gameStarted&&!over){
     mpReplaying=true; mpFast=false; busy=true; clearSel(); recruitType=null; spawnSet=[]; refreshUI();
     banner(`${FACTIONS[MP.foe].short}'s Turn`); log(`Watching the ${FACTIONS[MP.foe].name} move… (click the map or press Space to skip)`,'sys');
-    const byId=id=>units.find(u=>u.id===id);
+    const byId=id=>mpAll().find(u=>u.id===id);
     try{
       for(const e of d.events){
         if(!MP) break;
-        if(e.k==='move'){ const u=byId(e.id); if(!u||!e.path||e.path.length<2) continue; u.c=e.path[0].c; u.r=e.path[0].r; await moveUnit(u,e.path); }
-        else if(e.k==='strike'){ const a=byId(e.a), t=byId(e.d); if(!a||!t) continue; await strike(a,t,e.amt,e.ctr); }
+        if(e.k==='move'){ const u=byId(e.id); if(!u||u.aboard||!e.path||e.path.length<2) continue; u.c=e.path[0].c; u.r=e.path[0].r; await moveUnit(u,e.path); u.cargo.forEach(x=>{ x.c=u.c; x.r=u.r; }); }
+        else if(e.k==='strike'){ const a=byId(e.a), t=byId(e.d); if(!a||!t) continue; if(a.aboard){ a.c=a.aboard.c; a.r=a.aboard.r; } await strike(a,t,e.amt,e.ctr); }
+        else if(e.k==='board'){ const u=byId(e.id), sh=byId(e.ship); if(u&&sh&&!u.aboard){ units=units.filter(x=>x!==u); u.aboard=sh; u.c=sh.c; u.r=sh.r; sh.cargo.push(u); } }
+        else if(e.k==='unload'){ const sh=byId(e.ship), u=sh&&sh.cargo.find(x=>x.id===e.id); if(u){ sh.cargo=sh.cargo.filter(x=>x!==u); u.aboard=null; u.c=sh.c; u.r=sh.r; units.push(u); } }
+        else if(e.k==='wall'){ const a=byId(e.a); if(a) await wallFx(a,e.c,e.r); }
         else if(e.k==='spell'){ const w=byId(e.w), list=(e.t||[]).map(byId).filter(Boolean); if(w&&list.length) await spellFx(e.s,w,list,false); }
-        else if(e.k==='spawn'){ if(e.u&&TYPES[e.u.key]&&!mpAll().some(u=>u.id===e.u.id)) units.push({...e.u,type:TYPES[e.u.key],anim:null,off:{x:0,y:0},alpha:1,aboard:null,cargo:[]}); }
+        else if(e.k==='spawn'){ if(e.u&&TYPES[e.u.key]&&!mpAll().some(u=>u.id===e.u.id)) units.push({...e.u,type:typeOf(e.u.team,e.u.key),anim:null,off:{x:0,y:0},alpha:1,aboard:null,cargo:[]}); }
         if(!mpFast) refreshUI();
       }
     }catch(err){ console.error(err); }
@@ -743,7 +852,7 @@ function mpApply(d,fresh,given){
   restoreState(d); mpEvents=[];
   MP.fogs=d.fogs||{}; MP.seq=d.seq||0; MP.match=d.match;
   const F=MP.fogs[ME];
-  explored=new Set(F?F.explored:[]); seenMine=new Map(F?F.seenMine:[]); seenKeep=F?F.seenKeep.slice():[null,null,null,null]; seenTower=new Map(F?F.seenTower:[]); seenScrip=new Map(F?F.seenScrip||[]:[]); barbSeen=new Set(F?F.barbSeen:[]);
+  explored=new Set(F?F.explored:[]); seenMine=new Map(F?F.seenMine:[]); seenKeep=F?F.seenKeep.slice():[null,null,null,null]; seenTower=new Map(F?F.seenTower:[]); seenScrip=new Map(F?F.seenScrip||[]:[]); seenWall=new Map(F?F.seenWall||[]:[]); barbSeen=new Set(F?F.barbSeen:[]);
   const G=MP.fogs[MP.foe]; if(G&&aiFog[MP.foe]){ aiFog[MP.foe].explored=new Set(G.explored); updateAIVision(MP.foe); }
   updateVision(); mpStore(d);
   if(before&&!fresh){
@@ -820,7 +929,7 @@ function mpOnMsg(m){
   }
   if(m.t==='lobby'&&MP.role==='guest'){ mpGuestPick(m.host); return; }
   if(m.t==='pick'&&MP.role==='host'&&!gameStarted){
-    if(!(m.army>=0&&m.army<4)||m.army===ME){ mpConn.send({t:'lobby',host:ME}); return; }
+    if(!isArmy(m.army)||m.army===ME){ mpConn.send({t:'lobby',host:ME}); return; }
     MP.foe=m.army; MP.match=Math.random().toString(36).slice(2); MP.seq=1; MP.fogs={};
     logEl.innerHTML=''; newGame(); const d=mpPack(); MP.fogs=d.fogs; mpStore(d);
     mpConn.send({t:'start',host:ME,guest:MP.foe,state:d}); enterGame(); return;
@@ -840,13 +949,13 @@ function mpOnMsg(m){
 }
 
 // ---- lobby screens (shown over the title)
-const mpArmyButtons=(on,taken)=>[0,1,2,3].map(t=>`<button class="mparmy${t===on?' on':''}" data-t="${t}" ${t===taken?'disabled title="Taken by the host"':''} style="--fc:${FACTIONS[t].color}"><i></i>${FACTIONS[t].name}</button>`).join('');
+const mpArmyButtons=(on,taken)=>ARMY_IDS.map(t=>`<button class="mparmy${t===on?' on':''}" data-t="${t}" ${t===taken?'disabled title="Taken by the host"':''} style="--fc:${FACTIONS[t].color}"><i></i>${FACTIONS[t].name}</button>`).join('');
 function mpStatus(html,bad){ const el=document.getElementById('mpStatus'); if(el){ el.innerHTML=html; el.classList.toggle('bad',!!bad); } }
 function mpFail(msg){ mpShutdown(); if(gameStarted){ log(msg,'sys'); return; } mpStatus(msg,true); const b=document.getElementById('mpHost'), j=document.getElementById('mpJoin'); if(b) b.disabled=false; if(j) j.disabled=false; }
 function mpMenu(){
   mpClose(); ME=0;
   const ov=document.getElementById('overlay'), pn=document.getElementById('panel'), sv=mpReadSave();
-  let army=0; try{ const a=+localStorage.getItem('raysRealm.mpArmy'); if(a>=0&&a<4) army=a; }catch(e){}
+  let army=0; try{ const a=+localStorage.getItem('raysRealm.mpArmy'); if(isArmy(a)) army=a; }catch(e){}
   ov.classList.remove('hidden'); pn.classList.add('mp');
   pn.innerHTML=`<h2>Head to Head</h2><p>Two players on two computers. One of you creates a match and texts the code to the other, who joins with it. Just your two armies, and twice the barbarians.</p>
     <div class="mpgrid">
@@ -891,12 +1000,13 @@ function mpGuestPick(hostArmy){
 }
 // ---------------------------------------------------------------- random map
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
-const ROSTERS = [
-  ['knight','knight','cavalry','archer','archer','catapult','scout'],
-  ['knight','knight','archer','wizard','hydra','scout'],
-  ['knight','knight','archer','cavalry','wizard','catapult','scout'],
-  ['knight','knight','archer','archer','cavalry','wizard','scout']
-];
+const ROSTERS = {
+  0:['knight','knight','cavalry','archer','archer','catapult','scout'],
+  1:['knight','knight','archer','wizard','hydra','scout'],
+  2:['knight','knight','archer','cavalry','wizard','catapult','scout'],
+  3:['knight','knight','archer','archer','cavalry','wizard','scout'],
+  5:['knight','knight','knight','crossbow','crossbow','cavalry','catapult','scout']
+};
 // Four armies start in the four corners; a river cross and lake split the map, every army gets a pond for ships,
 // the same number of home mines, and shared mines sit on the borders and centre. Fords are carved so nothing is cut off.
 function generateMap(seed){
@@ -1001,11 +1111,9 @@ function generateMap(seed){
   for(const t of targets){ if(!reached.has(key(t.c,t.r))){ carve(t.c,t.r,reached); reached=flood(keeps[0][0],keeps[0][1]); } }
   groundReach=reached;
   // starting units: the nearest open ground around each keep
-  const start=[];
-  keeps.forEach(([kc,kr],i)=>{
+  const start=keeps.map(([kc,kr])=>{   // open hexes beside each corner keep, nearest first; whichever army sits there fills them
     const list=[]; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const d=hexDist({c,r},{c:kc,r:kr}); if(d>=1&&d<=4&&passable(c,r)&&at(c,r)!=='K') list.push({c,r,d:d+rnd()*0.9}); }
-    list.sort((a,b)=>a.d-b.d);
-    ROSTERS[i].forEach((type,n)=>{ const sp=list[n]; if(sp) start.push([type,i,sp.c,sp.r]); });
+    return list.sort((a,b)=>a.d-b.d);
   });
   MAP=g.map(row=>row.join('')); KEEPS=keeps; START=start; MINES.length=0; mines.forEach(m=>MINES.push({c:m.c,r:m.r,mana:crystals.has(key(m.c,m.r))}));
   return {owners};
@@ -1014,13 +1122,15 @@ function generateMap(seed){
 function newGame(seed){
   undoSnap=null; mapSeed=seed??((Math.random()*1e9)|0);
   const info=generateMap(mapSeed); resize();
-  setArmies(enemyCount); if(MP) activeArmies=[0,1,2,3].map(t=>t===ME||t===MP.foe);
-  units = START.filter(([t,team])=>activeArmies[team]).map(([t,team,c,r]) => makeUnit(t,team,c,r));
+  enemyCount=ENEMY_SETS[enemyCount]?enemyCount:3;
+  const seats=seatArmies(enemyCount,MP?[MP.foe]:null);
+  activeArmies=perArmy(false); seats.forEach(t=>{ if(isArmy(t)) activeArmies[t]=true; });
+  units = seats.flatMap((team,i)=>isArmy(team)?ROSTERS[team].map((type,n)=>{ const sp=START[i][n]; return sp&&makeUnit(type,team,sp.c,sp.r); }).filter(Boolean):[]);
   turn=1; side=MP?Math.min(ME,MP.foe):ME; sel=null; moveInfo=null; targets=[]; recruitType=null; spawnSet=[]; busy=false; over=false; effects=[]; proj=null;
-  gold=activeArmies.map(a=>a?2:0); mana=activeArmies.map(a=>a?2:0); recruitsUsed=[0,0,0,0]; elim=activeArmies.map(a=>!a); mineOwner=new Map(); keepOwner=[0,1,2,3].map(t=>activeArmies[t]?t:4); towers=new Map(); towerUsed=new Set(); scrip=new Map(); seenScrip=new Map(); techs=[[],[],[],[]]; research=[null,null,null,null];
+  gold=activeArmies.map(a=>a?2:0); mana=activeArmies.map(a=>a?2:0); recruitsUsed=perArmy(0); elim=activeArmies.map(a=>!a); mineOwner=new Map(); keepOwner=[...seats]; towers=new Map(); towerUsed=new Set(); scrip=new Map(); seenScrip=new Map(); walls=new Map(); seenWall=new Map(); wallsBuilt=0; techs=perArmy(()=>[]); research=perArmy(null);
   omenNow=null; omenLast=null; stopAmbience(); omenNext=rollOmen(2); refreshOmenPanel(); loadOmenSfx();
   explored=new Set(); visible=new Set(); seenMine=new Map(); seenKeep=[null,null,null,null]; seenTower=new Map();
-  MINES.forEach(m=>{ const o=info.owners[key(m.c,m.r)]; mineOwner.set(key(m.c,m.r),o!=null&&activeArmies[o]?o:null); });
+  MINES.forEach(m=>{ const o=info.owners[key(m.c,m.r)]; mineOwner.set(key(m.c,m.r),o!=null&&isArmy(seats[o])?seats[o]:null); });
   resetAIFog(); updateVision(); barbSeen=new Set(); for(let i=0;i<(MP?BARB_START_MP:3)+(mapSize==='large'?2:0);i++) spawnBarbTower(); updateVision(); logEl.innerHTML='';
   if(MP) log(`Head to head: ${FACTIONS[ME].name} vs ${FACTIONS[MP.foe].name}. Take their keep and guard your own. The barbarians are out in force.`,'sys');
   else log(`Welcome to Ray's Realm. Capture ${enemyWord()} to rule the realm — and guard your own!`,'sys');
@@ -1109,24 +1219,26 @@ function zocSet(u){
 }
 const inZoc = u => { const z=zocSet(u); return !!z&&z.has(key(u.c,u.r)); };
 function reach(u){
-  const res=new Map(), k0=key(u.c,u.r), zoc=zocSet(u);
+  const res=new Map(), k0=key(u.c,u.r), zoc=zocSet(u), climb=climbs(u);
   res.set(k0,{c:u.c,r:u.r,cost:0,steps:0,prev:null});
   const open=[k0];
   while(open.length){
     open.sort((a,b)=>res.get(a).cost-res.get(b).cost);
     const cur=res.get(open.shift());
     if(zoc&&cur.prev!==null&&zoc.has(key(cur.c,cur.r))) continue;   // engaged: can stop here but not walk on
+    if(climb&&cur.prev!==null&&tileCh(cur.c,cur.r)==='^') continue;   // a climb ends the move
     for(const [nc,nr] of neighbors(cur.c,cur.r)){
-      const tc=tileCost(u.type.cls,nc,nr,u.team); if(tc==null) continue;
+      const tc=tileCost(u.type.cls,nc,nr,u.team,climb); if(tc==null) continue;
       const occ=unitAt(nc,nr); if(occ && occ.team!==u.team) continue;
-      const cost=cur.cost+tc; if(cost>u.mp) continue;
+      let cost=cur.cost+tc; if(cost>u.mp) continue;
+      if(climb&&tileCh(nc,nr)==='^') cost=u.mp;   // climbing takes all the movement left
       const nk=key(nc,nr), ex=res.get(nk);
       if(!ex||cost<ex.cost){ res.set(nk,{c:nc,r:nr,cost,steps:cur.steps+1,prev:key(cur.c,cur.r)}); if(!open.includes(nk)) open.push(nk); }
     }
   }
   return res;
 }
-const canStop = (u,e) => !unitAt(e.c,e.r) || (e.c===u.c && e.r===u.r);
+const canStop = (u,e) => !walls.has(key(e.c,e.r)) && (!unitAt(e.c,e.r) || (e.c===u.c && e.r===u.r));   // nobody ends a move on a wall
 
 function targetsFrom(u,c,r){
   if(u.type.noattack) return [];
@@ -1134,22 +1246,28 @@ function targetsFrom(u,c,r){
   return units.filter(t => t.team!==u.team && (u.team===ME?visible.has(key(t.c,t.r)):aiCanSee(u.team,t.c,t.r)) && (d=>d>=u.type.rng[0]&&d<=rmax(u))(hexDist({c,r},t)));
 }
 function calcDmg(a,d,charge){
-  const atk=a.type.atk+(charge&&a.type.charge?(hasTech(a.team,'horses')?3:2):0)+(hasTech(a.team,'whet')&&a.type.rng[1]===1&&a.type.cls==='ground'?1:0)+(a.key==='ranger'&&hasTech(a.team,'archery')?1:0);
+  const atk=a.type.atk+(charge&&a.type.charge?(hasTech(a.team,'horses')?3:2):0)+(hasTech(a.team,'whet')&&a.type.rng[1]===1&&a.type.cls==='ground'?1:0)+atkBonus(a);
   const def=a.type.pierce?0:d.type.def+terrainDef(d);
   return Math.max(1,atk-def);
 }
 const chargeOf = (a,steps) => !!a.type.charge && steps>=2;
+const shootersOn = s => s.cargo.filter(p=>p.type.shooter);
 function counterInfo(a,d,dmgToD){
-  if(d.hp-dmgToD<=0||d.type.noattack) return 0;
-  const dist=hexDist(a,d);
+  if(d.hp-dmgToD<=0) return 0;
+  const hit=a.aboard||a;   // anything fired back at a passenger lands on the ship
+  if(d.cargo.length) return shootersOn(d).reduce((n,p)=>n+calcDmg(p,hit,false),0);   // archers aboard answer any attack, from any distance
+  if(d.type.noattack) return 0;
+  const dist=hexDist(hit,d);
   if(dist<d.type.rng[0]||dist>rmax(d)) return 0;
-  return calcDmg(d,a,false);
+  return calcDmg(d,hit,false);
 }
+// a passenger who can shoot: what it can hit from its ship
+const fireTargets = p => p.aboard&&p.type.shooter&&!p.done ? targetsFrom(p,p.aboard.c,p.aboard.r) : [];
 
 // economy
 const mercCount = team => [...units,...units.flatMap(u=>u.cargo)].filter(u=>u.team===team&&u.key==='merc').length;
 function spawnTiles(team,type){
-  if(team<4&&type!=='merc'&&supplyLeft(team)<=0) return [];   // army at its supply cap: take more land (keeps, mines, forts) to field more
+  if(isArmy(team)&&type!=='merc'&&supplyLeft(team)<=0) return [];   // army at its supply cap: take more land (keeps, mines, forts) to field more
   if(type==='merc'){   // hired locally: any free, visible hex you could walk onto (not a keep or mine)
     if(mercCount(team)>=MERC_MAX) return [];
     const out=[]; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ if(unitAt(c,r)||tileCost('ground',c,r)==null) continue; const ch=tileCh(c,r); if(ch==='K'||ch==='G') continue; if(team===ME&&!isVis(c,r)) continue; out.push({c,r,tower:null}); }
@@ -1159,7 +1277,7 @@ function spawnTiles(team,type){
   const owned=KEEPS.filter((k,i)=>keepOwner[i]===team);
   const myTowers=[...towers].filter(([k,tm])=>tm===team&&!towerSpent(k)).map(([k])=>({k,c:+k.split(',')[0],r:+k.split(',')[1]}));
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
-    if(unitAt(c,r)||tileCost(T.cls,c,r)==null) continue;
+    if(unitAt(c,r)||walls.has(key(c,r))||tileCost(T.cls,c,r)==null) continue;
     if(type==='archertower'&&tileCh(c,r)!=='.') continue;   // towers are built on open grass only (no forest, crags, mines, keeps or water)
     let tw=null;
     const quotaOK=recruitsUsed[team]<recruitQuota(team);
@@ -1176,21 +1294,62 @@ function spawnTiles(team,type){
 function towerTiles(team){
   const out=[], mine=units.filter(u=>u.team===team), owned=KEEPS.filter((k,i)=>keepOwner[i]===team);
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
-    if(tileCh(c,r)!=='.'||towers.has(key(c,r))) continue;
+    if(tileCh(c,r)!=='.'||towers.has(key(c,r))||walls.has(key(c,r))) continue;
     const occ=unitAt(c,r); if(occ&&occ.team!==team) continue;
     if(mine.some(u=>hexDist(u,{c,r})<=2)||owned.some(([kc,kr])=>hexDist({c,r},{c:kc,r:kr})<=2)) out.push({c,r});
   }
   return out;
 }
-const costOf = (type,team=ME) => type==='tower' ? towerCost(team) : type==='scrip' ? SCRIP_COST : (type==='merc' ? Math.max(1,TYPES.merc.cost-(team===2?1:0)-(hasTech(team,'charter')?1:0)) : TYPES[type].cost);   // Golden Valkyries hire Mercenaries for 2
+const costOf = (type,team=ME) => type==='wall' ? WALL_COST : type==='tower' ? towerCost(team) : type==='scrip' ? SCRIP_COST : (type==='merc' ? Math.max(1,TYPES.merc.cost-(team===2?1:0)-(hasTech(team,'charter')?1:0)) : TYPES[type].cost);   // Golden Valkyries hire Mercenaries for 2
 function scripTiles(team){   // anywhere you can see: open meadow or hills, no unit, no fort
   if(!scripEnabled()||scripOf(team)) return [];
   const out=[], seen=k=>team===ME?visible.has(k):!!(aiFog[team]&&aiFog[team].visible.has(k));
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const k=key(c,r), ch=tileCh(c,r);
-    if((ch!=='.'&&ch!=='h')||unitAt(c,r)||towers.has(k)||scrip.has(k)||!seen(k)) continue; out.push({c,r}); }
+    if((ch!=='.'&&ch!=='h')||unitAt(c,r)||towers.has(k)||walls.has(k)||scrip.has(k)||!seen(k)) continue; out.push({c,r}); }
   return out;
 }
-const tilesFor = (team,type) => type==='tower' ? towerTiles(team) : type==='scrip' ? scripTiles(team) : spawnTiles(team,type);
+function wallTiles(team){   // meadow or hills close to the Dwarves, never beside an enemy and never near a keep they don't hold
+  if(team!==DWARF||wallsBuilt>=WALL_PER_TURN||walls.size>=WALL_MAX) return [];
+  const mine=units.filter(u=>u.team===team), foes=units.filter(u=>u.team!==team);
+  const owned=KEEPS.filter((k,i)=>keepOwner[i]===team), other=KEEPS.filter((k,i)=>keepOwner[i]!==team), out=[];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const k=key(c,r), ch=tileCh(c,r), at={c,r};
+    if((ch!=='.'&&ch!=='h')||walls.has(k)||towers.has(k)||scrip.has(k)||unitAt(c,r)) continue;
+    if(!mine.some(u=>hexDist(u,at)<=2)&&!owned.some(([kc,kr])=>hexDist(at,{c:kc,r:kr})<=2)) continue;
+    if(foes.some(u=>hexDist(u,at)<=1)||other.some(([kc,kr])=>hexDist(at,{c:kc,r:kr})<=WALL_KEEP_GAP)) continue;
+    out.push({c,r}); }
+  return out;
+}
+function buildWall(team,c,r){
+  gold[team]-=WALL_COST; walls.set(key(c,r),team); wallsBuilt++;
+  if(team===ME||isVis(c,r)){ const p=center(c,r); effects.push({ring:true,x:p.x,y:p.y-S*0.3,t0:performance.now(),life:500,color:'#c9c2b0'});
+    log(`${FACTIONS[team].short} raises a stone wall (-${WALL_COST}g).`,'t'+team); sfx('recruit'); }
+}
+// walls a siege unit could knock down from (c,r)
+function wallTargetsFrom(u,c,r){
+  if(!u.type.siege||!walls.size) return [];
+  if(u.team===ME) updateVision();
+  const out=[];
+  for(const [k,team] of walls){ if(team===u.team) continue; const [wc,wr]=k.split(',').map(Number), d=hexDist({c,r},{c:wc,r:wr});
+    if(d>=u.type.rng[0]&&d<=rmax(u)&&(u.team===ME?visible.has(k):aiCanSee(u.team,wc,wr))) out.push({wall:true,c:wc,r:wr,team}); }
+  return out;
+}
+const targetsOf = u => [...targetsFrom(u,u.c,u.r),...wallTargetsFrom(u,u.c,u.r)];   // everything u can attack from where it stands
+async function wallFx(a,c,r){   // the shot, then the wall comes down
+  const seen=unitVisible(a)||isVis(c,r);
+  if(seen){ const A=upos(a), W=center(c,r), dx=W.x-A.x, dy=W.y-A.y, len=Math.hypot(dx,dy)||1, kind=a.key==='catapult'?'stone':'fire';
+    ensureInView(W); sfx(kind==='stone'?'boom':kind);
+    await tween(Math.min(520,180+len*1.1),t=>{ const arc=kind==='stone'?-Math.sin(t*Math.PI)*S*1.6:0; proj={kind,x:A.x+dx*t,y:A.y-S*0.4+dy*t+arc,ang:Math.atan2(dy,dx),t}; });
+    proj=null; sfx('boom'); effects.push({ring:true,x:W.x,y:W.y-S*0.3,t0:performance.now(),life:600,color:'#d8d0c0'}); addText(W.x,W.y-S*1.1,'Wall down!','#ffd0a0');
+    log(`${a.name} smashes a stone wall!`,'t'+a.team); }
+  walls.delete(key(c,r)); if(seen) seenWall.delete(key(c,r));
+}
+async function attackWall(a,w){
+  undoSnap=null; mpRec({k:'wall',a:a.id,c:w.c,r:w.r});
+  a.done=true; a.moved=true; a.fought=true;
+  await wallFx(a,w.c,w.r);
+  refreshUI();
+}
+const tilesFor = (team,type) => type==='wall' ? wallTiles(team) : type==='tower' ? towerTiles(team) : type==='scrip' ? scripTiles(team) : spawnTiles(team,type);
 function buildScrip(team,c,r){
   gold[team]-=SCRIP_COST; scrip.set(key(c,r),team);
   if(team===ME||isVis(c,r)){ const p=center(c,r); effects.push({ring:true,x:p.x,y:p.y-S*0.3,t0:performance.now(),life:600,color:'#e8d9a0'});
@@ -1252,7 +1411,7 @@ function openScriptorium(){
 }
 // ---- computer play: once its army is established it saves up for a Scriptorium, then researches in a fixed order
 function aiNextTech(t){
-  for(const id0 of AI_TECH_ORDER){ const id=id0==='ARMY'?['oath','blood','legion','archery'][t]:id0;
+  for(const id0 of AI_TECH_ORDER){ const id=id0==='ARMY'?{0:'oath',1:'blood',2:'legion',3:'archery',5:'boiler'}[t]:id0;
     if(TECHS[id]&&!TECHS[id].humanOnly&&!hasTech(t,id)&&techAllowed(t,id)) return id; }
   return null;
 }
@@ -1273,7 +1432,7 @@ function aiScrip(t){
   const id=aiNextTech(t); if(id&&mana[t]>=TECHS[id].cost) startResearch(t,id);
 }
 function captureAt(u){
-  if(u.team>=4) return;   // barbarians do not hold ground
+  if(!isArmy(u.team)) return;   // barbarians do not hold ground
   const tk=key(u.c,u.r);
   const seen=u.team===ME||isVis(u.c,u.r);
   if(towers.has(tk)&&towers.get(tk)!==u.team){ towers.delete(tk); if(seen) log(`${FACTIONS[u.team].short} razes an enemy fort!`,'sys'); }
@@ -1281,10 +1440,10 @@ function captureAt(u){
   if(tileCh(u.c,u.r)==='K'){
     const i=KEEPS.findIndex(k=>k[0]===u.c&&k[1]===u.r);
     if(i>=0&&keepOwner[i]!==u.team){
-      const abandoned=keepOwner[i]===4; keepOwner[i]=u.team; const p=center(u.c,u.r);
+      const was=keepOwner[i], abandoned=was===4; keepOwner[i]=u.team; const p=center(u.c,u.r);
       const loot=5+Math.floor(Math.random()*21); gold[u.team]+=loot;
       if(seen){ addText(p.x,p.y-S*1.4,`Keep looted! +${loot}🪙`,FACTIONS[u.team].color);
-        log(`${FACTIONS[u.team].name} ${abandoned?'claims the abandoned':'captures the'} ${FACTIONS[i].short} keep and loots ${loot} gold!`,'sys'); sfx('coin'); }
+        log(`${FACTIONS[u.team].name} ${abandoned?'claims an abandoned':'captures the '+FACTIONS[was].short} keep and loots ${loot} gold!`,'sys'); sfx('coin'); }
       checkEnd();
     }
     return;
@@ -1331,7 +1490,7 @@ function healTeam(t){
 function startTeamTurn(t){
   for(const u of [...units]){ if(u.team===t&&u.key==='merc'&&--u.rounds<=0){ units=units.filter(x=>x!==u); units.forEach(h=>{ h.cargo=h.cargo.filter(x=>x!==u); }); if(sel===u) clearSel();
     if(t===ME){ const p=center(u.c,u.r); addText(p.x,p.y-S*1.2,'Contract ended',FACTIONS[ME].color); log('A Mercenary\'s contract has ended. He walks away.','sys'); } } }
-  healTeam(t); paladinAura(t); recruitsUsed[t]=0;
+  healTeam(t); paladinAura(t); recruitsUsed[t]=0; if(t===DWARF) wallsBuilt=0;
   for(const [k,tm] of towers) if(tm===t) for(let i=0;i<TOWER_RECRUITS;i++) towerUsed.delete(towerUseId(k,i));
   units.filter(u=>u.team===t).forEach(u=>{u.done=false;u.moved=false;u.steps=0;u.mp=mvOf(u);u.cargo.forEach(c=>{c.done=false;c.moved=false;c.steps=0;c.mp=mvOf(c);});});
   units.filter(u=>u.team===t&&u.stun>0).forEach(u=>{ u.done=true; u.moved=true; u.mp=0; u.stun--; });   // stunned by Flash: loses this turn
@@ -1353,7 +1512,7 @@ const OMENS = {
 };
 let omenNow=null, omenNext=null, omenLast=null;
 const omenIs = t => !!omenNow && omenNow.type===t;
-const rmax = u => u.type.rng[1] + ((u.key==='archer'||u.key==='ranger')&&hasTech(u.team,'longbow')?1:0) + (u.key==='ranger'&&hasTech(u.team,'archery')?1:0) - (omenIs('storm') && u.type.rng[1]>1 && !hasTech(u.team,'almanac') ? 1 : 0);
+const rmax = u => u.type.rng[1] + (u.type.shooter&&hasTech(u.team,'longbow')?1:0) + (u.key==='ranger'&&hasTech(u.team,'archery')?1:0) - (omenIs('storm') && u.type.rng[1]>1 && !hasTech(u.team,'almanac') ? 1 : 0);
 const OMEN_START = 4;          // no omens until round 4: players get a few rounds to settle in
 function rollOmen(forTurn){
   if(forTurn<OMEN_START) return null;
@@ -1380,7 +1539,7 @@ function startOmen(o){
   const def=OMENS[o.type]; omenLast=o.type;
   log(`Omen: ${def.name}. ${def.rule}`,'sys');
   if(o.type==='plague'){
-    const mobile=t=>alive(t).filter(u=>u.type.mv>0), live=[0,1,2,3].filter(t=>!elim[t]&&mobile(t).length);
+    const mobile=t=>alive(t).filter(u=>u.type.mv>0), live=ARMY_IDS.filter(t=>!elim[t]&&mobile(t).length);
     if(live.length){ live.sort((a,b)=>mobile(b).length-mobile(a).length||gold[b]-gold[a]); const t=live[0];
       for(const u of mobile(t)){ u.hp=Math.max(1,u.hp-2); u.cargo.forEach(c=>{ c.hp=Math.max(1,c.hp-2); }); if(unitVisible(u)){ const p=center(u.c,u.r); addText(p.x,p.y-S*1.2,'-2',def.color); } }
       log(`The plague strikes the ${FACTIONS[t].name}: every unit that can move loses 2 health.`,'sys'); }
@@ -1512,7 +1671,7 @@ function updateVision(){
   visible.forEach(k=>explored.add(k));
   for(const m of MINES){ const k=key(m.c,m.r); if(visible.has(k)) seenMine.set(k,mineOwner.get(k)); }
   KEEPS.forEach(([c,r],i)=>{ if(visible.has(key(c,r))) seenKeep[i]=keepOwner[i]; });
-  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const k=key(c,r); if(visible.has(k)){ if(towers.has(k)) seenTower.set(k,towers.get(k)); else seenTower.delete(k); if(scrip.has(k)) seenScrip.set(k,scrip.get(k)); else seenScrip.delete(k); } }
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const k=key(c,r); if(visible.has(k)){ if(towers.has(k)) seenTower.set(k,towers.get(k)); else seenTower.delete(k); if(scrip.has(k)) seenScrip.set(k,scrip.get(k)); else seenScrip.delete(k); if(walls.has(k)) seenWall.set(k,walls.get(k)); else seenWall.delete(k); } }
   for(const b of units) if(b.key==='barbtower'&&!barbSeen.has(b.id)&&visible.has(key(b.c,b.r))){ barbSeen.add(b.id); if(logEl) log('You have discovered a Barbarian Tower!','sys'); }
 }
 function revealAround(c,r,rad=VISION){ const t=new Set(); visTiles([{c,r,type:{vision:rad}}],t); t.forEach(k=>explored.add(k)); }
@@ -1548,14 +1707,14 @@ async function strike(a,d,amount,counter){
   a.fought=true; d.fought=true;
   if(!(unitVisible(a)||unitVisible(d))){
     d.hp=Math.max(0,d.hp-amount);
-    if(d.hp<=0){ if(towers.get(key(d.c,d.r))===d.team) towers.delete(key(d.c,d.r)); if(d.key==='barbtower'&&a.team<BARB_TEAM) gold[a.team]+=BARB_BOUNTY; giantBounty(a,d); if(a.team===1&&d.team!==1){ gold[1]+=spoilsAmt(); bloodHeal(a); } units=units.filter(x=>x!==d); if(sel===d) clearSel(); }
+    if(d.hp<=0){ if(towers.get(key(d.c,d.r))===d.team) towers.delete(key(d.c,d.r)); if(d.key==='barbtower'&&isArmy(a.team)) gold[a.team]+=BARB_BOUNTY; giantBounty(a,d); if(a.team===1&&d.team!==1){ gold[1]+=spoilsAmt(); bloodHeal(a); } units=units.filter(x=>x!==d); if(sel===d) clearSel(); }
     return;
   }
   ensureInView(upos(d));
   const A=upos(a), D=upos(d), ranged=a.type.rng[1]>1;
   const dx=D.x-A.x, dy=D.y-A.y, len=Math.hypot(dx,dy)||1;
   if(ranged){
-    const kind=(a.key==='archer'||a.key==='archertower')?'arrow':(a.key==='catapult'||a.key==='ship')?'stone':a.key==='wizard'?'magic':'fire';
+    const kind=(a.key==='archer'||a.key==='crossbow'||a.key==='archertower')?'arrow':(a.key==='catapult'||a.key==='ship')?'stone':a.key==='wizard'?'magic':'fire';
     sfx(kind==='arrow'?'arrow':kind==='stone'?'boom':kind);
     await tween(Math.min(520,180+len*1.1),t=>{
       const arc = (kind==='stone')?-Math.sin(t*Math.PI)*S*1.6:(kind==='arrow'?-Math.sin(t*Math.PI)*S*0.5:0);
@@ -1575,7 +1734,7 @@ async function strike(a,d,amount,counter){
   if(d.hp<=0){
     log(`${d.name} is destroyed!${d.cargo.length?' Its passengers are lost!':''}`,'sys'); sfx('die');
     if(giantBounty(a,d)) addText(D.x,D.y-S*1.6,`+${GIANT_BOUNTY}🪙`,FACTIONS[a.team].color);
-    if(d.key==='barbtower'&&a.team<BARB_TEAM){ gold[a.team]+=BARB_BOUNTY; addText(D.x,D.y-S*1.6,`+${BARB_BOUNTY}🪙`,FACTIONS[a.team].color); log(`${FACTIONS[a.team].name} destroys a Barbarian Tower and claims ${BARB_BOUNTY} gold!`,'sys'); }
+    if(d.key==='barbtower'&&isArmy(a.team)){ gold[a.team]+=BARB_BOUNTY; addText(D.x,D.y-S*1.6,`+${BARB_BOUNTY}🪙`,FACTIONS[a.team].color); log(`${FACTIONS[a.team].name} destroys a Barbarian Tower and claims ${BARB_BOUNTY} gold!`,'sys'); }
     if(a.team===1&&d.team!==1){ gold[1]+=spoilsAmt(); bloodHeal(a); addText(D.x,D.y-S*1.3,`+${spoilsAmt()}🪙`,FACTIONS[1].color); log(`Spoils of War: the Dark Host takes ${spoilsAmt()} gold.`,'t1'); }
     await tween(450,t=>{ d.alpha=1-t; d.off={x:0,y:t*S*0.3}; });
     if(towers.get(key(d.c,d.r))===d.team){ towers.delete(key(d.c,d.r)); log('Its fort collapses with it!','sys'); }
@@ -1606,7 +1765,7 @@ async function magicHit(a,d,amount){   // damage that ignores armour, with the u
   if(d.hp<=0){
     if(seen){ log(`${d.name} is destroyed!${d.cargo.length?' Its passengers are lost!':''}`,'sys'); sfx('die'); }
     if(giantBounty(a,d)&&seen) addText(D.x,D.y-S*1.6,`+${GIANT_BOUNTY}🪙`,FACTIONS[a.team].color);
-    if(d.key==='barbtower'&&a.team<BARB_TEAM) gold[a.team]+=BARB_BOUNTY;
+    if(d.key==='barbtower'&&isArmy(a.team)) gold[a.team]+=BARB_BOUNTY;
     if(a.team===1&&d.team!==1){ gold[1]+=spoilsAmt(); bloodHeal(a); }
     if(seen) await tween(450,t=>{ d.alpha=1-t; d.off={x:0,y:t*S*0.3}; });
     if(towers.get(key(d.c,d.r))===d.team) towers.delete(key(d.c,d.r));
@@ -1643,7 +1802,7 @@ async function castSpell(w,s,t){
 }
 function startSpell(k){
   if(!sel||sel.key!=='wizard'||busy||side!==ME) return;
-  if(spellMode===k){ spellMode=null; targets=targetsFrom(sel,sel.c,sel.r); }
+  if(spellMode===k){ spellMode=null; targets=targetsOf(sel); }
   else if(mana[ME]>=SPELLS[k].cost){ spellMode=k; targets=spellTargets(sel,k); }
   refreshUI();
 }
@@ -1656,24 +1815,27 @@ async function aiCastSpell(u){
 }
 async function performAttack(a,d){
   undoSnap=null;
-  const steps=a.steps, dmg=calcDmg(a,d,chargeOf(a,steps));
+  const hit=a.aboard||a;
+  if(a.aboard){ a.c=a.aboard.c; a.r=a.aboard.r; }
+  const steps=a.aboard?0:a.steps, dmg=calcDmg(a,d,chargeOf(a,steps));
   if(chargeOf(a,steps)&&(unitVisible(a)||unitVisible(d))) log(`${a.name} charges!`,'sys');
   await strike(a,d,dmg,false);
-  if(d.hp>0 && a.hp>0){
-    const c=counterInfo(a,d,0);
-    if(c) await strike(d,a,c,true);
+  if(d.hp>0 && hit.hp>0){
+    if(d.cargo.length){   // return fire from every archer aboard the ship that was attacked
+      for(const p of shootersOn(d)){ if(hit.hp<=0) break; p.c=d.c; p.r=d.r; await strike(p,hit,calcDmg(p,hit,false),true); }
+    } else { const c=counterInfo(a,d,0); if(c) await strike(d,hit,c,true); }
   }
   a.done=true; a.moved=true;
   checkEnd();
 }
 function checkEnd(){
   if(over||mpReplaying) return;
-  for(let t=0;t<4;t++) if(!elim[t] && alive(t).length===0 && gold[t]<MIN_COST){
+  for(const t of ARMY_IDS) if(!elim[t] && alive(t).length===0 && gold[t]<MIN_COST){
     elim[t]=true; log(`${FACTIONS[t].name} has been eliminated!`,'sys');
   }
   if(!keepOwner.includes(ME)){ over=true; showEnd(false,'Your keep has fallen. The realm is lost…'); }
   else if(elim[ME]){ over=true; showEnd(false,'Your army is destroyed and your coffers are empty…'); }
-  else if(!keepOwner.some(o=>o!==ME&&o>=0&&o<=3)||(MP&&elim[MP.foe])){ over=true; showEnd(true); }   // no enemy army holds a keep (abandoned ones don't count)
+  else if(!keepOwner.some(o=>o!==ME&&isArmy(o))||(MP&&elim[MP.foe])){ over=true; showEnd(true); }   // no enemy army holds a keep (abandoned ones don't count)
   if(over&&MP&&side===ME) mpSendState();
   refreshUI();
 }
@@ -1682,23 +1844,23 @@ function checkEnd(){
 let cheatBuf='';
 function secretDragon(){
   if(!gameStarted||busy||over||side!==ME) return;
-  const T=TYPES.dragon, homes=KEEPS.filter((k,i)=>keepOwner[i]===ME); if(!T||!homes.length) return;
+  const beast=ME===DWARF?'steamtank':'dragon', T=TYPES[beast], homes=KEEPS.filter((k,i)=>keepOwner[i]===ME); if(!T||!homes.length) return;
   const spots=[]; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
     if(unitAt(c,r)||tileCost(T.cls,c,r)==null) continue;
     const d=Math.min(...homes.map(([kc,kr])=>hexDist({c,r},{c:kc,r:kr}))); if(d>=1&&d<=3) spots.push({c,r,d}); }
   if(!spots.length){ log('The dragon circles, but there is no room near your keep to land.','sys'); return; }
   spots.sort((a,b)=>a.d-b.d); const {c,r}=spots[0];
   undoSnap=takeSnap('dragon');
-  const u=makeUnit('dragon',ME,c,r); u.done=true; u.moved=true; u.mp=0; units.push(u); mpRec({k:'spawn',u:packUnit(u)});
-  const p=center(c,r); effects.push({ring:true,x:p.x,y:p.y-S*0.3,t0:performance.now(),life:700,color:'#ff6a1a'}); addText(p.x,p.y-S*1.4,'A dragon answers!','#ff9a3a');
-  log('A dragon answers your call. It rests at your keep until next turn.','t'+ME); sfx('recruit'); sfx('fire');
+  const u=makeUnit(beast,ME,c,r); u.done=true; u.moved=true; u.mp=0; units.push(u); mpRec({k:'spawn',u:packUnit(u)});
+  const p=center(c,r); effects.push({ring:true,x:p.x,y:p.y-S*0.3,t0:performance.now(),life:700,color:'#ff6a1a'}); addText(p.x,p.y-S*1.4,ME===DWARF?'The forges answer!':'A dragon answers!','#ff9a3a');
+  log(`${ME===DWARF?'A Steam Tank rolls out of the forges':'A dragon answers your call'}. It rests at your keep until next turn.`,'t'+ME); sfx('recruit'); sfx('fire');
   clearSel(); recruitType=null; spawnSet=[]; updateVision(); refreshUI();
 }
 
 // ---------------------------------------------------------------- player input
 function clearSel(){ sel=null; moveInfo=null; targets=[]; boardShips=[]; spellMode=null; }
-const canStrike = u => !u.type.noattack && !(u.type.stat&&u.moved) && targetsFrom(u,u.c,u.r).length>0;
-const actionable = u => (!u.done && (u.mp>0 || canStrike(u))) || (u.cargo.some(c=>!c.done) && landTiles(u).length>0);
+const canStrike = u => !u.type.noattack && !(u.type.stat&&u.moved) && targetsOf(u).length>0;
+const actionable = u => (!u.done && (u.mp>0 || canStrike(u))) || u.cargo.some(c=>!c.done && (landTiles(u).length>0 || fireTargets(c).length>0));
 const selectable = u => u.team===ME && actionable(u);
 const landTiles = sh => neighbors(sh.c,sh.r).filter(([c,r])=>tileCost('ground',c,r)!=null && !unitAt(c,r));
 function boardSpot(u,s){
@@ -1713,11 +1875,35 @@ function selectCargo(cu){
     ...landTiles(sh).map(([c,r])=>[key(c,r),{c,r,cost:1,steps:1,prev:key(sh.c,sh.r)}])]);
   refreshUI();
 }
+function selectShooter(p){
+  const sh=p.aboard; p.c=sh.c; p.r=sh.r; recruitType=null; spawnSet=[]; spellMode=null;
+  sel=p; moveInfo=null; boardShips=[]; targets=fireTargets(p);
+  refreshUI();
+}
+async function landCargo(sh,cu,c,r){
+  sh.cargo=sh.cargo.filter(x=>x!==cu); units.push(cu); cu.aboard=null; cu.c=sh.c; cu.r=sh.r; mpRec({k:'unload',id:cu.id,ship:sh.id});
+  if(cu.team===ME||isVis(sh.c,sh.r)) log(`${cu.name} disembarks.`,'t'+cu.team);
+  await moveUnit(cu,[{c:sh.c,r:sh.r},{c,r}]); cu.moved=true; cu.steps=1; cu.mp=0; cu.done=true;   // landing ends its turn
+}
+// which shore hex to prefer when everyone lands at once: something to seize first, then good cover
+function shoreRank([c,r]){
+  const k=key(c,r), ch=tileCh(c,r), keep=KEEPS.findIndex(q=>q[0]===c&&q[1]===r);
+  return (keep>=0&&keepOwner[keep]!==ME?100:(ch==='G'||ch==='M')&&mineOwner.get(k)!==ME?50:0) + TERR[ch].def;
+}
+async function unloadAll(sh){
+  if(busy||over||side!==ME) return;
+  undoSnap=takeSnap('unloading'); busy=true; clearSel(); refreshUI();
+  for(const cu of sh.cargo.filter(x=>!x.done)){
+    const spot=landTiles(sh).sort((a,b)=>shoreRank(b)-shoreRank(a))[0]; if(!spot||over) break;
+    await landCargo(sh,cu,spot[0],spot[1]);
+  }
+  busy=false; refreshUI(); maybeAutoEnd();
+}
 function select(u){
   recruitType=null; spawnSet=[]; spellMode=null;
   sel=u; moveInfo=(u.done||u.mp<=0)?null:reach(u); boardShips=[];
-  targets=(u.type.stat&&u.moved)?[]:targetsFrom(u,u.c,u.r);
-  if(moveInfo&&u.type.cls==='ground'&&u.type.mv>0) boardShips=units.filter(s=>s.team===u.team&&s.type.cap&&s.cargo.length<capOf(s)&&boardSpot(u,s));
+  targets=(u.type.stat&&u.moved)?[]:targetsOf(u);
+  if(moveInfo&&u.type.cls==='ground'&&u.type.mv>0&&!u.type.heavy) boardShips=units.filter(s=>s.team===u.team&&s.type.cap&&s.cargo.length<capOf(s)&&boardSpot(u,s));
   refreshUI();
 }
 function finishUnit(u){ u.done=true; if(sel===u) clearSel(); refreshUI(); maybeAutoEnd(); }
@@ -1734,9 +1920,9 @@ async function onTile(c,r,pickedUnit){
   if(recruitType){
     const ent=spawnSet.find(t=>t.c===c&&t.r===r);
     if(ent){
-      undoSnap=takeSnap(recruitType==='tower'?'fort':recruitType==='scrip'?'Scriptorium':'recruit');
-      if(recruitType==='tower') buildTower(ME,c,r); else if(recruitType==='scrip') buildScrip(ME,c,r); else recruit(ME,recruitType,c,r,ent.tower);
-      if(recruitType==='scrip'||gold[ME]<costOf(recruitType)){ recruitType=null; spawnSet=[]; } else spawnSet=tilesFor(ME,recruitType);
+      undoSnap=takeSnap(recruitType==='tower'?'fort':recruitType==='scrip'?'Scriptorium':recruitType==='wall'?'wall':'recruit');
+      if(recruitType==='wall') buildWall(ME,c,r); else if(recruitType==='tower') buildTower(ME,c,r); else if(recruitType==='scrip') buildScrip(ME,c,r); else recruit(ME,recruitType,c,r,ent.tower);
+      if(recruitType==='scrip'||gold[ME]<costOf(recruitType)){ recruitType=null; spawnSet=[]; } else { spawnSet=tilesFor(ME,recruitType); if(!spawnSet.length) recruitType=null; }
       refreshUI(); maybeAutoEnd(); return;
     }
     recruitType=null; spawnSet=[]; refreshUI();
@@ -1744,7 +1930,7 @@ async function onTile(c,r,pickedUnit){
   }
   if(sel&&spellMode){
     if(u&&targets.includes(u)){ busy=true; const w=sel, k=spellMode; spellMode=null; clearSel(); refreshUI(); await castSpell(w,k,u); busy=false; refreshUI(); maybeAutoEnd(); return; }
-    spellMode=null; targets=targetsFrom(sel,sel.c,sel.r); refreshUI(); return;
+    spellMode=null; targets=targetsOf(sel); refreshUI(); return;
   }
   if(sel){
     if(u && boardShips.includes(u)){
@@ -1754,7 +1940,8 @@ async function onTile(c,r,pickedUnit){
       if(path.length>1) await moveUnit(m,path);
       units=units.filter(x=>x!==m); m.aboard=ship; m.c=ship.c; m.r=ship.r; ship.cargo.push(m);
       m.mp=0; m.moved=true;   // the passenger's walking is over, but it can still land this turn; the ship keeps its move
-      log(`${m.name} boards the ${ship.name}. Sail, then land it this turn if you like.`,'t0'); sfx('step');
+      mpRec({k:'board',id:m.id,ship:ship.id});
+      log(`${m.name} boards the ${ship.name}. Sail, then ${m.type.shooter?'shoot from the deck or land':'land it'} this turn if you like.`,'t0'); sfx('step');
       busy=false; refreshUI(); maybeAutoEnd(); return;
     }
     if(sel.aboard && u===sel.aboard){ clearSel(); refreshUI(); return; }
@@ -1763,12 +1950,14 @@ async function onTile(c,r,pickedUnit){
       await performAttack(a,u); busy=false; refreshUI(); maybeAutoEnd(); return;
     }
     if(u===sel){ clearSel(); refreshUI(); return; }
+    const wt=!u&&targets.find(t=>t.wall&&t.c===c&&t.r===r);
+    if(wt){ busy=true; const a=sel; clearSel(); refreshUI(); await attackWall(a,wt); busy=false; refreshUI(); maybeAutoEnd(); return; }
     if(moveInfo && !u){
       const e=moveInfo.get(key(c,r));
       if(e && canStop(sel,e)){
         undoSnap=takeSnap(sel.aboard?'unloading':'move');
         busy=true; const m=sel, path=pathTo(moveInfo,c,r), wasAboard=!!m.aboard;
-        if(m.aboard){ const sh=m.aboard; sh.cargo=sh.cargo.filter(x=>x!==m); units.push(m); m.aboard=null; log(`${m.name} disembarks.`,'t0'); }
+        if(m.aboard){ const sh=m.aboard; sh.cargo=sh.cargo.filter(x=>x!==m); units.push(m); m.aboard=null; mpRec({k:'unload',id:m.id,ship:sh.id}); log(`${m.name} disembarks.`,'t'+ME); }
         moveInfo=null; targets=[]; boardShips=[]; await moveUnit(m,path);
         m.moved=true; m.steps+=path.length-1; m.mp=wasAboard?0:Math.max(0,m.mp-e.cost);
         if(path.length>1&&inZoc(m)){ m.mp=0; log(`${m.name} is engaged by the enemy and halts.`,'t'+ME); }   // zone of control: stepping next to an enemy ends the move
@@ -1795,10 +1984,10 @@ function maybeAutoEnd(){
 
 // ---------------------------------------------------------------- AI
 // ---- per-army fog of war for the AI: same rules as yours (3 hexes, explored stays revealed)
-const aiFog=[null,null,null,null,null];
+const aiFog=perArmy(null);
 function resetAIFog(){
-  for(const t of [0,1,2,3,4]) aiFog[t]={explored:new Set(),visible:new Set(),seenMine:new Map(),seenKeep:[null,null,null,null]};
-  [0,1,2,3,4].forEach(updateAIVision);
+  for(const t of [0,1,2,3,4,5]) aiFog[t]={explored:new Set(),visible:new Set(),seenMine:new Map(),seenKeep:[null,null,null,null]};
+  [0,1,2,3,4,5].forEach(updateAIVision);
 }
 function updateAIVision(t){
   const F=aiFog[t]; if(!F) return;
@@ -1820,7 +2009,7 @@ function aiSources(t){
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(!F.explored.has(key(c,r))) src.push({c,r,d0:7});
   return src;
 }
-function distMapMulti(cls,sources,team){
+function distMapMulti(cls,sources,team,climb){
   const d=new Map(), buckets=[];
   const push=(c,r,dist)=>{ (buckets[dist]||(buckets[dist]=[])).push([c,r,dist]); };
   for(const s of sources){ const k=key(s.c,s.r); if(!d.has(k)||s.d0<d.get(k)){ d.set(k,s.d0); push(s.c,s.r,s.d0); } }
@@ -1829,7 +2018,10 @@ function distMapMulti(cls,sources,team){
     for(let i=0;i<arr.length;i++){
       const [c,r,dist]=arr[i]; if(d.get(key(c,r))!==dist) continue;
       for(const [nc,nr] of neighbors(c,r)){
-        const tc=tileCost(cls,nc,nr,team); if(tc==null) continue;
+        let tc=tileCost(cls,nc,nr,team,climb);
+        if(tc==null&&cls==='ground'&&walls.size){ const w=walls.get(key(nc,nr)); if(w!=null&&w!==team){ const open=tileCost(cls,nc,nr,w,climb); if(open!=null) tc=open+5; } }
+        if(tc==null) continue;
+        if(climb&&tileCh(nc,nr)==='^') tc=2;   // about a turn's walk
         const nk=key(nc,nr), nd=dist+tc;
         if(!d.has(nk)||nd<d.get(nk)){ d.set(nk,nd); push(nc,nr,nd); }
       }
@@ -1848,7 +2040,7 @@ async function aiAttackFrom(u){
 async function aiShip(u){
   if(!u.cargo.length) return;
   updateAIVision(u.team);
-  const gm=distMapMulti('ground',aiSources(u.team));
+  const gm=distMapMulti('ground',aiSources(u.team),u.team);
   const gd=(c,r)=>gm.get(key(c,r))??Infinity;
   const info=reach(u); let best=null;
   for(const [k,e] of info){
@@ -1860,17 +2052,22 @@ async function aiShip(u){
   if(best&&(best.e.c!==u.c||best.e.r!==u.r)){ const path=pathTo(info,best.e.c,best.e.r); await moveUnit(u,path); u.cargo.forEach(x=>{x.c=u.c;x.r=u.r;}); await sleep(80); }
   u.moved=true;
   for(const cu of [...u.cargo]){
+    if(cu.done) continue;
     const spots=landTiles(u).filter(([c,r])=>isFinite(gd(c,r))).sort((a,b)=>gd(a[0],a[1])-gd(b[0],b[1]));
     if(!spots.length) break;
-    const [c,r]=spots[0];
-    u.cargo=u.cargo.filter(x=>x!==cu); units.push(cu); cu.aboard=null; cu.c=u.c; cu.r=u.r;
-    if(isVis(u.c,u.r)) log(`${cu.name} disembarks.`,'t'+cu.team);
-    await moveUnit(cu,[{c:u.c,r:u.r},{c,r}]); cu.moved=true; cu.steps=1; cu.mp=0; cu.done=true;   // landing ends its turn
+    await landCargo(u,cu,spots[0][0],spots[0][1]);
     if(over) return;
+  }
+  for(const p of [...u.cargo]){   // anyone still aboard shoots if something is in range
+    if(over||!units.includes(u)) return;
+    updateAIVision(u.team);
+    const tg=fireTargets(p); if(!tg.length) continue;
+    const best=tg.map(t=>({t,s:calcDmg(p,t,false)+(calcDmg(p,t,false)>=t.hp?9:0)+(1-t.hp/t.type.hp)*3})).sort((a,b)=>b.s-a.s)[0].t;
+    await performAttack(p,best); await sleep(180);
   }
 }
 async function aiTryBoard(u,info,dm){
-  if(u.type.cls!=='ground'||u.type.mv===0) return false;
+  if(u.type.cls!=='ground'||u.type.mv===0||u.type.heavy) return false;
   const ships=units.filter(s=>s.team===u.team&&s.type.cap&&s.cargo.length<capOf(s)&&!s.done&&!s.moved);
   if(!ships.length) return false;
   const here=dm.get(key(u.c,u.r))??Infinity;
@@ -1881,7 +2078,7 @@ async function aiTryBoard(u,info,dm){
     if(!spot) continue;
     const path=pathTo(info,spot.c,spot.r); if(path.length>1) await moveUnit(u,path);
     units=units.filter(x=>x!==u); u.aboard=sh; u.c=sh.c; u.r=sh.r; sh.cargo.push(u);
-    u.mp=0; u.moved=true;
+    u.mp=0; u.moved=true; mpRec({k:'board',id:u.id,ship:sh.id});
     if(isVis(sh.c,sh.r)){ log(`${u.name} boards the ${sh.name}.`,'t'+u.team); sfx('step'); await sleep(120); }
     await aiShip(sh); sh.done=true;   // same rules as the player: the ship sails and lands its passengers this turn
     return true;
@@ -1897,12 +2094,29 @@ async function aiTower(t){
   if(cands.length) buildTower(t,cands[0].q.c,cands[0].q.r);
   await sleep(300);
 }
+// the Dwarf computer wall-builds in front of its keep once enemies come near
+async function aiWalls(t){
+  if(t!==DWARF||turn<2) return;
+  updateAIVision(t);
+  const keeps=KEEPS.filter((k,i)=>keepOwner[i]===t).map(([c,r])=>({c,r})); if(!keeps.length) return;
+  const foes=units.filter(f=>f.team!==t&&aiCanSee(t,f.c,f.r)); if(!foes.length) return;
+  while(gold[t]>=WALL_COST+18+aiReserve(t) && [...walls.values()].filter(x=>x===t).length<4){
+    let best=null;
+    for(const q of wallTiles(t)){
+      const home=Math.min(...keeps.map(k=>hexDist(q,k))); if(home<3||home>4) continue;
+      const near=Math.min(...foes.map(f=>hexDist(q,f))); if(near>7) continue;
+      const sc=-near+1.5*neighbors(q.c,q.r).filter(([c,r])=>walls.has(key(c,r))).length;
+      if(!best||sc>best.sc) best={q,sc};
+    }
+    if(!best) break; buildWall(t,best.q.c,best.q.r); await sleep(250);
+  }
+}
 async function aiAct(u){
   if(u.done) return;
   if(u.type.noattack) return aiShip(u);
   updateAIVision(u.team);
   if(u.key==='wizard'&&await aiCastSpell(u)) return;
-  const info=reach(u), dm=distMapMulti(u.type.cls,aiSources(u.team),u.team);
+  const info=reach(u), dm=distMapMulti(u.type.cls,aiSources(u.team),u.team,climbs(u));
   if(await aiTryBoard(u,info,dm)) return;
   let best=null;
   for(const [k,e] of info){
@@ -1911,7 +2125,8 @@ async function aiAct(u){
     const tdef=u.type.cls==='fly'?0:TERR[tileCh(e.c,e.r)].def;
     const kI=tileCh(e.c,e.r)==='K'?KEEPS.findIndex(q=>q[0]===e.c&&q[1]===e.r):-1;
     const grab=((tileCh(e.c,e.r)==='G'||tileCh(e.c,e.r)==='M')&&mineOwner.get(k)!==u.team)?5:(kI>=0&&keepOwner[kI]!==u.team)?9:(scrip.has(k)&&scrip.get(k)!==u.team&&aiCanSee(u.team,e.c,e.r))?8:0;
-    const tgs=u.type.stat&&(e.c!==u.c||e.r!==u.r)?[]:targetsFrom(ghost,e.c,e.r);
+    const still=!(u.type.stat&&(e.c!==u.c||e.r!==u.r));
+    const tgs=still?targetsFrom(ghost,e.c,e.r):[];
     if(tgs.length){
       for(const t of tgs){
         const dmg=calcDmg(ghost,t,chargeOf(u,e.steps)), kill=dmg>=t.hp;
@@ -1921,14 +2136,17 @@ async function aiAct(u){
       }
     } else {
       let d=dm.get(k)??Infinity; if(!isFinite(d)) d=60;
-      const score=-d+tdef*0.3+grab;
-      if(!best||score>best.score) best={score,e,tgt:null};
+      // a siege unit with nobody to shoot knocks down the wall nearest the way it wants to go
+      const wall=still?wallTargetsFrom(ghost,e.c,e.r).sort((a,b)=>(dm.get(key(a.c,a.r))??99)-(dm.get(key(b.c,b.r))??99))[0]:null;
+      const score=-d+tdef*0.3+grab+(wall?4:0);
+      if(!best||score>best.score) best={score,e,tgt:null,wall};
     }
   }
   if(!best) return;
-  const {e,tgt}=best;
+  const {e,tgt,wall}=best;
   if(e.c!==u.c||e.r!==u.r){ const path=pathTo(info,e.c,e.r); await moveUnit(u,path); u.steps=path.length-1; await sleep(70); }
   if(tgt&&units.includes(tgt)){ u.moved=true; await performAttack(u,tgt); await sleep(180); }
+  else if(wall&&walls.has(key(wall.c,wall.r))){ await attackWall(u,wall); await sleep(180); }
   else if(!tgt) await aiAttackFrom(u);
 }
 
@@ -1940,9 +2158,12 @@ async function aiRecruit(t){
     const opts=shopFor(t).filter(k=>!TYPES[k].merc && k!=='dirigible' && gold[t]-costOf(k,t)>=reserve && spawnTiles(t,k).length);
     if(!opts.length) break;
     let pick;
-    if((opts.includes('dragon')||opts.includes('hydra')) && Math.random()<0.6) pick=opts.includes('hydra')?'hydra':'dragon';
+    const big=['hydra','dragon','steamtank'].find(k=>opts.includes(k));
+    if(big && Math.random()<0.6) pick=big;
     else {
-      const w={knight:3,archer:2,archertower:1,scout:1,cavalry:2,wizard:2,catapult:1,ship:1,dragon:0,hydra:0};
+      const w={knight:3,archer:2,crossbow:2,archertower:1,scout:1,cavalry:2,wizard:2,catapult:1,ship:1,dragon:0,hydra:0,steamtank:0};
+      // walls in sight: bring up catapults
+      if([...walls].some(([k,tm])=>tm!==t&&aiFog[t].explored.has(k))&&units.filter(u=>u.team===t&&u.key==='catapult').length<2) w.catapult=6;
       // near the supply cap every slot counts: lean toward the strongest units it can afford, skip scouts and ships
       const tight=supplyLeft(t)<=3, wt=k=>tight?(k==='scout'||k==='ship'?0:Math.ceil(costOf(k,t)/3)):(w[k]||0);
       const bag=opts.flatMap(k=>Array(wt(k)).fill(k)); if(!bag.length) break;
@@ -1963,6 +2184,7 @@ async function aiTeamTurn(t){
     u.steps=0; await aiAct(u);
   }
   if(!over) await aiTower(t);
+  if(!over) await aiWalls(t);
   if(!over) aiScrip(t);
   if(!over) await aiRecruit(t);
   checkEnd();
@@ -1973,7 +2195,7 @@ async function endTurn(){
   alive(ME).forEach(u=>u.done=true); clearSel(); recruitType=null; spawnSet=[];
   busy=true; refreshUI();
   if(MP){ await mpEndTurn(); return; }
-  for(const t of [0,1,2,3].filter(x=>x!==ME)){
+  for(const t of ARMY_IDS.filter(x=>x!==ME)){
     if(over) break; if(elim[t]||!activeArmies[t]) continue;
     await aiTeamTurn(t);
   }
@@ -1998,7 +2220,7 @@ function barbCandidates(){
     const k=key(c,r); if(!groundReach.has(k)) continue;
     const ch=tileCh(c,r); if(ch!=='.'&&ch!=='f'&&ch!=='h') continue;
     if(unitAt(c,r)||explored.has(k)||visible.has(k)) continue;
-    if([0,1,2,3].some(t=>t!==ME&&aiFog[t]&&aiFog[t].visible.has(k))) continue;
+    if(ARMY_IDS.some(t=>t!==ME&&aiFog[t]&&aiFog[t].visible.has(k))) continue;
     if(KEEPS.some(([kc,kr])=>hexDist({c,r},{c:kc,r:kr})<6)) continue;
     if(st.some(p=>hexDist(p,{c,r})<5)) continue;
     if(!neighbors(c,r).some(([nc,nr])=>tileCost('ground',nc,nr)!=null&&!unitAt(nc,nr))) continue;
@@ -2025,7 +2247,7 @@ function spawnFrostGiants(){
   return n;
 }
 function giantBounty(a,d){
-  if(d.key!=='frostgiant'||a.team>=BARB_TEAM) return false;
+  if(d.key!=='frostgiant'||!isArmy(a.team)) return false;
   gold[a.team]+=GIANT_BOUNTY; log(`${FACTIONS[a.team].name} brings down a Frost Giant and claims ${GIANT_BOUNTY} gold!`,'sys'); return true;
 }
 const barbUnitCount = tw => units.filter(u=>u.team===BARB_TEAM&&u.home===tw.id).length;
@@ -2070,7 +2292,7 @@ async function giantAct(u){   // no tower to guard: hits whatever it can reach, 
     return;
   }
   // march on the nearest enemy BY ROAD (walking distance around rivers and crags), not as the crow flies, so giants never get stuck at a riverbank
-  const foes=units.filter(x=>x.team<BARB_TEAM&&!x.aboard); if(!foes.length) return;
+  const foes=units.filter(x=>isArmy(x.team)&&!x.aboard); if(!foes.length) return;
   const dm=distMapMulti('ground',foes.map(f=>({c:f.c,r:f.r,d0:0})),u.team), here=dm.get(key(u.c,u.r));
   let b=null;
   for(const [k,e] of info){ if(!canStop(u,e)) continue;
@@ -2118,6 +2340,11 @@ function unitNotes(u){
   if(u.aboard) ink('Aboard a ship.');
   if(u.team===ME&&!u.aboard&&inZoc(u)) ink('<b>Engaged:</b> enemies next to it. It can step away, but must stop if it moves next to another enemy.','#9a4a2a');
   if(u.key==='scout') ink('Slips past enemy zones of control.');
+  if(climbs(u)) ink('<b>Mountain climber:</b> may enter crags; climbing ends the move.','#a63d17');
+  if(u.key==='steamtank') ink('<b>Iron giant:</b> cannot climb mountains or board ships.','#a63d17');
+  if(u.type.shooter&&u.aboard) ink('Can fire from the ship, and shoots back at anyone who attacks it.','#2a5a8a');
+  if(u.cargo.some(p=>p.type.shooter)) ink('<b>Archers aboard:</b> they return fire on any attacker.','#2a5a8a');
+  if(u.type.siege&&units.some(x=>x.team===DWARF&&x.team!==u.team)) ink('Can knock down Dwarf stone walls.','#6a5a2a');
   if(u.hp<T.hp&&!u.aboard){
     let heal=0, why=[];
     if(!u.fought){
@@ -2151,7 +2378,7 @@ function cardHTML(u,preview){
     <div class="sub" style="color:${FACTION_INK[u.team]}">${FACTIONS[u.team].name}</div>
     <div class="sub">${TERR[tileCh(u.c,u.r)].name}${towers.get(key(u.c,u.r))===u.team?' + Fort':''}${tdef?` (+${tdef} def)`:''}</div></div></div>
     <div class="hpbar"><i style="width:${pct}%;background:${hc}"></i><span>${u.hp} / ${T.hp} HP</span></div>
-    <div class="stats"><div><b>${u.hp}/${T.hp}</b>HP</div><div><b>${T.noattack?'—':T.atk+(u.key==='ranger'&&hasTech(u.team,'archery')?1:0)}</b>ATK</div><div><b>${T.def}</b>DEF</div><div><b>${u.team===ME?u.mp+'/'+mvOf(u):mvOf(u)}</b>MOVE</div><div><b>${T.noattack?'—':rng}</b>RANGE</div></div>
+    <div class="stats"><div><b>${u.hp}/${T.hp}</b>HP</div><div><b>${T.noattack?'—':T.atk+atkBonus(u)}</b>ATK</div><div><b>${T.def}</b>DEF</div><div><b>${u.team===ME?u.mp+'/'+mvOf(u):mvOf(u)}</b>MOVE</div><div><b>${T.noattack?'—':rng}</b>RANGE</div></div>
     ${unitNotes(u)}<p>${T.desc}</p>${u.cargo.length?`<p><b>Aboard:</b> ${u.cargo.map(c=>c.name).join(', ')}</p>`:''}${preview?`<div class="preview">${preview}</div>`:''}`;
 }
 function previewFor(t){
@@ -2166,7 +2393,8 @@ function tipHTML(k){
   if(k==='scrip') return `<div class="top"><img src="assets/tf_scriptorium.webp" alt="" style="width:60px;height:auto"><div><h4>Scriptorium</h4><div class="cost">${SCRIP_COST} gold · one per army</div></div></div><p style="margin:6px 0 0">Build it on any open hex you can see. It lets you <b>research technologies</b> (armour, dirigibles, army secrets...). A gamble: each discovery lands at a random time. <b>Guard it:</b> an enemy who ends a move on it captures it, costs the owner their newest tech, and you learn one.</p>`;
   if(k==='tower') return `<div class="top"><img src="assets/f${ME}_fort.webp" alt="" style="width:60px;height:auto"><div><h4>Fort</h4><div class="cost">${towerCost(ME)} gold</div></div></div>
     <p style="margin:6px 0 0">Build it on a grass hex near your units. <b>+2 defence</b> to your unit standing there, <b>+${SUPPLY_PER_FORT} supply</b> (army size), and it recruits <b>2 units per turn</b> on adjacent hexes (ships too, if water is adjacent). Collapses if that unit is slain; enemies can raze it.</p>`;
-  const T=TYPES[k], rng=T.rng[0]===T.rng[1]?T.rng[0]:T.rng[0]+'–'+T.rng[1];
+  if(k==='wall') return `<div class="top"><div><h4>Stone Wall</h4><div class="cost">${WALL_COST} gold · ${WALL_PER_TURN} a turn · ${WALL_MAX} standing</div></div></div><p style="margin:6px 0 0">Build it on meadow or hills within 2 hexes of your units or keep (never beside an enemy or within ${WALL_KEEP_GAP} hexes of a keep you don't hold). Enemy ground units cannot pass; flyers go over but cannot land. Your Dwarves walk through. <b>Only a Catapult, Dragon or Hydra</b> can knock it down, in one hit.</p>`;
+  const T=typeOf(ME,k), rng=T.rng[0]===T.rng[1]?T.rng[0]:T.rng[0]+'–'+T.rng[1];
   const why = gold[ME]<costOf(k) ? `Need ${costOf(k)-gold[ME]} more gold.` : !spawnTiles(ME,k).length ? (k==='archertower'?'No open space next to your units.':T.cls==='water'?'No open water near your keeps or forts.':'No open space near your keeps or forts.') : '';
   return `<div class="top"><img src="assets/${spriteKey(ME,k)}.webp" alt=""><div><h4>${T.name}</h4><div class="cost">${costOf(k)} gold${T.cap?' · carries '+T.cap:''}</div></div></div>
     <div class="stats"><div><b>${T.hp}</b>HP</div><div><b>${T.noattack?'—':T.atk}</b>ATK</div><div><b>${T.def}</b>DEF</div><div><b>${T.mv}</b>MOVE</div><div><b>${T.noattack?'—':rng}</b>RANGE</div></div>
@@ -2186,24 +2414,25 @@ function refreshUI(){
   updateVision(); chatVisible(); { const gb=document.getElementById('givebtn'); if(gb) gb.style.display=(gameStarted&&!over)?'':'none'; }
   const p=document.getElementById('turn');
   setHTML('turn',`<b>Turn ${turn}</b><span class="pill" style="background:${FACTIONS[side].color}">${side===ME?'Your move':FACTIONS[side].short+' moves'}</span><span title="Supply: units fielded / how many your keeps, mines and forts can feed">⚔ ${supplyUsed(ME)}/${supplyCap(ME)}</span><span>🪙 ${gold[ME]}</span><span title="Mana: spells and research">🔮 ${mana[ME]} <small>(+${manaIncome(ME)})</small></span>`);
-  setHTML('factions',FACTIONS.slice(0,4).map((f,i)=>!activeArmies[i]?'':`<div class="frow ${side===i&&!over?'active':''} ${elim[i]?'out':''}"><span class="dot" style="background:${f.color}"></span><span>${f.name}</span>
-    <span class="n">⚔ ${i===ME?`${supplyUsed(ME)}/${supplyCap(ME)}`:'?'}</span><span class="n">⛏ ${i===ME?minesOf(ME):MINES.filter(m=>seenMine.get(key(m.c,m.r))===i).length}</span><span class="n">🏰 ${i===ME?keepOwner.filter(o=>o===ME).length:seenKeep.filter(o=>o===i).length}</span><span class="n">🪙 ${i===ME?`${gold[ME]} <small>(+${income(ME)})</small>`:'?'}</span></div>`).join(''));
+  setHTML('factions',ARMY_IDS.map(i=>{ const f=FACTIONS[i]; return !activeArmies[i]?'':`<div class="frow ${side===i&&!over?'active':''} ${elim[i]?'out':''}"><span class="dot" style="background:${f.color}"></span><span>${f.name}</span>
+    <span class="n">⚔ ${i===ME?`${supplyUsed(ME)}/${supplyCap(ME)}`:'?'}</span><span class="n">⛏ ${i===ME?minesOf(ME):MINES.filter(m=>seenMine.get(key(m.c,m.r))===i).length}</span><span class="n">🏰 ${i===ME?keepOwner.filter(o=>o===ME).length:seenKeep.filter(o=>o===i).length}</span><span class="n">🪙 ${i===ME?`${gold[ME]} <small>(+${income(ME)})</small>`:'?'}</span></div>`; }).join(''));
   const hu=hover&&unitAt(hover.c,hover.r), hvis=hu&&unitVisible(hu)?hu:null;
   const ins=inspected&&units.includes(inspected)&&unitVisible(inspected)?inspected:null, shown=sel||ins;
   const hp=hvis&&sel&&previewFor(hvis);   // hovering a target while a unit is selected still previews the attack
   setHTML('card', shown ? cardHTML(shown,hp?`<b>${hvis.name}:</b> ${hp}`:'')
     : hover&&!explored.has(key(hover.c,hover.r)) ? '<div class="empty"><b>Unexplored</b><br>Send units this way to reveal the map.</div>'
-    : hover ? `<div class="empty"><b>${TERR[tileCh(hover.c,hover.r)].name}</b>${mineInfo(hover)}<br>${TERR[tileCh(hover.c,hover.r)].note||'Open ground.'}${seenScrip.has(key(hover.c,hover.r))?`<br>📜 ${FACTIONS[seenScrip.get(key(hover.c,hover.r))].short} Scriptorium: research hub. Walk a unit onto it to capture it.`:''}${seenTower.has(key(hover.c,hover.r))?`<br>🏯 ${FACTIONS[seenTower.get(key(hover.c,hover.r))].short} fort: +2 defence and +${SUPPLY_PER_FORT} supply for its owner; recruits 2 units per turn nearby${towerSpent(key(hover.c,hover.r))?' (used this turn)':''}.`:''}</div>`
+    : hover ? `<div class="empty"><b>${TERR[tileCh(hover.c,hover.r)].name}</b>${mineInfo(hover)}<br>${TERR[tileCh(hover.c,hover.r)].note||'Open ground.'}${seenScrip.has(key(hover.c,hover.r))?`<br>📜 ${FACTIONS[seenScrip.get(key(hover.c,hover.r))].short} Scriptorium: research hub. Walk a unit onto it to capture it.`:''}${seenWall.has(key(hover.c,hover.r))?'<br>🧱 Dwarf stone wall: blocks other armies\' ground units. Only a Catapult, Dragon or Hydra can knock it down.':''}${seenTower.has(key(hover.c,hover.r))?`<br>🏯 ${FACTIONS[seenTower.get(key(hover.c,hover.r))].short} fort: +2 defence and +${SUPPLY_PER_FORT} supply for its owner; recruits 2 units per turn nearby${towerSpent(key(hover.c,hover.r))?' (used this turn)':''}.`:''}</div>`
     : '<div class="empty">Select one of your units, or hover anything for details.</div>');
   // shop
   const shop=setHTML('shop',`<h3><span>${supplyLeft(ME)<=0?`<b style="color:#ffb070">Army at full supply (${supplyCap(ME)})</b>`:`Recruit at your keeps · ${Math.min(recruitsLeft(ME),supplyLeft(ME))} left this turn`}</span><span>🪙 ${gold[ME]}</span></h3><div class="grid">${shopFor(ME).map(k=>{
-    const T=TYPES[k], ok=gold[ME]>=costOf(k)&&side===ME&&!busy&&!over&&spawnTiles(ME,k).length>0;
-    return `<div class="sw" data-k="${k}"><button class="sec ${recruitType===k?'on':''}" data-k="${k}" ${ok||recruitType===k?'':'disabled'}><span>${T.short}</span><span>${costOf(k)}🪙</span></button></div>`;}).join('')}<div class="sw" data-k="tower" style="grid-column:1/3"><button class="sec ${recruitType==='tower'?'on':''}" data-k="tower" ${(gold[ME]>=towerCost(ME)&&side===ME&&!busy&&!over&&towerTiles(ME).length)||recruitType==='tower'?'':'disabled'}><span>Fort (+${hasTech(ME,'masonry')?3:2} def, +${SUPPLY_PER_FORT} supply, 2 recruits)</span><span>${towerCost(ME)}🪙</span></button></div>${scripEnabled()?(scripOf(ME)?`<div class="sw" data-k="research" style="grid-column:1/3"><button class="sec" data-k="research"><span>📜 Scriptorium${research[ME]?' · researching…':''}</span><span>${techs[ME].length} learned</span></button></div>`:`<div class="sw" data-k="scrip" style="grid-column:1/3"><button class="sec ${recruitType==='scrip'?'on':''}" data-k="scrip" ${(gold[ME]>=SCRIP_COST&&side===ME&&!busy&&!over&&scripTiles(ME).length)||recruitType==='scrip'?'':'disabled'}><span>Scriptorium (research)</span><span>${SCRIP_COST}🪙</span></button></div>`):''}</div>`);
+    const T=typeOf(ME,k), ok=gold[ME]>=costOf(k)&&side===ME&&!busy&&!over&&spawnTiles(ME,k).length>0;
+    return `<div class="sw" data-k="${k}"><button class="sec ${recruitType===k?'on':''}" data-k="${k}" ${ok||recruitType===k?'':'disabled'}><span>${T.short}</span><span>${costOf(k)}🪙</span></button></div>`;}).join('')}<div class="sw" data-k="tower" style="grid-column:1/3"><button class="sec ${recruitType==='tower'?'on':''}" data-k="tower" ${(gold[ME]>=towerCost(ME)&&side===ME&&!busy&&!over&&towerTiles(ME).length)||recruitType==='tower'?'':'disabled'}><span>Fort (+${hasTech(ME,'masonry')?3:2} def, +${SUPPLY_PER_FORT} supply, 2 recruits)</span><span>${towerCost(ME)}🪙</span></button></div>${ME===DWARF?`<div class="sw" data-k="wall" style="grid-column:1/3"><button class="sec ${recruitType==='wall'?'on':''}" data-k="wall" ${(gold[ME]>=WALL_COST&&side===ME&&!busy&&!over&&wallTiles(ME).length)||recruitType==='wall'?'':'disabled'}><span>Stone Wall (${walls.size}/${WALL_MAX} standing · ${Math.max(0,WALL_PER_TURN-wallsBuilt)} left)</span><span>${WALL_COST}🪙</span></button></div>`:''}${scripEnabled()?(scripOf(ME)?`<div class="sw" data-k="research" style="grid-column:1/3"><button class="sec" data-k="research"><span>📜 Scriptorium${research[ME]?' · researching…':''}</span><span>${techs[ME].length} learned</span></button></div>`:`<div class="sw" data-k="scrip" style="grid-column:1/3"><button class="sec ${recruitType==='scrip'?'on':''}" data-k="scrip" ${(gold[ME]>=SCRIP_COST&&side===ME&&!busy&&!over&&scripTiles(ME).length)||recruitType==='scrip'?'':'disabled'}><span>Scriptorium (research)</span><span>${SCRIP_COST}🪙</span></button></div>`):''}</div>`);
   shop.querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(b.dataset.k==='research') openScriptorium(); else chooseRecruit(b.dataset.k); });
   shop.querySelectorAll('.sw').forEach(w=>{ w.onmouseenter=()=>showTip(w); w.onmouseleave=hideTip; });
   const cp=sel&&sel.cargo.length&&side===ME&&!busy?sel:null;
-  const cel=setHTML('cargo',cp?`<h3><span>Aboard the ${cp.type.short}</span></h3><div class="grid">${cp.cargo.map((c,i)=>`<button class="sec" data-i="${i}" ${!c.done&&landTiles(cp).length?'':'disabled'}>Unload ${c.type.short}</button>`).join('')}</div>`:'');
-  cel.querySelectorAll('button').forEach(b=>b.onclick=()=>selectCargo(cp.cargo[+b.dataset.i]));
+  const shore=cp?landTiles(cp).length:0;
+  const cel=setHTML('cargo',cp?`<h3><span>Aboard the ${cp.type.short}</span></h3><div class="grid">${cp.cargo.map((c,i)=>`<button class="sec" data-i="${i}" ${!c.done&&shore?'':'disabled'} ${c.type.shooter?'':'style="grid-column:1/3"'}><span>Unload ${c.type.short}</span></button>${c.type.shooter?`<button class="sec" data-fire="${i}" ${fireTargets(c).length?'':'disabled'} title="Shoot from the deck"><span>Fire ${c.type.short}</span></button>`:''}`).join('')}${cp.cargo.length>1?`<button class="sec" data-all="1" style="grid-column:1/3" ${shore&&cp.cargo.some(c=>!c.done)?'':'disabled'} title="Land everyone who can still act, each on a free shore hex"><span>Unload all</span></button>`:''}</div>`:'');
+  cel.querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(b.dataset.all) unloadAll(cp); else if(b.dataset.fire!=null) selectShooter(cp.cargo[+b.dataset.fire]); else selectCargo(cp.cargo[+b.dataset.i]); });
   { const sp=sel&&sel.key==='wizard'&&sel.team===ME&&!sel.done&&!sel.aboard&&side===ME&&!busy&&!over?sel:null;
     const spEl=setHTML('spells',sp?`<h3><span>Wizard spells (instead of attacking)</span><span>🔮 ${mana[ME]}</span></h3><div class="grid">${Object.entries(SPELLS).map(([k,d])=>{ const ok=mana[ME]>=d.cost&&spellTargets(sp,k).length>0; return `<button class="sec ${spellMode===k?'on':''}" data-s="${k}" title="${d.desc}" ${ok||spellMode===k?'':'disabled'}><span>${d.name}</span><span>${d.cost}🔮</span></button>`; }).join('')}</div>`:'');
     spEl.querySelectorAll('button').forEach(b=>b.onclick=()=>startSpell(b.dataset.s)); }
@@ -2211,15 +2440,17 @@ function refreshUI(){
   if(over) h='The battle is over.';
   else if(side!==ME) h=`${FACTIONS[side].name} is moving…`;
   else if(recruitType==='scrip') h='Click any open meadow or hill hex you can see to raise your Scriptorium. Guard it: an enemy who ends a move on it captures it.';
+  else if(recruitType==='wall') h='Click a green hex to raise a stone wall. Enemy ground units cannot pass it; your Dwarves can.';
   else if(recruitType==='tower') h=`Click a green grass hex to build a fort: +2 defence for your unit there, +${SUPPLY_PER_FORT} supply, and two recruits per turn on adjacent hexes. It collapses if that unit dies; enemies can raze it.`;
   else if(recruitType==='archertower') h='Click a green grass hex next to any of your units (or near a keep or fort) to build an Archer Tower. Grass only. It rests until next turn.';
   else if(recruitType==='merc') h='Click any green hex you can see to hire a Mercenary there. He rests until next turn and serves for 5 rounds (3 at most).';
-  else if(recruitType) h=`Click a green hex near a keep (or next to an unused fort) to place a ${TYPES[recruitType].short}. Recruits rest until next turn.`;
+  else if(recruitType) h=`Click a green hex near a keep (or next to an unused fort) to place a ${typeOf(ME,recruitType).short}. Recruits rest until next turn.`;
   else if(spellMode) h=`${SPELLS[spellMode].name}: click a ringed target within ${SPELL_RANGE} hexes (${SPELLS[spellMode].cost} mana). ${SPELLS[spellMode].desc}`;
+  else if(sel&&sel.aboard&&!moveInfo) h='Click a red-ringed enemy to shoot from the ship, or click the ship to cancel.';
   else if(sel&&sel.aboard) h='Click a highlighted shore hex to disembark. Landing ends this unit\'s turn.';
   else if(sel&&sel.type.noattack) h=`Blue hex = sail (${sel.mp} movement left). Passengers unload onto adjacent land.`;
   else if(sel&&boardShips.length) h=`Blue hex = move (${sel.mp} left). Click a green-ringed ship to board it; the ship can still sail and land it this turn.`;
-  else if(sel&&sel.mp>0) h=(sel.type.stat?'Moving means it cannot fire this turn. ':'')+`Blue hex = move (${sel.mp} movement left). ${targets.length?'Red-ringed enemy = attack.':''}`;
+  else if(sel&&sel.mp>0) h=(sel.type.stat?'Moving means it cannot fire this turn. ':'')+`Blue hex = move (${sel.mp} movement left). ${targets.length?(targets.every(t=>t.wall)?'Red-ringed wall = knock it down.':'Red-ringed enemy = attack.'):''}`;
   else if(sel) h='No movement left. Choose a red-ringed enemy to attack, or press Wait.';
   else if(alive(ME).length&&alive(ME).every(u=>!actionable(u))) h='All units have acted. Recruit more, or end your turn.';
   document.getElementById('hint').textContent=h;
@@ -2372,7 +2603,7 @@ function showIntro(){
   mp.querySelectorAll('button').forEach(b=>b.onclick=()=>{ mapSize=b.dataset.m; try{ localStorage.setItem('raysRealm.mapSize',mapSize); }catch(e){} markM(); sfx('step'); });
   markM(); mp.title='How big the battlefield is in a New Battle';
   const as=document.getElementById('armyscreen'), tabs=document.getElementById('armytabs');
-  tabs.innerHTML=[0,1,2,3].map(t=>`<button data-t="${t}" style="--fc:${FACTIONS[t].color}"><i></i>${FACTIONS[t].name}</button>`).join('');
+  tabs.innerHTML=ARMY_IDS.map(t=>`<button data-t="${t}" style="--fc:${FACTIONS[t].color}"><i></i>${FACTIONS[t].name}</button>`).join('');
   const showArmy=t=>{ myArmy=t; const F=FACTIONS[t], I=ARMY_INFO[t];
     as.style.setProperty('--ac',F.color);
     document.getElementById('armyimg').src='assets/commander_'+t+'.jpg';
@@ -2616,10 +2847,12 @@ function draw(){
       ctx.save(); hexPath(x,y,S); ctx.clip(); ctx.translate(x,y); ctx.scale(1,TILT); if(TILEIMG.F) ctx.drawImage(TILEIMG.F,-S,-SQ*S*0.5,2*S,SQ*S); ctx.restore(); }
     hexPath(x,y,S*0.9); ctx.strokeStyle=FACTIONS[team].color; ctx.lineWidth=3; ctx.stroke();
     structs.push({c,r,y,kind:'fort',img:'f'+team+'_fort',dim:!isVis(c,r)||(team===ME&&towerSpent(k))}); }
-  KEEPS.forEach(([c,r],i)=>{ const o=seenKeep[i]; if(o==null||o>3||!STRUCT_IMG['f'+o+'_keep'].naturalWidth) return; const {x,y}=center(c,r);
+  KEEPS.forEach(([c,r],i)=>{ const o=seenKeep[i]; if(o==null||!isArmy(o)||!STRUCT_IMG['f'+o+'_keep'].naturalWidth) return; const {x,y}=center(c,r);
     hexPath(x,y,S); const gr=ctx.createLinearGradient(x,y-TILT*S,x,y+TILT*S); gr.addColorStop(0,'#8f8a78'); gr.addColorStop(1,'#615c4f'); ctx.fillStyle=gr; ctx.fill();   // cover the painted tile: the 3D keep stands here now
     hexPath(x,y,S*0.9); ctx.strokeStyle=FACTIONS[o].color; ctx.lineWidth=3; ctx.stroke();
     structs.push({c,r,y,kind:'keep',img:'f'+o+'_keep',dim:!isVis(c,r)}); });
+  for(const [k,team] of seenWall){ const [c,r]=k.split(',').map(Number), {y}=center(c,r);
+    structs.push({c,r,y,kind:'wall',team,dim:!isVis(c,r)}); }
   for(const [k,team] of seenScrip){ const [c,r]=k.split(',').map(Number), {x,y}=center(c,r);
     ctx.save(); hexPath(x,y,S); ctx.clip(); ctx.translate(x,y); ctx.scale(1,TILT); if(TILEIMG.S) ctx.drawImage(TILEIMG.S,-S,-SQ*S*0.5,2*S,SQ*S); ctx.restore();
     hexPath(x,y,S*0.9); ctx.strokeStyle=FACTIONS[team].color; ctx.lineWidth=3; ctx.stroke(); }
@@ -2633,6 +2866,7 @@ function draw(){
   }
   for(const t of spawnSet){ const {x,y}=center(t.c,t.r); hexPath(x,y,S*0.94); ctx.fillStyle=`rgba(90,220,90,${0.28+0.1*pulse})`; ctx.fill(); ctx.strokeStyle='#a6f59a'; ctx.lineWidth=2; ctx.stroke(); }
   if(hover&&!busy){ const {x,y}=center(hover.c,hover.r); hexPath(x,y,S*0.97); ctx.strokeStyle='#ffffffaa'; ctx.lineWidth=2; ctx.stroke(); }
+  for(const s of structs) if(s.kind==='wall') drawWallShadow(s);
   // units, forts and keeps back to front; a unit standing in a fort or keep draws in front of it
   const order=[...structs.map(s=>({y:s.y-0.01,s})),...units.filter(unitVisible).map(u=>({y:upos(u).y,u}))].sort((a,b)=>a.y-b.y);
   for(const o of order) o.s ? drawStruct(o.s) : drawUnit(o.u);
